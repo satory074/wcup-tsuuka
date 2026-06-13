@@ -1,0 +1,47 @@
+// 表示状態 ⇔ クエリ文字列の相互変換（純関数。DOM・location は触らない）。
+// 共有URL: ?group=E&pivot=E-5&assume=E-1:1-0,E-2:0-0
+import type { GroupId, ResultOverride } from "../engine/types";
+import { GROUP_IDS } from "../engine/types";
+
+export interface QueryState {
+  group?: GroupId;
+  /** ピボット試合id（"E-5"） */
+  pivot?: string;
+  /** 他の未消化試合の仮定スコア */
+  assume?: ResultOverride[];
+}
+
+const MATCH_ID_RE = /^[A-H]-\d{1,2}$/;
+const ASSUME_RE = /^([A-H]-\d{1,2}):(\d{1,2})-(\d{1,2})$/;
+
+export function encodeQuery(s: QueryState): string {
+  const p = new URLSearchParams();
+  if (s.group) p.set("group", s.group);
+  if (s.pivot && MATCH_ID_RE.test(s.pivot)) p.set("pivot", s.pivot);
+  const pairs = (s.assume ?? [])
+    .filter((o) => MATCH_ID_RE.test(o.matchId))
+    .map((o) => `${o.matchId}:${o.score.home}-${o.score.away}`)
+    .sort();
+  if (pairs.length > 0) p.set("assume", pairs.join(","));
+  const qs = p.toString();
+  return qs ? `?${qs}` : "";
+}
+
+export function decodeQuery(search: string): QueryState {
+  const p = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const out: QueryState = {};
+  const group = p.get("group");
+  if (group && (GROUP_IDS as readonly string[]).includes(group)) out.group = group as GroupId;
+  const pivot = p.get("pivot");
+  if (pivot && MATCH_ID_RE.test(pivot)) out.pivot = pivot;
+  const assume = p.get("assume");
+  if (assume) {
+    const parsed: ResultOverride[] = [];
+    for (const token of assume.split(",")) {
+      const m = ASSUME_RE.exec(token);
+      if (m) parsed.push({ matchId: m[1], score: { home: Number(m[2]), away: Number(m[3]) } });
+    }
+    if (parsed.length > 0) out.assume = parsed;
+  }
+  return out;
+}

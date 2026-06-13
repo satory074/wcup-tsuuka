@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "title": "WCUP 通過シミュレーター",
+    "edition": "2022 Qatar",
+    "advancePerGroup": 2,
+    "points": { "win": 3, "draw": 1, "loss": 0 },
+    "dataLastUpdated": "2026-06-13",
+    "source": "https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/qatar2022",
+    "disclaimer": "2022年カタール大会の実データに基づく非公式の可視化です。順位・通過判定は参考用です。"
+  },
+  "teams": [
+    { "id": "qat", "name": "カタール", "nameEn": "Qatar", "group": "A", "flag": "🇶🇦" },
+    { "id": "ecu", "name": "エクアドル", "nameEn": "Ecuador", "group": "A", "flag": "🇪🇨" },
+    { "id": "sen", "name": "セネガル", "nameEn": "Senegal", "group": "A", "flag": "🇸🇳" },
+    { "id": "ned", "name": "オランダ", "nameEn": "Netherlands", "group": "A", "flag": "🇳🇱" },
+
+    { "id": "eng", "name": "イングランド", "nameEn": "England", "group": "B", "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+    { "id": "irn", "name": "イラン", "nameEn": "Iran", "group": "B", "flag": "🇮🇷" },
+    { "id": "usa", "name": "アメリカ", "nameEn": "United States", "group": "B", "flag": "🇺🇸" },
+    { "id": "wal", "name": "ウェールズ", "nameEn": "Wales", "group": "B", "flag": "🏴󠁧󠁢󠁷󠁬󠁳󠁿" },
+
+    { "id": "arg", "name": "アルゼンチン", "nameEn": "Argentina", "group": "C", "flag": "🇦🇷" },
+    { "id": "ksa", "name": "サウジアラビア", "nameEn": "Saudi Arabia", "group": "C", "flag": "🇸🇦" },
+    { "id": "mex", "name": "メキシコ", "nameEn": "Mexico", "group": "C", "flag": "🇲🇽" },
+    { "id": "pol", "name": "ポーランド", "nameEn": "Poland", "group": "C", "flag": "🇵🇱" },
+
+    { "id": "fra", "name": "フランス", "nameEn": "France", "group": "D", "flag": "🇫🇷" },
+    { "id": "aus", "name": "オーストラリア", "nameEn": "Australia", "group": "D", "flag": "🇦🇺" },
+    { "id": "den", "name": "デンマーク", "nameEn": "Denmark", "group": "D", "flag": "🇩🇰" },
+    { "id": "tun", "name": "チュニジア", "nameEn": "Tunisia", "group": "D", "flag": "🇹🇳" },
+
+    { "id": "esp", "name": "スペイン", "nameEn": "Spain", "group": "E", "flag": "🇪🇸" },
+    { "id": "crc", "name": "コスタリカ", "nameEn": "Costa Rica", "group": "E", "flag": "🇨🇷" },
+    { "id": "ger", "name": "ドイツ", "nameEn": "Germany", "group": "E", "flag": "🇩🇪" },
+    { "id": "jpn", "name": "日本", "nameEn": "Japan", "group": "E", "flag": "🇯🇵" },
+
+    { "id": "bel", "name": "ベルギー", "nameEn": "Belgium", "group": "F", "flag": "🇧🇪" },
+    { "id": "can", "name": "カナダ", "nameEn": "Canada", "group": "F", "flag": "🇨🇦" },
+    { "id": "mar", "name": "モロッコ", "nameEn": "Morocco", "group": "F", "flag": "🇲🇦" },
+    { "id": "cro", "name": "クロアチア", "nameEn": "Croatia", "group": "F", "flag": "🇭🇷" },
+
+    { "id": "bra", "name": "ブラジル", "nameEn": "Brazil", "group": "G", "flag": "🇧🇷" },
+    { "id": "srb", "name": "セルビア", "nameEn": "Serbia", "group": "G", "flag": "🇷🇸" },
+    { "id": "sui", "name": "スイス", "nameEn": "Switzerland", "group": "G", "flag": "🇨🇭" },
+    { "id": "cmr", "name": "カメルーン", "nameEn": "Cameroon", "group": "G", "flag": "🇨🇲" },
+
+    { "id": "por", "name": "ポルトガル", "nameEn": "Portugal", "group": "H", "flag": "🇵🇹" },
+    { "id": "gha", "name": "ガーナ", "nameEn": "Ghana", "group": "H", "flag": "🇬🇭" },
+    { "id": "uru", "name": "ウルグアイ", "nameEn": "Uruguay", "group": "H", "flag": "🇺🇾" },
+    { "id": "kor", "name": "韓国", "nameEn": "South Korea", "group": "H", "flag": "🇰🇷" }
+  ],
+  "groups": [
+    { "id": "A", "teamIds": ["qat", "ecu", "sen", "ned"] },
+    { "id": "B", "teamIds": ["eng", "irn", "usa", "wal"] },
+    { "id": "C", "teamIds": ["arg", "ksa", "mex", "pol"] },
+    { "id": "D", "teamIds": ["fra", "aus", "den", "tun"] },
+    { "id": "E", "teamIds": ["esp", "crc", "ger", "jpn"] },
+    { "id": "F", "teamIds": ["bel", "can", "mar", "cro"] },
+    { "id": "G", "teamIds": ["bra", "srb", "sui", "cmr"] },
+    { "id": "H", "teamIds": ["por", "gha", "uru", "kor"] }
+  ],
+  "matches": [
+    { "id": "A-1", "group": "A", "matchday": 1, "home": "qat", "away": "ecu", "score": { "home": 0, "away": 2 } },
+    { "id": "A-2", "group": "A", "matchday": 1, "home": "sen", "away": "ned", "score": { "home": 0, "away": 2 } },
+    { "id": "A-3", "group": "A", "matchday": 2, "home": "qat", "away": "sen", "score": { "home": 1, "away": 3 } },
+    { "id": "A-4", "group": "A", "matchday": 2, "home": "ned", "away": "ecu", "score": { "home": 1, "away": 1 } },
+    { "id": "A-5", "group": "A", "matchday": 3, "home": "ecu", "away": "sen", "score": { "home": 1, "away": 2 } },
+    { "id": "A-6", "group": "A", "matchday": 3, "home": "ned", "away": "qat", "score": { "home": 2, "away": 0 } },
+
+    { "id": "B-1", "group": "B", "matchday": 1, "home": "eng", "away": "irn", "score": { "home": 6, "away": 2 } },
+    { "id": "B-2", "group": "B", "matchday": 1, "home": "usa", "away": "wal", "score": { "home": 1, "away": 1 } },
+    { "id": "B-3", "group": "B", "matchday": 2, "home": "wal", "away": "irn", "score": { "home": 0, "away": 2 } },
+    { "id": "B-4", "group": "B", "matchday": 2, "home": "eng", "away": "usa", "score": { "home": 0, "away": 0 } },
+    { "id": "B-5", "group": "B", "matchday": 3, "home": "wal", "away": "eng", "score": { "home": 0, "away": 3 } },
+    { "id": "B-6", "group": "B", "matchday": 3, "home": "irn", "away": "usa", "score": { "home": 0, "away": 1 } },
+
+    { "id": "C-1", "group": "C", "matchday": 1, "home": "arg", "away": "ksa", "score": { "home": 1, "away": 2 } },
+    { "id": "C-2", "group": "C", "matchday": 1, "home": "mex", "away": "pol", "score": { "home": 0, "away": 0 } },
+    { "id": "C-3", "group": "C", "matchday": 2, "home": "pol", "away": "ksa", "score": { "home": 2, "away": 0 } },
+    { "id": "C-4", "group": "C", "matchday": 2, "home": "arg", "away": "mex", "score": { "home": 2, "away": 0 } },
+    { "id": "C-5", "group": "C", "matchday": 3, "home": "pol", "away": "arg", "score": { "home": 0, "away": 2 } },
+    { "id": "C-6", "group": "C", "matchday": 3, "home": "ksa", "away": "mex", "score": { "home": 1, "away": 2 } },
+
+    { "id": "D-1", "group": "D", "matchday": 1, "home": "den", "away": "tun", "score": { "home": 0, "away": 0 } },
+    { "id": "D-2", "group": "D", "matchday": 1, "home": "fra", "away": "aus", "score": { "home": 4, "away": 1 } },
+    { "id": "D-3", "group": "D", "matchday": 2, "home": "tun", "away": "aus", "score": { "home": 0, "away": 1 } },
+    { "id": "D-4", "group": "D", "matchday": 2, "home": "fra", "away": "den", "score": { "home": 2, "away": 1 } },
+    { "id": "D-5", "group": "D", "matchday": 3, "home": "aus", "away": "den", "score": { "home": 1, "away": 0 } },
+    { "id": "D-6", "group": "D", "matchday": 3, "home": "tun", "away": "fra", "score": { "home": 1, "away": 0 } },
+
+    { "id": "E-1", "group": "E", "matchday": 1, "home": "ger", "away": "jpn", "score": { "home": 1, "away": 2 } },
+    { "id": "E-2", "group": "E", "matchday": 1, "home": "esp", "away": "crc", "score": { "home": 7, "away": 0 } },
+    { "id": "E-3", "group": "E", "matchday": 2, "home": "jpn", "away": "crc", "score": { "home": 0, "away": 1 } },
+    { "id": "E-4", "group": "E", "matchday": 2, "home": "esp", "away": "ger", "score": { "home": 1, "away": 1 } },
+    { "id": "E-5", "group": "E", "matchday": 3, "home": "jpn", "away": "esp", "score": { "home": 2, "away": 1 } },
+    { "id": "E-6", "group": "E", "matchday": 3, "home": "crc", "away": "ger", "score": { "home": 2, "away": 4 } },
+
+    { "id": "F-1", "group": "F", "matchday": 1, "home": "mar", "away": "cro", "score": { "home": 0, "away": 0 } },
+    { "id": "F-2", "group": "F", "matchday": 1, "home": "bel", "away": "can", "score": { "home": 1, "away": 0 } },
+    { "id": "F-3", "group": "F", "matchday": 2, "home": "bel", "away": "mar", "score": { "home": 0, "away": 2 } },
+    { "id": "F-4", "group": "F", "matchday": 2, "home": "cro", "away": "can", "score": { "home": 4, "away": 1 } },
+    { "id": "F-5", "group": "F", "matchday": 3, "home": "cro", "away": "bel", "score": { "home": 0, "away": 0 } },
+    { "id": "F-6", "group": "F", "matchday": 3, "home": "can", "away": "mar", "score": { "home": 1, "away": 2 } },
+
+    { "id": "G-1", "group": "G", "matchday": 1, "home": "sui", "away": "cmr", "score": { "home": 1, "away": 0 } },
+    { "id": "G-2", "group": "G", "matchday": 1, "home": "bra", "away": "srb", "score": { "home": 2, "away": 0 } },
+    { "id": "G-3", "group": "G", "matchday": 2, "home": "cmr", "away": "srb", "score": { "home": 3, "away": 3 } },
+    { "id": "G-4", "group": "G", "matchday": 2, "home": "bra", "away": "sui", "score": { "home": 1, "away": 0 } },
+    { "id": "G-5", "group": "G", "matchday": 3, "home": "srb", "away": "sui", "score": { "home": 2, "away": 3 } },
+    { "id": "G-6", "group": "G", "matchday": 3, "home": "cmr", "away": "bra", "score": { "home": 1, "away": 0 } },
+
+    { "id": "H-1", "group": "H", "matchday": 1, "home": "uru", "away": "kor", "score": { "home": 0, "away": 0 } },
+    { "id": "H-2", "group": "H", "matchday": 1, "home": "por", "away": "gha", "score": { "home": 3, "away": 2 } },
+    { "id": "H-3", "group": "H", "matchday": 2, "home": "kor", "away": "gha", "score": { "home": 2, "away": 3 } },
+    { "id": "H-4", "group": "H", "matchday": 2, "home": "por", "away": "uru", "score": { "home": 2, "away": 0 } },
+    { "id": "H-5", "group": "H", "matchday": 3, "home": "gha", "away": "uru", "score": { "home": 0, "away": 2 } },
+    { "id": "H-6", "group": "H", "matchday": 3, "home": "kor", "away": "por", "score": { "home": 2, "away": 1 } }
+  ]
+}

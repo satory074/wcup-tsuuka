@@ -1,0 +1,26 @@
+---
+import "../styles/globals.css";
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <title>WCUP 通過シミュレーター</title>
+    <meta
+      name="description"
+      content="ワールドカップ グループステージで、決着試合のスコア次第で各国の通過・順位がどう変わるかを可視化するサイト"
+    />
+  </head>
+  <body>
+    <main id="app">
+      <noscript>このアプリの利用には JavaScript が必要です。</noscript>
+    </main>
+    <script>
+      import { boot } from "../app/main";
+      boot(document.getElementById("app")!);
+    </script>
+  </body>
+</html>
