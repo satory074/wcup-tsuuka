@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 概要
 
-ワールドカップ グループステージの **通過条件マトリックス** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。決着試合のスコア（home 得点 × away 得点）を2軸に振り、各セルに通過結果（①1位 ②2位 / 敗退）を色分け表示する。2022方式（32カ国・8組・各組上位2通過）。初期データは2022年カタール大会の全48試合・実スコア。
+ワールドカップ グループステージの **通過タイムライン** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。主役は**タイムライン**（「この時間に得点→この時点ではこの順位」を縦スナップショット表示）。2モード = 最終節の分刻みライブ／大会全体の試合単位。副機能として**通過条件マトリックス**（もしものスコア。home 得点×away 得点の2軸で各スコアの①②/敗退を色分け）を折りたたみで残置。2022方式（32カ国・8組・各組上位2通過）。初期データは2022年カタール大会の全48試合・実スコア＋第3節16試合のゴール分刻み。
 
 ```bash
 npm install
@@ -24,7 +24,11 @@ npm run test       # tsx scripts/smoketest.ts && tsx scripts/domtest.ts
 
 ## データ
 
-`src/data/worldcup2022.json` が単一の真実（`meta` / `teams[32]` / `groups[8]` / `matches[48]`）。team id は小文字 FIFA トリコード（表示用は大文字化）。`matches[].score` 省略/null = 未消化。`cards` は任意（無ければフェアプレーは未適用）。`compileTournament()` が `validateTournament()` を通して `CompiledTournament`（Map 索引）にする。
+`src/data/worldcup2022.json` が単一の真実（`meta` / `teams[32]` / `groups[8]` / `matches[48]`）。team id は小文字 FIFA トリコード（表示用は大文字化）。`matches[].score` 省略/null = 未消化。`cards` は任意（無ければフェアプレーは未適用）。`matches[].goals`（任意）= `{minute, plus?, side}` の配列で**最終節の分刻みタイムライン**用。あれば**本数==score を validate が強制**（転記ミス検出）。第3節16試合に投入済み。`compileTournament()` が `validateTournament()` を通して `CompiledTournament`（Map 索引）にする。
+
+## タイムライン（`engine/timeline.ts`）
+
+`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=最終節分刻み（第3節の goals が全試合に揃う組のみ。無ければ null→UI は stage にフォールバック）。**ライブのキックオフは第3節を 0-0（=現在引分扱いで各+1点）として表示**＝放送のライブ表と同じ挙動。各スナップショットは `movements`（直前比の rank 変動 ▲▼）と `advancing`（上位 advancePerGroup の暫定通過圏）を持つ。決定的。`?view=live|stage` で URL 同期。
 
 ## 順位決定ロジック（`engine/standings.ts`）= 正しさの核
 
@@ -46,8 +50,8 @@ FIFA 2022 順:
 
 ## テスト
 
-- `scripts/smoketest.ts`: ①データ検証（壊した複製を弾く） ②2022 全8組の実順位再現 ③タイブレーク単体（総GD/総GF/h2h/3すくみ抽選/1-2位タイ） ④マトリックス（49セル/既知セル手計算/引分有効/決定性） ⑤status。
-- `scripts/domtest.ts`: jsdom で boot→描画→グループ切替→ピボット切替→仮定スコア→共有URL復元。
+- `scripts/smoketest.ts`: ①データ検証（壊した複製・goals本数!=scoreを弾く） ②2022 全8組の実順位再現 ③タイブレーク単体（総GD/総GF/h2h/3すくみ抽選/1-2位タイ） ④マトリックス（49セル/既知セル手計算/引分有効/決定性） ⑤status ⑦タイムライン（全8組の最終スナップ==最終順位・**組E 70'でコスタリカが暫定通過圏入り→最終は日本/スペイン**・scoreAtClock境界・決定性）。
+- `scripts/domtest.ts`: jsdom で boot→描画（タイムライン主役）→モード切替(view=)→グループ切替→ピボット切替→仮定スコア→共有URL(group/view)復元。マトリックスは `<details#matrix-details>` 内。
 - エンジン変更後は `npm run typecheck` も（tsx は型を見ない）。
 
 ## デプロイ

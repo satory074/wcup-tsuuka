@@ -3,8 +3,12 @@
 import type { GroupId, ResultOverride } from "../engine/types";
 import { GROUP_IDS } from "../engine/types";
 
+export type ViewMode = "live" | "stage";
+
 export interface QueryState {
   group?: GroupId;
+  /** タイムライン表示モード */
+  view?: ViewMode;
   /** ピボット試合id（"E-5"） */
   pivot?: string;
   /** 他の未消化試合の仮定スコア */
@@ -17,6 +21,7 @@ const ASSUME_RE = /^([A-H]-\d{1,2}):(\d{1,2})-(\d{1,2})$/;
 export function encodeQuery(s: QueryState): string {
   const p = new URLSearchParams();
   if (s.group) p.set("group", s.group);
+  if (s.view) p.set("view", s.view);
   if (s.pivot && MATCH_ID_RE.test(s.pivot)) p.set("pivot", s.pivot);
   const pairs = (s.assume ?? [])
     .filter((o) => MATCH_ID_RE.test(o.matchId))
@@ -32,6 +37,8 @@ export function decodeQuery(search: string): QueryState {
   const out: QueryState = {};
   const group = p.get("group");
   if (group && (GROUP_IDS as readonly string[]).includes(group)) out.group = group as GroupId;
+  const view = p.get("view");
+  if (view === "live" || view === "stage") out.view = view;
   const pivot = p.get("pivot");
   if (pivot && MATCH_ID_RE.test(pivot)) out.pivot = pivot;
   const assume = p.get("assume");

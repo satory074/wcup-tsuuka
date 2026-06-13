@@ -48,6 +48,17 @@ export interface Cards {
   r: number;
 }
 
+export type GoalSide = "home" | "away";
+
+export interface Goal {
+  /** 試合の経過分（0..120 の整数） */
+  minute: number;
+  /** アディショナルタイム（"45+2" の +2。任意・非負整数） */
+  plus?: number;
+  /** 得点した側（オウンゴールは得点が入る側＝利益を得た側を入れる） */
+  side: GoalSide;
+}
+
 export interface Match {
   /** "<group>-<n>" 例: "A-1" */
   id: string;
@@ -61,6 +72,8 @@ export interface Match {
   score?: Score | null;
   /** フェアプレー算出用。無ければ未適用 */
   cards?: { home: Cards; away: Cards };
+  /** 得点イベント（分刻みタイムライン用）。あれば本数は score と一致必須 */
+  goals?: Goal[];
 }
 
 /** 生 JSON のルート（= worldcup2022.json） */

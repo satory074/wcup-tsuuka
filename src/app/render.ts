@@ -1,28 +1,33 @@
-// 唯一の DOM 層。グループ選択・順位表・通過ステータス・ピボット操作・マトリックス・凡例を描画する。
+// 唯一の DOM 層。グループ選択・順位表・通過ステータス・タイムライン（主役）・
+// もしものスコア=マトリックス（折りたたみ）を描画する。
 // イベントはルートの click / change リスナーで data-action 委譲（kisei/moshirasu パターン）。
-// 再描画は可変リージョンの innerHTML 差し替え。select/number 入力は change で拾い、再描画でのフォーカス喪失を許容。
 import type { CompiledTournament, GroupId, Match, Score, Standings } from "../engine/types";
 import { scoreLabel, tricode } from "../engine/format";
 import type { TeamStatus } from "../engine/status";
 import type { ScenarioMatrix, Outcome } from "../engine/scenario/matrix";
+import type { Snapshot } from "../engine/timeline";
+
+export type ViewMode = "live" | "stage";
 
 export type Command =
   | { type: "set-group"; group: GroupId }
+  | { type: "set-view"; view: ViewMode }
   | { type: "set-pivot"; pivotId: string }
   | { type: "set-assume"; matchId: string; score: Score };
 export type Dispatch = (cmd: Command) => void;
 
 export interface RenderView {
   group: GroupId;
+  view: ViewMode;
   standings: Standings;
   status: TeamStatus[];
+  liveTimeline: Snapshot[] | null;
+  stageTimeline: Snapshot[];
+  // もしものスコア（マトリックス）用
   matrix: ScenarioMatrix;
   pivotId: string;
-  /** ピボット選択肢（組の全試合） */
   pivotOptions: Match[];
-  /** 仮定スコアが必要な他の未消化試合 */
   assumeMatches: Match[];
-  /** matchId → 現在の仮定スコア */
   assumeValues: Map<string, Score>;
 }
 
@@ -47,21 +52,32 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
     <div class="wrap">
       <header class="site-header">
         <h1>⚽ WCUP 通過シミュレーター</h1>
-        <p class="site-sub">${esc(ct.meta.title)} ／ 決着試合のスコア次第で、どの国が・何位で通過するかが変わります。</p>
+        <p class="site-sub">${esc(ct.meta.title)} ／ いつ誰が得点して、その時点で通過国がどう入れ替わったかを時系列で可視化します。</p>
       </header>
 
       <nav class="group-tabs" id="group-tabs" aria-label="グループ選択">${groupTabs}</nav>
 
-      <h2 class="section-title">順位表 <span class="hint" id="group-caption"></span></h2>
+      <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
       <div id="standings"></div>
-
-      <h2 class="section-title">通過ステータス</h2>
       <div id="status"></div>
 
-      <h2 class="section-title">通過条件マトリックス <span class="hint">この試合のスコアで通過がどう変わるか</span></h2>
-      <div id="pivot"></div>
-      <div id="matrix"></div>
-      <div id="legend"></div>
+      <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位</span></h2>
+      <div class="view-toggle seg" role="group" aria-label="タイムライン表示モード">
+        <button type="button" class="seg-btn" data-action="set-view" data-view="live">最終節（分刻み）</button>
+        <button type="button" class="seg-btn" data-action="set-view" data-view="stage">大会全体（試合単位）</button>
+      </div>
+      <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}） ／ ▲▼ 直前からの順位変動</p>
+      <div id="timeline"></div>
+
+      <details class="matrix-details" id="matrix-details">
+        <summary>もしものスコア（通過条件マトリックス）を見る</summary>
+        <div class="matrix-details-body">
+          <p class="site-sub">決着試合のスコアを2軸に振り、各スコアでの通過結果（①1位 ②2位／敗退）を色分け表示します。</p>
+          <div id="pivot"></div>
+          <div id="matrix"></div>
+          <div id="legend"></div>
+        </div>
+      </details>
 
       <footer class="site-footer">
         <p class="disclaimer">⚠️ ${esc(ct.meta.disclaimer)}</p>
@@ -74,6 +90,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
   const $ = <T extends HTMLElement>(sel: string): T => root.querySelector(sel) as T;
   const elStandings = $("#standings");
   const elStatus = $("#status");
+  const elTimeline = $("#timeline");
   const elPivot = $("#pivot");
   const elMatrix = $("#matrix");
   const elLegend = $("#legend");
@@ -83,9 +100,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
   root.addEventListener("click", (ev) => {
     const t = (ev.target as HTMLElement).closest("[data-action]") as HTMLElement | null;
     if (!t) return;
-    if (t.dataset.action === "set-group") {
-      dispatch({ type: "set-group", group: t.dataset.group as GroupId });
-    }
+    if (t.dataset.action === "set-group") dispatch({ type: "set-group", group: t.dataset.group as GroupId });
+    else if (t.dataset.action === "set-view") dispatch({ type: "set-view", view: t.dataset.view as ViewMode });
   });
   root.addEventListener("change", (ev) => {
     const t = ev.target as HTMLElement;
@@ -99,11 +115,11 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
     }
   });
 
-  // ---- 各リージョンの HTML ビルダ ----
   function gdLabel(gd: number): string {
     return gd > 0 ? `+${gd}` : String(gd);
   }
 
+  // ---- 最終順位表 ----
   function standingsHTML(st: Standings): string {
     const adv = ct.meta.advancePerGroup;
     const rows = st.rows
@@ -132,6 +148,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       </div>`;
   }
 
+  // ---- 通過ステータス ----
   function statusHTML(status: TeamStatus[]): string {
     const meta: Record<TeamStatus["status"], { cls: string; word: string }> = {
       advanced: { cls: "is-advanced", word: "突破確定" },
@@ -151,6 +168,70 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       <div class="status-chips">${chips}</div>`;
   }
 
+  // ---- タイムライン（主役） ----
+  function moveCell(kind: "up" | "down" | "same"): string {
+    if (kind === "up") return `<td class="tl-move is-up">▲</td>`;
+    if (kind === "down") return `<td class="tl-move is-down">▼</td>`;
+    return `<td class="tl-move is-same">·</td>`;
+  }
+
+  function miniStandingsHTML(snap: Snapshot): string {
+    const advSet = new Set(snap.advancing);
+    const rows = snap.standings.rows
+      .map((r) => {
+        const adv = advSet.has(r.teamId) ? " tl-adv" : "";
+        return `
+          <tr class="${adv.trim()}">
+            <td class="tl-pos">${r.rank}</td>
+            ${moveCell(snap.movements[r.teamId] ?? "same")}
+            <td class="tl-team"><span class="team-flag">${team(r.teamId).flag}</span>${esc(team(r.teamId).name)}</td>
+            <td class="tl-pts">${r.points}</td>
+            <td class="tl-gd">${gdLabel(r.gd)}</td>
+          </tr>`;
+      })
+      .join("");
+    return `<table class="tl-standings tnum"><tbody>${rows}</tbody></table>`;
+  }
+
+  function eventHeadlineHTML(snap: Snapshot): string {
+    if (snap.kind === "kickoff") {
+      return `<span class="tl-kind tl-kickoff">⏱ キックオフ</span><span class="tl-sub">第3節 2試合 同時開催（0-0）</span>`;
+    }
+    const e = snap.event!;
+    if (snap.kind === "goal") {
+      const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
+      return `
+        <span class="tl-kind tl-goal">⚽ ${esc(snap.clockLabel)}</span>
+        <span class="tl-scorer">${tlabel(scorerId)} が得点</span>
+        <span class="tl-matchscore">${tc(e.homeId)} ${e.homeScore}–${e.awayScore} ${tc(e.awayId)}</span>`;
+    }
+    // matchEnd（試合単位）
+    return `
+      <span class="tl-kind tl-matchend">${esc(snap.clockLabel)}</span>
+      <span class="tl-matchscore">${tlabel(e.homeId)} ${e.homeScore}–${e.awayScore} ${tlabel(e.awayId)}</span>`;
+  }
+
+  function timelineHTML(view: RenderView): string {
+    const snaps = view.view === "live" ? view.liveTimeline : view.stageTimeline;
+    if (!snaps || snaps.length === 0) {
+      return `<p class="empty-msg">このグループにはタイムラインデータがありません。</p>`;
+    }
+    const items = snaps
+      .map(
+        (s) => `
+        <li class="tl-item tl-${s.kind}">
+          <div class="tl-time">${esc(s.clockLabel)}</div>
+          <div class="tl-body">
+            <div class="tl-event">${eventHeadlineHTML(s)}</div>
+            ${miniStandingsHTML(s)}
+          </div>
+        </li>`,
+      )
+      .join("");
+    return `<ol class="timeline">${items}</ol>`;
+  }
+
+  // ---- もしものスコア（マトリックス・折りたたみ内） ----
   function matchOptionLabel(m: Match): string {
     return `${team(m.home).flag} ${team(m.home).name} × ${team(m.away).name} ${team(m.away).flag}（第${m.matchday}節）`;
   }
@@ -177,7 +258,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
         .join("");
       assume = `
         <div class="assume-list">
-          <p class="assume-hint">⚠️ 他にも未消化の試合があります。仮のスコアを入れてください（マトリックスはこの仮定の上で計算します）。</p>
+          <p class="assume-hint">⚠️ 他にも未消化の試合があります。仮のスコアを入れてください。</p>
           ${rows}
         </div>`;
     }
@@ -200,7 +281,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       const top = o.advancing.length > 0 ? `<span class="cell-1st">①${o.advancing.map(tc).join("/")}</span>` : "";
       return `${top}<span class="cell-2nd">🎲抽選</span>`;
     }
-    // 1-2位タイ（両者通過・順序のみ抽選）
     return `<span class="cell-1st">${o.advancing.map(tc).join("/")}</span><span class="cell-2nd">🎲順</span>`;
   }
 
@@ -260,13 +340,19 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
   }
 
   function render(view: RenderView): void {
-    // グループタブの選択状態
     for (const tab of root.querySelectorAll<HTMLElement>(".group-tab")) {
       tab.classList.toggle("is-on", tab.dataset.group === view.group);
+    }
+    // 表示モードトグル（live が無い組では live を隠す）
+    for (const btn of root.querySelectorAll<HTMLElement>(".view-toggle .seg-btn")) {
+      const mode = btn.dataset.view as ViewMode;
+      btn.classList.toggle("seg-on", mode === view.view);
+      btn.hidden = mode === "live" && view.liveTimeline === null;
     }
     elCaption.textContent = `グループ ${view.group}`;
     elStandings.innerHTML = standingsHTML(view.standings);
     elStatus.innerHTML = statusHTML(view.status);
+    elTimeline.innerHTML = timelineHTML(view);
     elPivot.innerHTML = pivotHTML(view);
     elMatrix.innerHTML = matrixHTML(view.matrix);
     elLegend.innerHTML = legendHTML(view.matrix);

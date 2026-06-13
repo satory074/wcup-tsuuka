@@ -454,6 +454,186 @@ table.matrix {
   text-decoration: underline;
 }
 
+/* ---- タイムライン表示モード切替 ---- */
+.view-toggle {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.view-toggle .seg-btn {
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-weight: 700;
+}
+.view-toggle .seg-btn.seg-on {
+  background: var(--accent);
+  color: #fff;
+}
+.tl-legend-note {
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+  margin: 0.5rem 0 0.25rem;
+}
+
+/* ---- 縦タイムライン ---- */
+.timeline {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+.tl-item {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+  align-items: flex-start;
+}
+.tl-time {
+  flex: 0 0 3rem;
+  text-align: right;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  padding-top: 0.55rem;
+  font-variant-numeric: tabular-nums;
+}
+.tl-body {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-card);
+  padding: 0.5rem 0.7rem;
+}
+.tl-goal .tl-body {
+  border-left-color: var(--cell-2);
+}
+.tl-kickoff .tl-body {
+  border-left-color: var(--ink-soft);
+}
+.tl-matchend .tl-body {
+  border-left-color: var(--accent);
+}
+.tl-event {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.88rem;
+}
+.tl-kind {
+  font-weight: 800;
+}
+.tl-kind.tl-goal {
+  color: var(--cell-2);
+}
+.tl-scorer {
+  font-weight: 700;
+}
+.tl-matchscore {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 0.05rem 0.45rem;
+}
+.tl-sub {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.tl-standings {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.tl-standings td {
+  padding: 0.18rem 0.3rem;
+  border-top: 1px dashed var(--border);
+}
+.tl-standings tr:first-child td {
+  border-top: none;
+}
+.tl-pos {
+  width: 1.4rem;
+  text-align: center;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.tl-move {
+  width: 1rem;
+  text-align: center;
+  font-size: 0.7rem;
+}
+.tl-move.is-up {
+  color: var(--advance);
+}
+.tl-move.is-down {
+  color: var(--cell-1);
+}
+.tl-move.is-same {
+  color: var(--border);
+}
+.tl-team {
+  width: 99%;
+}
+.tl-team .team-flag {
+  margin-right: 0.3rem;
+}
+.tl-pts {
+  text-align: right;
+  font-weight: 800;
+}
+.tl-gd {
+  text-align: right;
+  color: var(--ink-soft);
+  width: 2.2rem;
+}
+.tl-adv {
+  background: var(--advance-soft);
+}
+.tl-adv .tl-pos {
+  color: var(--advance);
+}
+
+/* ---- もしものスコア（マトリックス・折りたたみ） ---- */
+.matrix-details {
+  margin-top: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.matrix-details > summary {
+  cursor: pointer;
+  padding: 0.85rem 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  list-style: none;
+}
+.matrix-details > summary::-webkit-details-marker {
+  display: none;
+}
+.matrix-details > summary::before {
+  content: "▸ ";
+  color: var(--ink-soft);
+}
+.matrix-details[open] > summary::before {
+  content: "▾ ";
+}
+.matrix-details-body {
+  padding: 0 1rem 1rem;
+}
+
 @media (max-width: 480px) {
   .matrix td.cell {
     width: 2.7rem;
@@ -463,5 +643,11 @@ table.matrix {
   .group-tab {
     font-size: 0.88rem;
     padding: 0.35rem 0.4rem;
+  }
+  .tl-time {
+    flex-basis: 2.4rem;
+  }
+  .tl-gd {
+    display: none;
   }
 }

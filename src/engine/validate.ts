@@ -154,6 +154,29 @@ export function validateTournament(raw: unknown): ValidateResult {
           if (!isRecord(cs) || !isNonNegInt(cs.y) || !isNonNegInt(cs.r)) err(`${at}.cards.${side} が不正`);
         }
       }
+
+      // goals（任意。あれば本数は score と一致必須）
+      if (m.goals !== undefined && m.goals !== null) {
+        if (!Array.isArray(m.goals)) err(`${at}.goals が配列ではない`);
+        else {
+          let gh = 0;
+          let ga = 0;
+          for (const [gi, g] of m.goals.entries()) {
+            if (!isRecord(g)) { err(`${at}.goals[${gi}] が不正`); continue; }
+            if (!Number.isInteger(g.minute) || (g.minute as number) < 0 || (g.minute as number) > 120)
+              err(`${at}.goals[${gi}].minute が 0..120 の整数ではない`);
+            if (g.plus !== undefined && !isNonNegInt(g.plus)) err(`${at}.goals[${gi}].plus が不正`);
+            if (g.side !== "home" && g.side !== "away") err(`${at}.goals[${gi}].side が home/away ではない`);
+            else if (g.side === "home") gh++;
+            else ga++;
+          }
+          const s = m.score;
+          if (isRecord(s) && isNonNegInt(s.home) && isNonNegInt(s.away)) {
+            if (gh !== s.home) err(`${at}: home のゴール数 ${gh} が score.home ${s.home} と不一致`);
+            if (ga !== s.away) err(`${at}: away のゴール数 ${ga} が score.away ${s.away} と不一致`);
+          }
+        }
+      }
     }
   }
 

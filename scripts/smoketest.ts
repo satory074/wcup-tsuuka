@@ -8,6 +8,8 @@ import { computeStandings } from "../src/engine/standings";
 import { groupStatus } from "../src/engine/status";
 import { buildMatrix, type ScenarioMatrix } from "../src/engine/scenario/matrix";
 import { defaultPivot } from "../src/engine/scenario/pivot";
+import { buildLiveTimeline, buildStageTimeline, clockOf, scoreAtClock } from "../src/engine/timeline";
+import type { Goal } from "../src/engine/types";
 import type { CompiledTournament, GroupId, Match, Meta, Standings, Team } from "../src/engine/types";
 
 function assert(cond: boolean, msg: string): void {
@@ -57,7 +59,19 @@ function assert(cond: boolean, msg: string): void {
   a6.home = "qat";
   a6.away = "ecu";
   assert(!validateTournament(b5).ok, "対戦の重複/欠落を弾く");
-  console.log("[data] 不正データ検出 OK");
+
+  // 第3節16試合に goals があり、本数が score と一致
+  const md3 = (worldcupJson.matches as { matchday: number; goals?: unknown; score: { home: number; away: number } }[]).filter(
+    (m) => m.matchday === 3,
+  );
+  assert(md3.length === 16, `第3節は16試合（実際: ${md3.length}）`);
+  for (const m of md3) assert(Array.isArray(m.goals), "第3節の全試合に goals がある");
+  // 本数不一致を弾く（E-5 のゴールを1つ削る → home 2→1 で score.home 2 と不一致）
+  const bg = clone();
+  const e5 = (bg.matches as { id: string; goals: unknown[] }[]).find((m) => m.id === "E-5")!;
+  e5.goals = e5.goals.slice(0, 2);
+  assert(!validateTournament(bg).ok, "ゴール本数と score の不一致を弾く");
+  console.log("[data] 不正データ検出 + goals 本数==score OK");
 }
 
 // ---- 2) 2022 実順位の再現 ----
@@ -283,4 +297,76 @@ function synthCt(teamIds: string[], matches: Match[]): CompiledTournament {
   console.log("[status] 部分シーズンの確定/敗退/可能性あり OK");
 }
 
-console.log("✅ smoketest（P1-P4）通過");
+// ---- 7) タイムライン（timeline.ts） ----
+function sortedAdv(a: string[]): string {
+  return [...a].sort().join(",");
+}
+{
+  // scoreAtClock 単体
+  const g: Goal[] = [
+    { minute: 11, side: "away" },
+    { minute: 48, side: "home" },
+    { minute: 51, side: "home" },
+  ];
+  assert(JSON.stringify(scoreAtClock(g, 0)) === JSON.stringify({ home: 0, away: 0 }), "7: 0分は0-0");
+  assert(JSON.stringify(scoreAtClock(g, clockOf({ minute: 11, side: "away" }))) === JSON.stringify({ home: 0, away: 1 }), "7: 11分で0-1");
+  assert(JSON.stringify(scoreAtClock(g, 4800)) === JSON.stringify({ home: 1, away: 1 }), "7: 48分で1-1");
+  assert(JSON.stringify(scoreAtClock(g, 9000)) === JSON.stringify({ home: 2, away: 1 }), "7: 90分で2-1");
+  // アディショナルタイム境界
+  assert(clockOf({ minute: 90, plus: 5, side: "home" }) === 9005, "7: clockOf 90+5 = 9005");
+  const g2: Goal[] = [{ minute: 90, plus: 5, side: "home" }];
+  assert(scoreAtClock(g2, 9004).home === 0 && scoreAtClock(g2, 9005).home === 1, "7: 90+5 の境界");
+
+  // 大会全体タイムライン（試合単位）: 6スナップ・最終は最終順位
+  const stageE = buildStageTimeline(CT, "E");
+  assert(stageE.length === 6, `7: 組E 試合単位は6スナップ（実際: ${stageE.length}）`);
+  const stageLast = stageE[stageE.length - 1].standings;
+  assert(stageLast.rows.map((r) => r.teamId).join(",") === "jpn,esp,ger,crc", "7: 試合単位の最終=最終順位");
+  assert(stageE.every((s) => s.standings.rows.length === 4), "7: 各スナップ4チーム");
+  assert(stageE.every((s) => Object.keys(s.movements).length === 4), "7: movements が全チーム分");
+
+  // 全8組で試合単位タイムラインが作れ、最終スナップが最終順位と一致
+  for (const gid of CT.groups) {
+    const stage = buildStageTimeline(CT, gid);
+    const fin = standingsFor(gid);
+    assert(
+      stage[stage.length - 1].standings.rows.map((r) => r.teamId).join(",") === fin.rows.map((r) => r.teamId).join(","),
+      `7: 組${gid} 試合単位の最終=最終順位`,
+    );
+  }
+
+  // 最終節 分刻みタイムライン（組E）
+  const liveE = buildLiveTimeline(CT, "E");
+  assert(liveE !== null, "7: 組E はライブタイムラインを生成");
+  // キックオフ(1) + E-5(3ゴール) + E-6(6ゴール) = 10スナップ
+  assert(liveE!.length === 10, `7: 組E ライブは10スナップ（実際: ${liveE!.length}）`);
+  assert(liveE![0].kind === "kickoff", "7: 先頭はキックオフ");
+
+  // 既知の中間状態: コスタリカが70'に2-1とした時点で、暫定通過圏が [crc, jpn]（スペイン圏外）
+  const at70 = liveE!.find((s) => s.event?.matchId === "E-6" && s.event.homeScore === 2 && s.event.awayScore === 1);
+  assert(!!at70, "7: 70' コスタリカ2-1 のスナップが存在");
+  assert(sortedAdv(at70!.advancing) === "crc,jpn", `7: 70'時点の暫定通過は日本とコスタリカ（実際: ${at70!.advancing}）`);
+  assert(!at70!.advancing.includes("esp"), "7: 70'時点でスペインは暫定圏外");
+
+  // 最終: ドイツの逆転で 暫定通過は [esp, jpn] に戻り、最終順位と一致
+  const liveLast = liveE![liveE!.length - 1];
+  assert(sortedAdv(liveLast.advancing) === "esp,jpn", "7: 最終はスペインと日本が通過");
+  assert(liveLast.standings.rows.map((r) => r.teamId).join(",") === "jpn,esp,ger,crc", "7: ライブ最終=最終順位");
+
+  // 全8組でライブタイムラインが生成でき、最終スナップが最終順位と一致
+  for (const gid of CT.groups) {
+    const live = buildLiveTimeline(CT, gid);
+    assert(live !== null, `7: 組${gid} ライブ生成`);
+    const fin = standingsFor(gid);
+    assert(
+      live![live!.length - 1].standings.rows.map((r) => r.teamId).join(",") === fin.rows.map((r) => r.teamId).join(","),
+      `7: 組${gid} ライブ最終=最終順位`,
+    );
+  }
+
+  // 決定性
+  assert(JSON.stringify(buildLiveTimeline(CT, "E")) === JSON.stringify(buildLiveTimeline(CT, "E")), "7: ライブは決定的");
+  console.log("[timeline] 試合単位＋分刻み OK（全8組 最終一致・組E 70'の暫定逆転・決定性）");
+}
+
+console.log("✅ smoketest（P1-P5）通過");
