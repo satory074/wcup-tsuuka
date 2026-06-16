@@ -201,25 +201,34 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
     if (!snaps || snaps.length === 0) {
       return `<p class="empty-msg">このグループにはタイムラインデータがありません。</p>`;
     }
-    // 行順 = 最終順位（各チームの行を横に追える）
-    const teamOrder = view.standings.rows.map((r) => r.teamId);
+    const adv = ct.meta.advancePerGroup;
+    // 行＝順位（位置）, 列＝時間。各スナップショットの「位置index → teamId」「teamId → 位置index」
+    const posByCol = snaps.map((s) => s.standings.rows.map((r) => r.teamId)); // [col][pos] = teamId
+    const idxByCol = posByCol.map((arr) => new Map(arr.map((id, i) => [id, i])));
+    const teamCount = posByCol[0].length;
+
     const headCols = snaps.map(colHeadHTML).join("");
-    const bodyRows = teamOrder
-      .map((tid) => {
-        const cells = snaps
-          .map((s) => {
-            const row = s.standings.rows.find((r) => r.teamId === tid)!;
-            const adv = s.advancing.includes(tid) ? " is-adv" : "";
-            return `<td class="tl-cell${adv}"><span class="tl-rank">${row.rank}</span>${moveMark(s.movements[tid] ?? "same")}</td>`;
-          })
-          .join("");
-        return `<tr><th scope="row" class="tl-team-cell"><span class="team-flag">${team(tid).flag}</span>${esc(team(tid).name)}</th>${cells}</tr>`;
-      })
-      .join("");
+    const bodyRows = Array.from({ length: teamCount }, (_, pos) => {
+      const advCls = pos < adv ? " is-adv" : "";
+      const cells = posByCol
+        .map((col, ci) => {
+          const tid = col[pos];
+          // 位置ベースの上下（直前列での同チームの位置と比較）= 国旗が上下する動き
+          let mv: "up" | "down" | "same" = "same";
+          if (ci > 0) {
+            const prev = idxByCol[ci - 1].get(tid);
+            if (prev !== undefined) mv = pos < prev ? "up" : pos > prev ? "down" : "same";
+          }
+          return `<td class="tl-flagcell${advCls}" title="${esc(team(tid).name)}"><span class="tl-flag">${team(tid).flag}</span><span class="tl-code">${tc(tid)}</span>${moveMark(mv)}</td>`;
+        })
+        .join("");
+      return `<tr><th scope="row" class="tl-poscol${advCls}">${pos + 1}</th>${cells}</tr>`;
+    }).join("");
+
     return `
       <div class="timeline-scroll">
         <table class="tl-grid tnum">
-          <thead><tr><th class="tl-corner">時間 →</th>${headCols}</tr></thead>
+          <thead><tr><th class="tl-corner">順位 ＼ 時間 →</th>${headCols}</tr></thead>
           <tbody>${bodyRows}</tbody>
         </table>
       </div>`;

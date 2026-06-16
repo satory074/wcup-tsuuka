@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 概要
 
-ワールドカップ グループステージの **通過タイムライン** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。主役は**タイムライン＝横1表**（列＝時間が右へ流れる・行＝チーム・セル＝その時点の順位・列ヘッダに得点選手）。2モード = 最終節の分刻みライブ／大会全体の試合単位。副機能として**通過条件マトリックス**（もしものスコア。home 得点×away 得点の2軸で各スコアの①②/敗退を色分け）を折りたたみで残置。2022方式（32カ国・8組・各組上位2通過）。初期データは2022年カタール大会の全48試合・実スコア＋第3節16試合のゴール分刻み（得点選手名つき）。
+ワールドカップ グループステージの **通過タイムライン** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。主役は**タイムライン＝順位バンプチャート（横1表）**（縦＝順位1〜4・列＝時間が右へ流れる・各セルにその順位の国旗が入り上下に動く・列ヘッダに得点選手）。2モード = 最終節の分刻みライブ／大会全体の試合単位。副機能として**通過条件マトリックス**（もしものスコア。home 得点×away 得点の2軸で各スコアの①②/敗退を色分け）を折りたたみで残置。2022方式（32カ国・8組・各組上位2通過）。初期データは2022年カタール大会の全48試合・実スコア＋第3節16試合のゴール分刻み（得点選手名つき）。
 
 ```bash
 npm install
@@ -28,7 +28,7 @@ npm run test       # tsx scripts/smoketest.ts && tsx scripts/domtest.ts
 
 ## タイムライン（`engine/timeline.ts`）
 
-`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=最終節分刻み（第3節の goals が全試合に揃う組のみ。無ければ null→UI は stage にフォールバック）。**ライブのキックオフは第3節を 0-0（=現在引分扱いで各+1点）として表示**＝放送のライブ表と同じ挙動。各スナップショットは `movements`（直前比の rank 変動 ▲▼）・`advancing`（上位 advancePerGroup の暫定通過圏）・`event.scorer`（得点選手名）を持つ。決定的。**描画（`render.ts`）は横1表**: スナップショット配列を「列」、チームを「行」、セル＝そのスナップショットでのチーム rank、列ヘッダに時間＋得点者。先頭チーム名列は `position:sticky`。`?view=live|stage` で URL 同期。
+`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=最終節分刻み（第3節の goals が全試合に揃う組のみ。無ければ null→UI は stage にフォールバック）。**ライブのキックオフは第3節を 0-0（=現在引分扱いで各+1点）として表示**＝放送のライブ表と同じ挙動。各スナップショットは `movements`（直前比の rank 変動 ▲▼）・`advancing`（上位 advancePerGroup の暫定通過圏）・`event.scorer`（得点選手名）を持つ。決定的。**描画（`render.ts`）は順位バンプチャート（横1表）**: スナップショット配列を「列」、**行＝順位(位置 1〜4)**、各セル＝そのスナップショットで `standings.rows[pos]` のチーム国旗（位置ベースで上下＝▲▼）。列ヘッダに時間＋得点者。先頭の順位列と列ヘッダ余地は `position:sticky`。上位 advancePerGroup 行は緑（暫定通過圏）。`?view=live|stage` で URL 同期。
 
 ## 順位決定ロジック（`engine/standings.ts`）= 正しさの核
 

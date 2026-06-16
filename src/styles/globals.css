@@ -551,33 +551,39 @@ table.tl-grid {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.tl-team-cell {
+.tl-poscol {
   position: sticky;
   left: 0;
   z-index: 1;
   background: var(--surface);
-  text-align: left;
-  font-weight: 600;
-  white-space: nowrap;
-  padding: 0.3rem 0.6rem 0.3rem 0.5rem;
-  min-width: 6rem;
-}
-.tl-team-cell .team-flag {
-  margin-right: 0.35rem;
-}
-.tl-cell {
   text-align: center;
-  padding: 0.3rem 0.35rem;
+  font-weight: 800;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  padding: 0.35rem 0.5rem;
+  min-width: 2.6rem;
+}
+.tl-poscol.is-adv {
+  background: var(--advance-soft);
+  color: var(--advance);
+}
+.tl-flagcell {
+  text-align: center;
+  padding: 0.35rem 0.4rem;
   white-space: nowrap;
 }
-.tl-cell.is-adv {
+.tl-flagcell.is-adv {
   background: var(--advance-soft);
 }
-.tl-rank {
-  font-weight: 800;
+.tl-flag {
+  font-size: 1.3rem;
+  vertical-align: middle;
 }
-.tl-cell.is-adv .tl-rank {
-  color: var(--advance);
+.tl-code {
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+  margin-left: 0.15rem;
+  vertical-align: middle;
 }
 .tl-mv {
   font-size: 0.62rem;
@@ -634,8 +640,7 @@ table.tl-grid {
   .tl-colhead {
     min-width: 3.8rem;
   }
-  .tl-team-cell {
-    min-width: 5rem;
-    font-size: 0.78rem;
+  .tl-poscol {
+    min-width: 2.2rem;
   }
 }
