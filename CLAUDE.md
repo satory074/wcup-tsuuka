@@ -28,7 +28,7 @@ npm run test       # tsx scripts/smoketest.ts && tsx scripts/domtest.ts
 
 ## タイムライン（`engine/timeline.ts`）
 
-`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=最終節分刻み（第3節の goals が全試合に揃う組のみ。無ければ null→UI は stage にフォールバック）。**ライブのキックオフは第3節を 0-0（=現在引分扱いで各+1点）として表示**＝放送のライブ表と同じ挙動。各スナップショットは `movements`（直前比の rank 変動 ▲▼）・`advancing`（上位 advancePerGroup の暫定通過圏）・`event.scorer`（得点選手名）を持つ。決定的。**描画（`render.ts`）は順位バンプチャート（横1表）**: スナップショット配列を「列」、**行＝順位(位置 1〜4)**、各セル＝そのスナップショットで `standings.rows[pos]` のチーム国旗（位置ベースで上下＝▲▼）。列ヘッダに時間＋得点者。先頭の順位列と列ヘッダ余地は `position:sticky`。上位 advancePerGroup 行は緑（暫定通過圏）。`?view=live|stage` で URL 同期。
+`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=最終節分刻み（第3節の goals が全試合に揃う組のみ。無ければ null→UI は stage にフォールバック）。**ライブのキックオフは第3節を 0-0（=現在引分扱いで各+1点）として表示**＝放送のライブ表と同じ挙動。各スナップショットは `movements`（直前比の rank 変動 ▲▼）・`advancing`（上位 advancePerGroup の暫定通過圏）・`event.scorer`（得点選手名）を持つ。決定的。**描画（`render.ts`）は順位バンプチャート（横1表）**: スナップショット配列を「列」、**行＝順位(位置 1〜4)**、各セル＝そのスナップショットで `standings.rows[pos]` のチーム国旗（位置ベースで上下＝▲▼）。live のヘッダは『時間行』＋『最終節2試合のレーン行』に分割（得点者・スコアはその試合のレーンにのみ色分け表示。レーンは ct.matchesByGroup の matchday=3 から導出するので0-0試合もレーンが出る）。stage は1行ヘッダ。先頭の順位列・レーンラベルは `position:sticky`。上位 advancePerGroup 行は緑（暫定通過圏）。`?view=live|stage` で URL 同期。
 
 ## 順位決定ロジック（`engine/standings.ts`）= 正しさの核
 

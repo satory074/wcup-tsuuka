@@ -207,7 +207,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
     const idxByCol = posByCol.map((arr) => new Map(arr.map((id, i) => [id, i])));
     const teamCount = posByCol[0].length;
 
-    const headCols = snaps.map(colHeadHTML).join("");
     const bodyRows = Array.from({ length: teamCount }, (_, pos) => {
       const advCls = pos < adv ? " is-adv" : "";
       const cells = posByCol
@@ -225,10 +224,46 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       return `<tr><th scope="row" class="tl-poscol${advCls}">${pos + 1}</th>${cells}</tr>`;
     }).join("");
 
+    // ヘッダ: live は「時間行 + 試合ごとのレーン行」、stage は1行（試合ごとの列）
+    let theadHTML: string;
+    if (view.view === "live") {
+      const md3 = (ct.matchesByGroup.get(view.group) ?? [])
+        .filter((m) => m.matchday === 3)
+        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      const timeCells = snaps
+        .map((s) => {
+          const cls = s.event ? (s.event.matchId === md3[0]?.id ? "is-A" : "is-B") : "";
+          return `<th class="tl-th-time ${cls}">${esc(s.clockLabel)}</th>`;
+        })
+        .join("");
+      const laneRow = (m: Match | undefined, cls: string): string => {
+        if (!m) return "";
+        const cells = snaps
+          .map((s) => {
+            const e = s.event;
+            if (s.kind === "goal" && e && e.matchId === m.id) {
+              const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
+              const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
+              return `<td class="tl-lane-cell ${cls}"><div class="tl-ch-scorer">⚽${who}</div><div class="tl-ch-score">${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}</div></td>`;
+            }
+            return `<td class="tl-lane-empty ${cls}"></td>`;
+          })
+          .join("");
+        return `<tr><th class="tl-lane-label ${cls}" title="${esc(team(m.home).name)} × ${esc(team(m.away).name)}">${team(m.home).flag}${team(m.away).flag}</th>${cells}</tr>`;
+      };
+      theadHTML = `
+        <tr><th class="tl-corner">順位</th>${timeCells}</tr>
+        ${laneRow(md3[0], "is-A")}
+        ${laneRow(md3[1], "is-B")}`;
+    } else {
+      const headCols = snaps.map(colHeadHTML).join("");
+      theadHTML = `<tr><th class="tl-corner">順位</th>${headCols}</tr>`;
+    }
+
     return `
       <div class="timeline-scroll">
         <table class="tl-grid tnum">
-          <thead><tr><th class="tl-corner">順位 ＼ 時間 →</th>${headCols}</tr></thead>
+          <thead>${theadHTML}</thead>
           <tbody>${bodyRows}</tbody>
         </table>
       </div>`;

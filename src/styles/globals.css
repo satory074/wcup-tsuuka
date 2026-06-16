@@ -551,6 +551,51 @@ table.tl-grid {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* live ヘッダ: 時間行 + 試合ごとのレーン行 */
+.tl-th-time {
+  background: var(--bg);
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 0.3rem 0.4rem;
+  min-width: 4.4rem;
+  white-space: nowrap;
+}
+.tl-th-time.is-A {
+  border-top: 3px solid var(--cell-0);
+}
+.tl-th-time.is-B {
+  border-top: 3px solid var(--cell-1);
+}
+.tl-lane-label {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  text-align: center;
+  font-size: 1rem;
+  padding: 0.25rem 0.3rem;
+  white-space: nowrap;
+}
+.tl-lane-cell {
+  text-align: center;
+  padding: 0.25rem 0.4rem;
+  line-height: 1.2;
+}
+.tl-lane-label.is-A,
+.tl-lane-cell.is-A {
+  background: #eaf1fe;
+}
+.tl-lane-label.is-B,
+.tl-lane-cell.is-B {
+  background: #fdecec;
+}
+.tl-lane-empty.is-A {
+  background: #f5f8ff;
+}
+.tl-lane-empty.is-B {
+  background: #fef7f7;
+}
 .tl-poscol {
   position: sticky;
   left: 0;
