@@ -17,6 +17,8 @@ export interface SnapshotEvent {
   matchday: number;
   /** ゴールイベントのとき、得点した側 */
   scorerSide?: GoalSide;
+  /** ゴールイベントのとき、得点選手名（あれば） */
+  scorer?: string;
 }
 
 export interface Snapshot {
@@ -177,6 +179,7 @@ export function buildLiveTimeline(ct: CompiledTournament, group: GroupId): Snaps
         awayScore: sc.away,
         matchday: 3,
         scorerSide: ev.goal.side,
+        scorer: ev.goal.player,
       },
     });
     snaps.push(snap);

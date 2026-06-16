@@ -166,6 +166,7 @@ export function validateTournament(raw: unknown): ValidateResult {
             if (!Number.isInteger(g.minute) || (g.minute as number) < 0 || (g.minute as number) > 120)
               err(`${at}.goals[${gi}].minute が 0..120 の整数ではない`);
             if (g.plus !== undefined && !isNonNegInt(g.plus)) err(`${at}.goals[${gi}].plus が不正`);
+            if (g.player !== undefined && (typeof g.player !== "string" || !g.player)) err(`${at}.goals[${gi}].player が空文字`);
             if (g.side !== "home" && g.side !== "away") err(`${at}.goals[${gi}].side が home/away ではない`);
             else if (g.side === "home") gh++;
             else ga++;

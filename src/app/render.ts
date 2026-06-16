@@ -168,47 +168,32 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       <div class="status-chips">${chips}</div>`;
   }
 
-  // ---- タイムライン（主役） ----
-  function moveCell(kind: "up" | "down" | "same"): string {
-    if (kind === "up") return `<td class="tl-move is-up">▲</td>`;
-    if (kind === "down") return `<td class="tl-move is-down">▼</td>`;
-    return `<td class="tl-move is-same">·</td>`;
+  // ---- タイムライン（主役・横グリッド: 列=時間, 行=チーム, セル=順位） ----
+  function moveMark(kind: "up" | "down" | "same"): string {
+    if (kind === "up") return `<span class="tl-mv is-up">▲</span>`;
+    if (kind === "down") return `<span class="tl-mv is-down">▼</span>`;
+    return "";
   }
 
-  function miniStandingsHTML(snap: Snapshot): string {
-    const advSet = new Set(snap.advancing);
-    const rows = snap.standings.rows
-      .map((r) => {
-        const adv = advSet.has(r.teamId) ? " tl-adv" : "";
-        return `
-          <tr class="${adv.trim()}">
-            <td class="tl-pos">${r.rank}</td>
-            ${moveCell(snap.movements[r.teamId] ?? "same")}
-            <td class="tl-team"><span class="team-flag">${team(r.teamId).flag}</span>${esc(team(r.teamId).name)}</td>
-            <td class="tl-pts">${r.points}</td>
-            <td class="tl-gd">${gdLabel(r.gd)}</td>
-          </tr>`;
-      })
-      .join("");
-    return `<table class="tl-standings tnum"><tbody>${rows}</tbody></table>`;
-  }
-
-  function eventHeadlineHTML(snap: Snapshot): string {
+  function colHeadHTML(snap: Snapshot): string {
     if (snap.kind === "kickoff") {
-      return `<span class="tl-kind tl-kickoff">⏱ キックオフ</span><span class="tl-sub">第3節 2試合 同時開催（0-0）</span>`;
+      return `<th class="tl-colhead tl-kickoff"><div class="tl-ch-time">${esc(snap.clockLabel)}</div><div class="tl-ch-score">0-0</div></th>`;
     }
     const e = snap.event!;
     if (snap.kind === "goal") {
       const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
-      return `
-        <span class="tl-kind tl-goal">⚽ ${esc(snap.clockLabel)}</span>
-        <span class="tl-scorer">${tlabel(scorerId)} が得点</span>
-        <span class="tl-matchscore">${tc(e.homeId)} ${e.homeScore}–${e.awayScore} ${tc(e.awayId)}</span>`;
+      const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
+      return `<th class="tl-colhead tl-goal">
+        <div class="tl-ch-time">${esc(snap.clockLabel)}</div>
+        <div class="tl-ch-scorer">⚽${who}</div>
+        <div class="tl-ch-score">${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}</div>
+      </th>`;
     }
     // matchEnd（試合単位）
-    return `
-      <span class="tl-kind tl-matchend">${esc(snap.clockLabel)}</span>
-      <span class="tl-matchscore">${tlabel(e.homeId)} ${e.homeScore}–${e.awayScore} ${tlabel(e.awayId)}</span>`;
+    return `<th class="tl-colhead tl-matchend">
+      <div class="tl-ch-time">${esc(snap.clockLabel)}</div>
+      <div class="tl-ch-score">${team(e.homeId).flag}${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}${team(e.awayId).flag}</div>
+    </th>`;
   }
 
   function timelineHTML(view: RenderView): string {
@@ -216,19 +201,28 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
     if (!snaps || snaps.length === 0) {
       return `<p class="empty-msg">このグループにはタイムラインデータがありません。</p>`;
     }
-    const items = snaps
-      .map(
-        (s) => `
-        <li class="tl-item tl-${s.kind}">
-          <div class="tl-time">${esc(s.clockLabel)}</div>
-          <div class="tl-body">
-            <div class="tl-event">${eventHeadlineHTML(s)}</div>
-            ${miniStandingsHTML(s)}
-          </div>
-        </li>`,
-      )
+    // 行順 = 最終順位（各チームの行を横に追える）
+    const teamOrder = view.standings.rows.map((r) => r.teamId);
+    const headCols = snaps.map(colHeadHTML).join("");
+    const bodyRows = teamOrder
+      .map((tid) => {
+        const cells = snaps
+          .map((s) => {
+            const row = s.standings.rows.find((r) => r.teamId === tid)!;
+            const adv = s.advancing.includes(tid) ? " is-adv" : "";
+            return `<td class="tl-cell${adv}"><span class="tl-rank">${row.rank}</span>${moveMark(s.movements[tid] ?? "same")}</td>`;
+          })
+          .join("");
+        return `<tr><th scope="row" class="tl-team-cell"><span class="team-flag">${team(tid).flag}</span>${esc(team(tid).name)}</th>${cells}</tr>`;
+      })
       .join("");
-    return `<ol class="timeline">${items}</ol>`;
+    return `
+      <div class="timeline-scroll">
+        <table class="tl-grid tnum">
+          <thead><tr><th class="tl-corner">時間 →</th>${headCols}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>`;
   }
 
   // ---- もしものスコア（マトリックス・折りたたみ内） ----

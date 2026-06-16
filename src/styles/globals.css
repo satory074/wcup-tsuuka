@@ -482,126 +482,113 @@ table.matrix {
   margin: 0.5rem 0 0.25rem;
 }
 
-/* ---- 縦タイムライン ---- */
-.timeline {
-  list-style: none;
-  margin: 0.5rem 0 0;
-  padding: 0;
-}
-.tl-item {
-  display: flex;
-  gap: 0.6rem;
-  margin-bottom: 0.6rem;
-  align-items: flex-start;
-}
-.tl-time {
-  flex: 0 0 3rem;
-  text-align: right;
-  font-weight: 800;
-  font-size: 0.8rem;
-  color: var(--ink-soft);
-  padding-top: 0.55rem;
-  font-variant-numeric: tabular-nums;
-}
-.tl-body {
-  flex: 1;
-  min-width: 0;
-  background: var(--surface);
+/* ---- タイムライン（横グリッド: 列=時間, 行=チーム, セル=順位） ---- */
+.timeline-scroll {
+  margin-top: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
+  background: var(--surface);
   box-shadow: var(--shadow-card);
-  padding: 0.5rem 0.7rem;
 }
-.tl-goal .tl-body {
-  border-left-color: var(--cell-2);
-}
-.tl-kickoff .tl-body {
-  border-left-color: var(--ink-soft);
-}
-.tl-matchend .tl-body {
-  border-left-color: var(--accent);
-}
-.tl-event {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 0.6rem;
-  margin-bottom: 0.4rem;
-  font-size: 0.88rem;
-}
-.tl-kind {
-  font-weight: 800;
-}
-.tl-kind.tl-goal {
-  color: var(--cell-2);
-}
-.tl-scorer {
-  font-weight: 700;
-}
-.tl-matchscore {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  background: var(--bg);
-  border-radius: 6px;
-  padding: 0.05rem 0.45rem;
-}
-.tl-sub {
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-}
-.tl-standings {
-  width: 100%;
-  border-collapse: collapse;
+table.tl-grid {
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.82rem;
 }
-.tl-standings td {
-  padding: 0.18rem 0.3rem;
-  border-top: 1px dashed var(--border);
+.tl-grid th,
+.tl-grid td {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
 }
-.tl-standings tr:first-child td {
-  border-top: none;
+.tl-grid tbody tr:last-child th,
+.tl-grid tbody tr:last-child td {
+  border-bottom: none;
 }
-.tl-pos {
-  width: 1.4rem;
-  text-align: center;
+.tl-grid thead th {
+  background: var(--bg);
+  vertical-align: bottom;
+}
+.tl-corner {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--bg);
+  font-size: 0.72rem;
   color: var(--ink-soft);
-  font-weight: 700;
+  text-align: left;
+  padding: 0.3rem 0.5rem;
+  white-space: nowrap;
 }
-.tl-move {
-  width: 1rem;
+.tl-colhead {
+  min-width: 4.4rem;
+  padding: 0.3rem 0.4rem;
   text-align: center;
-  font-size: 0.7rem;
+  line-height: 1.25;
 }
-.tl-move.is-up {
-  color: var(--advance);
+.tl-colhead.tl-goal {
+  border-top: 3px solid var(--cell-2);
 }
-.tl-move.is-down {
-  color: var(--cell-1);
+.tl-colhead.tl-kickoff {
+  border-top: 3px solid var(--ink-soft);
 }
-.tl-move.is-same {
-  color: var(--border);
+.tl-colhead.tl-matchend {
+  border-top: 3px solid var(--accent);
 }
-.tl-team {
-  width: 99%;
-}
-.tl-team .team-flag {
-  margin-right: 0.3rem;
-}
-.tl-pts {
-  text-align: right;
+.tl-ch-time {
   font-weight: 800;
+  font-size: 0.8rem;
 }
-.tl-gd {
-  text-align: right;
+.tl-ch-scorer {
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tl-ch-score {
+  font-size: 0.7rem;
   color: var(--ink-soft);
-  width: 2.2rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-.tl-adv {
+.tl-team-cell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 0.3rem 0.6rem 0.3rem 0.5rem;
+  min-width: 6rem;
+}
+.tl-team-cell .team-flag {
+  margin-right: 0.35rem;
+}
+.tl-cell {
+  text-align: center;
+  padding: 0.3rem 0.35rem;
+  white-space: nowrap;
+}
+.tl-cell.is-adv {
   background: var(--advance-soft);
 }
-.tl-adv .tl-pos {
+.tl-rank {
+  font-weight: 800;
+}
+.tl-cell.is-adv .tl-rank {
   color: var(--advance);
+}
+.tl-mv {
+  font-size: 0.62rem;
+  margin-left: 0.12rem;
+  vertical-align: middle;
+}
+.tl-mv.is-up {
+  color: var(--advance);
+}
+.tl-mv.is-down {
+  color: var(--cell-1);
 }
 
 /* ---- もしものスコア（マトリックス・折りたたみ） ---- */
@@ -644,10 +631,11 @@ table.matrix {
     font-size: 0.88rem;
     padding: 0.35rem 0.4rem;
   }
-  .tl-time {
-    flex-basis: 2.4rem;
+  .tl-colhead {
+    min-width: 3.8rem;
   }
-  .tl-gd {
-    display: none;
+  .tl-team-cell {
+    min-width: 5rem;
+    font-size: 0.78rem;
   }
 }

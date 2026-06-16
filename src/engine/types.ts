@@ -57,6 +57,8 @@ export interface Goal {
   plus?: number;
   /** 得点した側（オウンゴールは得点が入る側＝利益を得た側を入れる） */
   side: GoalSide;
+  /** 得点選手名（任意）。日本選手=漢字、他=カタカナ、オウンゴールは "名前(OG)" */
+  player?: string;
 }
 
 export interface Match {

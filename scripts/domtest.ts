@@ -46,18 +46,21 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".group-tab").length === 8, "1: グループタブ8");
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "1: 順位表4行");
   assert(root.querySelectorAll(".status-chips .chip").length === 4, "1: ステータスチップ4");
-  // タイムライン（主役・既定は live）。組A: キックオフ + A-5(3) + A-6(2) = 6スナップ
-  assert(!!root.querySelector("ol.timeline"), "1: タイムラインが描画される");
-  assert(root.querySelectorAll(".timeline .tl-item").length === 6, `1: 組A live は6スナップ（実際: ${root.querySelectorAll(".timeline .tl-item").length}）`);
-  assert(!!root.querySelector(".timeline .tl-item.tl-kickoff"), "1: 先頭にキックオフ");
-  assert(root.querySelectorAll(".timeline .tl-move").length > 0, "1: 順位変動マーカーがある");
+  // タイムライン（主役・既定 live・横グリッド）。組A: キックオフ + A-5(3) + A-6(2) = 6列
+  assert(!!root.querySelector("table.tl-grid"), "1: タイムラインが横グリッドで描画される");
+  assert(root.querySelectorAll(".tl-grid tbody tr").length === 4, "1: 行=4チーム");
+  assert(root.querySelectorAll(".tl-grid thead .tl-colhead").length === 6, `1: 組A live は6列（実際: ${root.querySelectorAll(".tl-grid thead .tl-colhead").length}）`);
+  assert(!!root.querySelector(".tl-colhead.tl-kickoff"), "1: キックオフ列がある");
+  assert(root.querySelectorAll(".tl-team-cell").length === 4, "1: 先頭列にチーム名4");
+  assert(root.querySelectorAll(".tl-grid .tl-mv").length > 0, "1: 順位変動マーカーがある");
+  assert(root.querySelectorAll(".tl-ch-scorer").length === 5, "1: 得点者ヘッダが5（ゴール数）");
+  assert([...root.querySelectorAll(".tl-ch-scorer")].some((e) => (e.textContent ?? "").includes("ガクポ")), "1: 得点者名が表示される");
   // マトリックスは折りたたみ <details> 内に降格
   assert(!!root.querySelector("details#matrix-details"), "1: マトリックスは details 内");
   assert(root.querySelectorAll("#matrix-details .matrix td.cell").length === 49, "1: マトリックス49セル（details内）");
   assert(root.querySelectorAll("#matrix-details .legend .legend-item").length >= 2, "1: 凡例2件以上（details内）");
-  // 既定グループ A が選択
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "1: 既定はグループA");
-  console.log("[dom] 初期描画（タイムライン主役）OK");
+  console.log("[dom] 初期描画（タイムライン横グリッド）OK");
 }
 
 // ---- 1b) タイムライン表示モード切替（live → stage） ----
@@ -65,15 +68,15 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const dom = setupDom(`${BASE_URL}?group=E`);
   boot(app(dom));
   const root = app(dom);
-  // 既定 live: キックオフがある
-  assert(!!root.querySelector(".timeline .tl-item.tl-kickoff"), "1b: live にキックオフ");
+  // 既定 live: キックオフ列がある
+  assert(!!root.querySelector(".tl-colhead.tl-kickoff"), "1b: live にキックオフ列");
   const stageBtn = root.querySelector<HTMLElement>('.view-toggle [data-view="stage"]')!;
   click(dom, stageBtn);
   assert(decodeQuery(dom.window.location.search).view === "stage", "1b: URL に view=stage");
-  // stage: 試合単位（キックオフ無し・第n節ラベル）
-  assert(!root.querySelector(".timeline .tl-item.tl-kickoff"), "1b: stage はキックオフ無し");
-  assert(root.querySelectorAll(".timeline .tl-item").length === 6, "1b: 組E stage は6スナップ（6試合）");
-  assert((root.querySelector(".timeline .tl-time")?.textContent ?? "").includes("第"), "1b: stage は第n節ラベル");
+  // stage: 試合単位（キックオフ無し・第n節ラベル・6列）
+  assert(!root.querySelector(".tl-colhead.tl-kickoff"), "1b: stage はキックオフ列無し");
+  assert(root.querySelectorAll(".tl-grid thead .tl-colhead").length === 6, "1b: 組E stage は6列（6試合）");
+  assert([...root.querySelectorAll(".tl-colhead .tl-ch-time")].some((e) => (e.textContent ?? "").includes("第")), "1b: stage は第n節ラベル");
   console.log("[dom] タイムライン表示モード切替 OK");
 }
 
@@ -170,7 +173,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelector('.view-toggle [data-view="stage"]')?.classList.contains("seg-on") === true, "6b: stage トグルが選択状態で復元");
-  assert(!root.querySelector(".timeline .tl-item.tl-kickoff"), "6b: stage 表示（キックオフ無し）");
+  assert(!root.querySelector(".tl-colhead.tl-kickoff"), "6b: stage 表示（キックオフ列無し）");
   console.log("[dom] view=stage 復元 OK");
 }
 

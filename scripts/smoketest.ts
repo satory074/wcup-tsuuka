@@ -71,7 +71,13 @@ function assert(cond: boolean, msg: string): void {
   const e5 = (bg.matches as { id: string; goals: unknown[] }[]).find((m) => m.id === "E-5")!;
   e5.goals = e5.goals.slice(0, 2);
   assert(!validateTournament(bg).ok, "ゴール本数と score の不一致を弾く");
-  console.log("[data] 不正データ検出 + goals 本数==score OK");
+  // 第3節の各ゴールに得点選手名がある
+  for (const m of md3) {
+    for (const g of (m.goals as { player?: string }[])) {
+      assert(typeof g.player === "string" && g.player.length > 0, "第3節の各ゴールに選手名");
+    }
+  }
+  console.log("[data] 不正データ検出 + goals 本数==score + 選手名 OK");
 }
 
 // ---- 2) 2022 実順位の再現 ----
@@ -341,6 +347,9 @@ function sortedAdv(a: string[]): string {
   // キックオフ(1) + E-5(3ゴール) + E-6(6ゴール) = 10スナップ
   assert(liveE!.length === 10, `7: 組E ライブは10スナップ（実際: ${liveE!.length}）`);
   assert(liveE![0].kind === "kickoff", "7: 先頭はキックオフ");
+  // 得点者がスナップショットに載る
+  const e48 = liveE!.find((s) => s.event?.matchId === "E-5" && s.clockLabel === "48'");
+  assert(e48?.event?.scorer === "堂安", `7: 48' の得点者が堂安（実際: ${e48?.event?.scorer}）`);
 
   // 既知の中間状態: コスタリカが70'に2-1とした時点で、暫定通過圏が [crc, jpn]（スペイン圏外）
   const at70 = liveE!.find((s) => s.event?.matchId === "E-6" && s.event.homeScore === 2 && s.event.awayScore === 1);
