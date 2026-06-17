@@ -227,6 +227,35 @@ table.standings-table {
   padding: 0.05rem 0.45rem;
   margin-left: 0.35rem;
 }
+.th-pri {
+  font-size: 0.62rem;
+  color: var(--advance);
+  font-weight: 800;
+  margin-left: 0.05rem;
+}
+.tiebreak-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.7rem;
+  align-items: baseline;
+  margin: 0.4rem 0.3rem 0.15rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.tiebreak-legend .tb-head {
+  font-weight: 700;
+  color: var(--ink);
+}
+.tiebreak-legend b {
+  color: var(--advance);
+  font-weight: 800;
+}
+.tiebreak-legend .tb-dice {
+  font-weight: 400;
+}
 
 /* ---- ベスト3位（2026: 各組3位の横断ランキング → 上位8通過） ---- */
 .bt-card {

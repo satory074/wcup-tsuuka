@@ -162,10 +162,19 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         <table class="standings-table">
           <thead><tr>
             <th class="col-rank">順位</th><th class="col-team">チーム</th>
-            <th>試</th><th>勝</th><th>分</th><th>敗</th><th>得</th><th>失</th><th>差</th><th>点</th>
+            <th>試</th><th>勝</th><th>分</th><th>敗</th>
+            <th title="優先③: 総得点">得<sup class="th-pri">③</sup></th><th>失</th>
+            <th title="優先②: 総得失点差">差<sup class="th-pri">②</sup></th>
+            <th title="優先①: 総勝点">点<sup class="th-pri">①</sup></th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
+        <p class="tiebreak-legend">
+          <span class="tb-head">順位決定の優先順位</span>
+          <span><b>①</b>総勝点 <b>②</b>総得失点差 <b>③</b>総得点</span>
+          <span>→ 同点は直接対決のみで <b>④</b>勝点→得失点差→得点</span>
+          <span>→ <b>⑤</b>フェアプレー（警告少）→ <b>⑥</b>抽選 <span class="tb-dice">🎲</span></span>
+        </p>
       </div>`;
   }
 

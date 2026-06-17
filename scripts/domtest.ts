@@ -45,6 +45,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const root = app(dom);
   assert(root.querySelectorAll(".group-tab").length === 8, "1: グループタブ8");
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "1: 順位表4行");
+  assert(!!root.querySelector(".standings .tiebreak-legend"), "1: タイブレーク優先順位の凡例がある");
+  assert(root.querySelectorAll(".standings-table thead .th-pri").length === 3, "1: 列見出しに優先順位番号3つ(点/差/得)");
   assert(root.querySelectorAll(".status-chips .chip").length === 4, "1: ステータスチップ4");
   // タイムライン（主役・既定 live・バンプチャート: 行=順位, セル=国旗。ヘッダ=節帯+時刻行+2レーン）。組Aは全試合15ゴール
   assert(!!root.querySelector("table.tl-grid"), "1: タイムラインが横グリッドで描画される");
