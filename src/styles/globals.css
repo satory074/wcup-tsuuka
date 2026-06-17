@@ -1,36 +1,70 @@
 @import "tailwindcss";
 
+/* =====================================================================
+   WCUP 通過タイムライン — スポーツ放送風テーマ
+   構造の暗色(navy) × 芝グリーン(pitch)。見出し/数字は欧文 Web フォント、
+   和文はシステムフォント維持。ライト固定（color-scheme: only light）。
+   ===================================================================== */
+
 :root {
-  /* クールなライトテーマ（スポーツ系） */
-  --bg: #f4f6fb;
+  /* ---- フォント ---- */
+  --font-jp:
+    "Hiragino Sans", "Hiragino Kaku Gothic ProN", "BIZ UDPGothic", Meiryo,
+    system-ui, sans-serif;
+  /* 見出し・タブ（欧文 = Barlow、和文はフォールバックで JP） */
+  --font-display: "Barlow Semi Condensed", var(--font-jp);
+  /* 数字・スコア・時刻（等幅で「スコアボード」感、和文はフォールバック） */
+  --font-num: "Spline Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ---- ブランド配色 ---- */
+  --navy-900: #071a31;
+  --navy-800: #0a2540;
+  --navy-700: #123a63;
+  --pitch: #16a34a; /* ブランド = 通過色 */
+  --pitch-deep: #15803d;
+  --pitch-bright: #22c55e;
+
+  --bg: #eaeef4; /* ページ地（中立寄りの淡色） */
   --surface: #ffffff;
-  --border: #dde3ee;
-  --ink: #1a2230;
-  --ink-soft: #5b6678;
-  --accent: #1d4ed8;
+  --surface-2: #f5f8fc; /* ゼブラ/ヘッダ行の淡い面 */
+  --border: #d7dfea;
+  --border-strong: #c2cedd;
+  --ink: #0f1b2d;
+  --ink-soft: #46546a; /* AA 確保のため従来より濃く */
+  --ink-faint: #6a778a;
+  --accent: var(--pitch-deep);
+  --link: #1c5fb0;
 
-  /* 順位・通過のセマンティックカラー */
-  --advance: #15803d; /* 突破（上位2） */
-  --advance-soft: #e7f6ec;
-  --alive: #d97706; /* 可能性あり */
-  --alive-soft: #fdf1e0;
-  --eliminated: #94a3b8; /* 敗退 */
+  /* ---- 順位・通過のセマンティックカラー ---- */
+  --advance: var(--pitch-deep); /* 突破（上位2） */
+  --advance-soft: #e6f6ec;
+  --advance-edge: var(--pitch);
+  --alive: #c0680a; /* 可能性あり（AA のため濃いめ橙） */
+  --alive-soft: #fcefda;
+  --eliminated: #8a97a8; /* 敗退（沈んだ灰） */
   --eliminated-soft: #eef1f5;
+  --danger: #dc2626;
 
-  /* マトリックスの結果領域カラー（最大8 + 抽選）。白文字が乗る前提の中濃度 */
-  --cell-0: #2563eb;
-  --cell-1: #dc2626;
-  --cell-2: #15803d;
-  --cell-3: #7c3aed;
-  --cell-4: #ea580c;
-  --cell-5: #0891b2;
-  --cell-6: #db2777;
-  --cell-7: #b45309;
+  /* ---- マトリックスの結果領域カラー（最大8 + 抽選） ----
+     白文字が乗る中濃度。色覚配慮: 色相だけでなく「明度差」も付け、
+     赤緑が隣接で紛れないよう配列（凡例＝色＋文字＋件数で色のみ依存を回避）。 */
+  --cell-0: #2563eb; /* 青（明） */
+  --cell-1: #cf3a3a; /* 赤 */
+  --cell-2: #15803d; /* 緑（ブランド突破色と一致） */
+  --cell-3: #7338c9; /* 紫 */
+  --cell-4: #b45309; /* 琥珀（暗） */
+  --cell-5: #0e7c93; /* ティール */
+  --cell-6: #c02d6f; /* ローズ */
+  --cell-7: #41526b; /* スレート（最暗・明度で判別可） */
   --cell-tie: #64748b;
 
+  /* ---- 形状・影 ---- */
+  --r-lg: 16px;
   --r-md: 12px;
   --r-sm: 8px;
-  --shadow-card: 0 1px 4px rgba(20, 30, 60, 0.08);
+  --shadow-card: 0 1px 3px rgba(12, 26, 54, 0.06), 0 6px 18px rgba(12, 26, 54, 0.06);
+  --shadow-hero: 0 8px 28px rgba(7, 26, 49, 0.32);
+  --ring: 0 0 0 3px rgba(22, 163, 74, 0.45); /* focus-visible リング */
 }
 
 html {
@@ -41,30 +75,145 @@ html {
 }
 
 body {
-  font-family:
-    "Hiragino Sans", "Hiragino Kaku Gothic ProN", "BIZ UDPGothic", Meiryo,
-    system-ui, sans-serif;
+  font-family: var(--font-jp);
   line-height: 1.6;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
 .tnum {
   font-variant-numeric: tabular-nums;
 }
 
-.wrap {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
+/* 数字・時刻・スコア・トリコードを等幅化（和文は含まれないので安全） */
+.tl-th-time,
+.tl-ch-time,
+.tl-ch-score,
+.tl-code,
+.tl-dateband,
+.cell .cell-1st,
+.cell .cell-2nd,
+.legend-count,
+.matrix th {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
 }
 
-/* ---- ヘッダ ---- */
-.site-header h1 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  margin: 0;
+.wrap {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3.5rem;
 }
+
+/* 共通フォーカスリング（キーボード操作のアクセシビリティ） */
+:where(button, a, select, input, summary):focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--r-sm);
+}
+
+/* =========================== ヒーローヘッダ =========================== */
+.site-header {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 42%, var(--pitch-deep) 140%);
+  box-shadow: var(--shadow-hero);
+}
+/* 微かなピッチライン（放送グラフィック感・控えめ） */
+.site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.045) 0 2px,
+      transparent 2px 84px
+    );
+  pointer-events: none;
+}
+/* 下端に芝のアクセントライン */
+.site-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--pitch-bright), var(--pitch), var(--pitch-deep));
+}
+.hero-inner {
+  position: relative;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 1.6rem 1rem 1.5rem;
+}
+.site-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.8rem, 5.5vw, 2.7rem);
+  line-height: 1.02;
+  letter-spacing: 0.005em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+}
+.hero-mark {
+  font-size: 0.85em;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+.hero-title {
+  text-transform: uppercase;
+}
+/* h1 の color:#fff より詳細度を上げて芝グリーンのアクセントを効かせる */
+.site-header h1 .hero-em {
+  color: var(--pitch-bright);
+}
+.site-header .site-sub {
+  color: rgba(233, 240, 250, 0.86);
+  font-size: 0.9rem;
+  margin: 0.55rem 0 0;
+  max-width: 60ch;
+}
+
+/* 大会切替（2022 / 2026）= 放送風セグメント（ヒーロー帯の上） */
+.cup-tabs {
+  display: inline-flex;
+  margin-top: 1.05rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(2px);
+}
+.cup-tab {
+  padding: 0.4rem 1.2rem;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(233, 240, 250, 0.82);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.cup-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.cup-tab.seg-on {
+  background: #fff;
+  color: var(--navy-800);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+}
+
+/* =========================== 共通 =========================== */
 .site-sub {
   color: var(--ink-soft);
   font-size: 0.85rem;
@@ -79,127 +228,135 @@ body {
 }
 
 .section-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  margin: 1.5rem 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  margin: 1.9rem 0 0.6rem;
+  padding-left: 0.6rem;
+  border-left: 4px solid var(--pitch);
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
 }
 .section-title .hint {
-  font-weight: 400;
+  font-family: var(--font-jp);
+  font-weight: 500;
   font-size: 0.76rem;
   color: var(--ink-soft);
 }
 
-/* ---- グループ選択（A〜H タブ） ---- */
+/* ---- グループ選択（A〜L タブ） ---- */
 .group-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin-top: 1rem;
+  margin-top: 1.25rem;
 }
 .group-tab {
   flex: 1 1 auto;
-  min-width: 2.4rem;
-  border: 1px solid var(--border);
+  min-width: 2.6rem;
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink-soft);
-  padding: 0.4rem 0.7rem;
-  font-size: 0.95rem;
+  padding: 0.45rem 0.7rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
   text-align: center;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 }
 .group-tab:hover {
-  background: var(--bg);
+  background: var(--surface-2);
+  border-color: var(--pitch);
+  color: var(--pitch-deep);
+}
+.group-tab:active {
+  transform: translateY(1px);
 }
 .group-tab.is-on {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--pitch) 0%, var(--pitch-deep) 100%);
+  border-color: var(--pitch-deep);
   color: #fff;
-}
-
-/* ---- 大会切替（2022 / 2026） ---- */
-.cup-tabs {
-  display: inline-flex;
-  margin-top: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--surface);
-}
-.cup-tab {
-  padding: 0.4rem 1.1rem;
-  font-size: 0.85rem;
-  border: none;
-  background: transparent;
-  color: var(--ink-soft);
-  cursor: pointer;
-  font-weight: 700;
-}
-.cup-tab:hover {
-  background: var(--bg);
-}
-.cup-tab.seg-on {
-  background: var(--accent);
-  color: #fff;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.32);
 }
 
 /* ---- 順位表 ---- */
 .standings {
-  margin-top: 0.5rem;
-  padding: 0.25rem 0.25rem;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.4rem;
   overflow-x: auto;
 }
 table.standings-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
 }
 .standings-table th,
 .standings-table td {
-  padding: 0.45rem 0.4rem;
+  padding: 0.5rem 0.45rem;
   text-align: right;
   white-space: nowrap;
 }
-.standings-table th {
-  font-size: 0.72rem;
+.standings-table thead th {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--ink-soft);
-  font-weight: 600;
-  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  background: var(--surface-2);
+  border-bottom: 2px solid var(--border-strong);
 }
 .standings-table td {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
   border-bottom: 1px solid var(--border);
+}
+.standings-table tbody tr {
+  transition: background 0.12s ease;
+}
+.standings-table tbody tr:hover {
+  background: var(--surface-2);
 }
 .standings-table tr:last-child td {
   border-bottom: none;
 }
 .col-rank {
   text-align: center !important;
-  width: 2.4rem;
+  width: 2.6rem;
 }
 .col-team {
   text-align: left !important;
   width: 99%;
+  font-family: var(--font-jp);
 }
 .team-cell {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 .team-flag {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 .team-name {
-  font-weight: 600;
+  font-weight: 700;
 }
 .col-pts {
   font-weight: 800;
+  font-size: 1rem;
+  color: var(--ink);
 }
 .row-advance {
   background: var(--advance-soft);
+  box-shadow: inset 4px 0 0 var(--advance-edge);
+}
+.row-advance:hover {
+  background: #dcf1e3;
+}
+.row-advance .team-name {
+  color: var(--pitch-deep);
 }
 .row-advance .rank-badge {
   background: var(--advance);
@@ -207,13 +364,14 @@ table.standings-table {
 }
 .rank-badge {
   display: inline-block;
-  min-width: 1.4rem;
-  padding: 0.05rem 0.3rem;
+  min-width: 1.5rem;
+  padding: 0.08rem 0.35rem;
   border-radius: 999px;
   background: var(--eliminated-soft);
   color: var(--ink-soft);
+  font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.86rem;
 }
 .advance-line {
   border-bottom: 2px dashed var(--advance) !important;
@@ -224,12 +382,13 @@ table.standings-table {
   color: #fff;
   background: var(--cell-tie);
   border-radius: 999px;
-  padding: 0.05rem 0.45rem;
+  padding: 0.08rem 0.5rem;
   margin-left: 0.35rem;
+  vertical-align: middle;
 }
 .th-pri {
-  font-size: 0.62rem;
-  color: var(--advance);
+  font-size: 0.66rem;
+  color: var(--pitch-deep);
   font-weight: 800;
   margin-left: 0.05rem;
 }
@@ -238,10 +397,10 @@ table.standings-table {
   flex-wrap: wrap;
   gap: 0.15rem 0.7rem;
   align-items: baseline;
-  margin: 0.4rem 0.3rem 0.15rem;
-  padding-top: 0.4rem;
+  margin: 0.5rem 0.35rem 0.2rem;
+  padding-top: 0.5rem;
   border-top: 1px solid var(--border);
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   line-height: 1.5;
   color: var(--ink-soft);
 }
@@ -250,7 +409,7 @@ table.standings-table {
   color: var(--ink);
 }
 .tiebreak-legend b {
-  color: var(--advance);
+  color: var(--pitch-deep);
   font-weight: 800;
 }
 .tiebreak-legend .tb-dice {
@@ -259,32 +418,50 @@ table.standings-table {
 
 /* ---- ベスト3位（2026: 各組3位の横断ランキング → 上位8通過） ---- */
 .bt-card {
-  margin-top: 0.5rem;
-  padding: 0.25rem;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.4rem;
   overflow-x: auto;
 }
 table.bt-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
 }
 .bt-table th,
 .bt-table td {
-  padding: 0.45rem 0.4rem;
+  padding: 0.5rem 0.45rem;
   text-align: right;
   white-space: nowrap;
   border-bottom: 1px solid var(--border);
 }
-.bt-table th {
-  font-size: 0.72rem;
+.bt-table td {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+.bt-table thead th {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--ink-soft);
-  font-weight: 600;
+  font-weight: 700;
+  background: var(--surface-2);
+  border-bottom: 2px solid var(--border-strong);
+}
+.bt-table .col-team {
+  font-family: var(--font-jp);
+}
+.bt-table tbody tr {
+  transition: background 0.12s ease;
+}
+.bt-table tbody tr:hover {
+  background: var(--surface-2);
 }
 .bt-table tr:last-child td {
   border-bottom: none;
 }
 .bt-group {
   text-align: center !important;
+  font-family: var(--font-display);
   font-weight: 800;
   color: var(--ink-soft);
   width: 2.2rem;
@@ -302,17 +479,17 @@ table.bt-table {
   align-items: center;
   gap: 0.35rem;
   border-radius: 999px;
-  padding: 0.25rem 0.7rem;
-  font-size: 0.82rem;
-  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.83rem;
+  font-weight: 700;
   border: 1px solid transparent;
 }
 .chip .chip-flag {
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 .chip.is-advanced {
   background: var(--advance-soft);
-  color: var(--advance);
+  color: var(--pitch-deep);
   border-color: #bfe6cb;
 }
 .chip.is-alive {
@@ -329,7 +506,7 @@ table.bt-table {
 /* ---- ピボット操作 ---- */
 .pivot-controls {
   margin-top: 0.5rem;
-  padding: 0.85rem 1rem;
+  padding: 0.95rem 1.05rem;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
@@ -337,47 +514,51 @@ table.bt-table {
 .pivot-field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 .pivot-field-label {
-  font-size: 0.74rem;
+  font-size: 0.76rem;
+  font-weight: 600;
   color: var(--ink-soft);
 }
 .pivot-field select {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
   background: #fff;
-  padding: 0.45rem 0.6rem;
+  padding: 0.5rem 0.6rem;
   font-size: 0.95rem;
   width: 100%;
+  cursor: pointer;
 }
 .assume-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  border-top: 1px dashed var(--border);
-  padding-top: 0.7rem;
+  border-top: 1px dashed var(--border-strong);
+  padding-top: 0.75rem;
 }
 .assume-hint {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--alive);
 }
 .assume-row {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   flex-wrap: wrap;
 }
 .assume-row .assume-team {
-  font-weight: 600;
+  font-weight: 700;
 }
 .assume-row input {
   width: 3rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
-  padding: 0.25rem 0.4rem;
-  font-size: 0.9rem;
+  padding: 0.3rem 0.4rem;
+  font-family: var(--font-num);
+  font-size: 0.95rem;
   text-align: center;
   background: #fffdf5;
 }
@@ -385,13 +566,13 @@ table.bt-table {
 /* ---- シナリオ・マトリックス ---- */
 .matrix-wrap {
   margin-top: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.85rem;
   overflow: hidden;
 }
 .matrix-axislabel {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--ink-soft);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
 }
 .matrix-axislabel b {
   color: var(--ink);
@@ -405,7 +586,7 @@ table.matrix {
   margin: 0 auto;
 }
 .matrix th {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--ink-soft);
   padding: 0.2rem;
@@ -432,22 +613,23 @@ table.matrix {
   color: var(--cell-0);
 }
 .matrix td.cell {
-  width: 3.4rem;
-  height: 3.0rem;
+  width: 3.5rem;
+  height: 3.1rem;
   padding: 0.1rem;
   text-align: center;
   vertical-align: middle;
   color: #fff;
-  font-size: 0.74rem;
-  line-height: 1.15;
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  font-size: 0.76rem;
+  line-height: 1.18;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
   cursor: default;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
 }
 .cell .cell-1st,
 .cell .cell-2nd {
   display: block;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 .cell .cell-1st {
   font-weight: 800;
@@ -457,14 +639,14 @@ table.matrix {
   opacity: 0.95;
 }
 .cell.is-draw {
-  outline: 2px solid #1a2230;
+  outline: 2px solid #0f1b2d;
   outline-offset: -3px;
 }
 .cell.is-undecided {
   background-image: repeating-linear-gradient(
     45deg,
-    rgba(255, 255, 255, 0.25) 0,
-    rgba(255, 255, 255, 0.25) 5px,
+    rgba(255, 255, 255, 0.28) 0,
+    rgba(255, 255, 255, 0.28) 5px,
     transparent 5px,
     transparent 10px
   );
@@ -482,37 +664,47 @@ table.matrix {
 /* ---- 凡例 ---- */
 .legend {
   margin-top: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1.05rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 .legend-title {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--ink-soft);
 }
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.84rem;
+  gap: 0.55rem;
+  font-size: 0.86rem;
 }
 .legend-swatch {
   flex: 0 0 auto;
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 .legend-count {
   margin-left: auto;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---- メッセージ・フッタ ---- */
+.empty-msg {
+  margin: 0.75rem 0;
+  padding: 1rem;
+  text-align: center;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-md);
+  font-size: 0.88rem;
+}
 .error-panel {
   margin: 2rem auto;
   max-width: 720px;
@@ -525,10 +717,10 @@ table.matrix {
   font-size: 0.85rem;
 }
 .site-footer {
-  margin-top: 2.5rem;
+  margin-top: 2.75rem;
   border-top: 1px solid var(--border);
-  padding-top: 1rem;
-  font-size: 0.78rem;
+  padding-top: 1.1rem;
+  font-size: 0.79rem;
   color: var(--ink-soft);
   display: flex;
   flex-direction: column;
@@ -538,7 +730,7 @@ table.matrix {
   color: #92400e;
 }
 .site-footer a {
-  color: var(--accent);
+  color: var(--link);
   text-decoration: underline;
 }
 
@@ -546,32 +738,40 @@ table.matrix {
 .view-toggle {
   display: inline-flex;
   margin-top: 0.5rem;
-  border: 1px solid var(--border);
+  padding: 0.2rem;
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
-  overflow: hidden;
   background: var(--surface);
 }
 .view-toggle .seg-btn {
-  padding: 0.4rem 1rem;
-  font-size: 0.85rem;
+  padding: 0.42rem 1.05rem;
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 700;
   border: none;
+  border-radius: 999px;
   background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
-  font-weight: 700;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.view-toggle .seg-btn:hover {
+  color: var(--pitch-deep);
 }
 .view-toggle .seg-btn.seg-on {
-  background: var(--accent);
+  background: linear-gradient(180deg, var(--pitch) 0%, var(--pitch-deep) 100%);
   color: #fff;
+  box-shadow: 0 2px 6px rgba(21, 128, 61, 0.28);
 }
 .tl-legend-note {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   color: var(--ink-soft);
-  margin: 0.5rem 0 0.25rem;
+  margin: 0.6rem 0 0.3rem;
 }
 
 /* ---- タイムライン（横グリッド: 列=時間, 行=チーム, セル=順位） ---- */
 .timeline-scroll {
+  position: relative;
   margin-top: 0.5rem;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -583,92 +783,102 @@ table.matrix {
 table.tl-grid {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
 }
 .tl-grid th,
 .tl-grid td {
   border-bottom: 1px solid var(--border);
-  border-right: 1px solid var(--border);
+  /* 縦罫線は薄くしてノイズ削減 */
+  border-right: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
 .tl-grid tbody tr:last-child th,
 .tl-grid tbody tr:last-child td {
   border-bottom: none;
 }
 .tl-grid thead th {
-  background: var(--bg);
+  background: var(--surface-2);
   vertical-align: bottom;
 }
 .tl-corner {
   position: sticky;
   left: 0;
   z-index: 3;
-  background: var(--bg);
+  background: var(--surface-2);
   font-size: 0.72rem;
+  font-weight: 700;
   color: var(--ink-soft);
   text-align: left;
   padding: 0.3rem 0.5rem;
   white-space: nowrap;
+  box-shadow: 3px 0 6px rgba(12, 26, 54, 0.06);
 }
 .tl-colhead {
-  min-width: 4.4rem;
-  padding: 0.3rem 0.4rem;
+  min-width: 4.6rem;
+  padding: 0.35rem 0.4rem;
   text-align: center;
   line-height: 1.25;
 }
 .tl-colhead.tl-goal {
-  border-top: 3px solid var(--cell-2);
+  border-top: 3px solid var(--pitch);
 }
 .tl-colhead.tl-kickoff {
-  border-top: 3px solid var(--ink-soft);
+  border-top: 3px solid var(--ink-faint);
 }
 .tl-colhead.tl-matchend {
-  border-top: 3px solid var(--accent);
+  border-top: 3px solid var(--navy-700);
 }
 .tl-ch-time {
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  color: var(--ink);
 }
 .tl-ch-scorer {
-  font-size: 0.74rem;
-  font-weight: 600;
+  font-family: var(--font-jp);
+  font-size: 0.76rem;
+  font-weight: 700;
   white-space: nowrap;
 }
 .tl-ch-score {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-/* live ヘッダ: 節帯 + 時刻行 + 試合ごとのレーン行 */
+/* live ヘッダ: 節帯 + 日時帯 + 時刻行 + 試合ごとのレーン行 */
 .tl-band {
-  background: var(--bg);
+  background: var(--navy-800);
+  color: #fff;
+  font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
   text-align: center;
-  padding: 0.25rem 0.3rem;
-  border-left: 2px solid var(--ink-soft);
+  padding: 0.3rem 0.3rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.25);
 }
 .tl-band-corner {
-  background: var(--bg);
+  background: var(--navy-800);
+  position: sticky;
+  left: 0;
+  z-index: 3;
 }
 .tl-dateband {
   background: var(--surface);
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.73rem;
   color: var(--ink-soft);
   text-align: center;
-  padding: 0.2rem 0.3rem;
+  padding: 0.25rem 0.3rem;
   border-left: 2px solid var(--border);
   white-space: nowrap;
 }
 .tl-th-time {
-  background: var(--bg);
+  background: var(--surface-2);
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   text-align: center;
-  padding: 0.3rem 0.4rem;
-  min-width: 4.4rem;
+  padding: 0.32rem 0.4rem;
+  min-width: 4.6rem;
   white-space: nowrap;
 }
 .tl-th-time.is-A {
@@ -682,28 +892,31 @@ table.tl-grid {
   left: 0;
   z-index: 3;
   text-align: center;
-  font-size: 1rem;
-  padding: 0.25rem 0.3rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.28rem 0.3rem;
   white-space: nowrap;
+  box-shadow: 3px 0 6px rgba(12, 26, 54, 0.05);
 }
 .tl-lane-cell {
   text-align: center;
-  padding: 0.25rem 0.4rem;
+  padding: 0.28rem 0.4rem;
   line-height: 1.2;
 }
 .tl-lane-label.is-A,
 .tl-lane-cell.is-A {
-  background: #eaf1fe;
+  background: #e7effd;
 }
 .tl-lane-label.is-B,
 .tl-lane-cell.is-B {
-  background: #fdecec;
+  background: #fce8e8;
 }
 .tl-lane-empty.is-A {
-  background: #f5f8ff;
+  background: #f3f7ff;
 }
 .tl-lane-empty.is-B {
-  background: #fef7f7;
+  background: #fdf4f4;
 }
 .tl-poscol {
   position: sticky;
@@ -711,49 +924,55 @@ table.tl-grid {
   z-index: 1;
   background: var(--surface);
   text-align: center;
+  font-family: var(--font-display);
   font-weight: 800;
+  font-size: 0.95rem;
   color: var(--ink-soft);
   white-space: nowrap;
-  padding: 0.35rem 0.5rem;
-  min-width: 2.6rem;
+  padding: 0.4rem 0.5rem;
+  min-width: 2.8rem;
+  box-shadow: 3px 0 6px rgba(12, 26, 54, 0.06);
 }
 .tl-poscol.is-adv {
   background: var(--advance-soft);
-  color: var(--advance);
+  color: var(--pitch-deep);
+  box-shadow: inset 4px 0 0 var(--advance-edge), 3px 0 6px rgba(12, 26, 54, 0.06);
 }
 .tl-flagcell {
   text-align: center;
-  padding: 0.35rem 0.4rem;
+  padding: 0.4rem 0.4rem;
   white-space: nowrap;
 }
 .tl-flagcell.is-adv {
   background: var(--advance-soft);
 }
 .tl-flag {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   vertical-align: middle;
 }
 .tl-code {
-  font-size: 0.62rem;
+  font-size: 0.66rem;
+  font-weight: 600;
   color: var(--ink-soft);
   margin-left: 0.15rem;
   vertical-align: middle;
 }
 .tl-mv {
-  font-size: 0.62rem;
+  font-size: 0.7rem;
+  font-weight: 800;
   margin-left: 0.12rem;
   vertical-align: middle;
 }
 .tl-mv.is-up {
-  color: var(--advance);
+  color: var(--pitch);
 }
 .tl-mv.is-down {
-  color: var(--cell-1);
+  color: var(--danger);
 }
 
 /* ---- もしものスコア（マトリックス・折りたたみ） ---- */
 .matrix-details {
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface);
@@ -762,39 +981,71 @@ table.tl-grid {
 }
 .matrix-details > summary {
   cursor: pointer;
-  padding: 0.85rem 1rem;
-  font-weight: 700;
-  font-size: 0.95rem;
+  padding: 0.95rem 1.1rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
   list-style: none;
+  transition: background 0.15s ease;
+}
+.matrix-details > summary:hover {
+  background: var(--surface-2);
 }
 .matrix-details > summary::-webkit-details-marker {
   display: none;
 }
 .matrix-details > summary::before {
   content: "▸ ";
-  color: var(--ink-soft);
+  color: var(--pitch-deep);
 }
 .matrix-details[open] > summary::before {
   content: "▾ ";
 }
 .matrix-details-body {
-  padding: 0 1rem 1rem;
+  padding: 0 1.1rem 1.1rem;
+}
+
+/* ---- モーション抑制 ---- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 @media (max-width: 480px) {
+  .wrap {
+    padding: 1rem 0.75rem 3rem;
+  }
+  .hero-inner {
+    padding: 1.3rem 0.75rem 1.25rem;
+  }
   .matrix td.cell {
-    width: 2.7rem;
-    height: 2.7rem;
-    font-size: 0.66rem;
+    width: 2.8rem;
+    height: 2.8rem;
+    font-size: 0.68rem;
+  }
+  /* グループタブ A〜L は横スクロール1行で破綻を防ぐ */
+  .group-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
   }
   .group-tab {
-    font-size: 0.88rem;
-    padding: 0.35rem 0.4rem;
+    flex: 0 0 auto;
+    min-width: 2.5rem;
+    font-size: 0.92rem;
+    padding: 0.4rem 0.5rem;
   }
   .tl-colhead {
-    min-width: 3.8rem;
+    min-width: 3.9rem;
   }
   .tl-poscol {
-    min-width: 2.2rem;
+    min-width: 2.3rem;
+  }
+  .section-title {
+    font-size: 1.08rem;
   }
 }

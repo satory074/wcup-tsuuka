@@ -66,13 +66,14 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const btNote = btSlots > 0 ? ` ＋ 各組3位の上位${btSlots}` : "";
 
   root.innerHTML = `
-    <div class="wrap">
-      <header class="site-header">
-        <h1>⚽ WCUP 通過シミュレーター</h1>
+    <header class="site-header">
+      <div class="hero-inner">
+        <h1><span class="hero-mark">⚽</span><span class="hero-title">WCUP <span class="hero-em">通過タイムライン</span></span></h1>
         <p class="site-sub">${esc(ct.meta.title)} ／ いつ誰が得点して、その時点で通過国がどう入れ替わったかを時系列で可視化します。</p>
         <nav class="cup-tabs seg" id="cup-tabs" aria-label="大会選択">${cupTabs}</nav>
-      </header>
-
+      </div>
+    </header>
+    <div class="wrap">
       <nav class="group-tabs" id="group-tabs" aria-label="グループ選択">${groupTabs}</nav>
 
       <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>

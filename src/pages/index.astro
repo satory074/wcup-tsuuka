@@ -8,6 +8,13 @@ import "../styles/globals.css";
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <!-- 欧文の見出し（Barlow）と数字（Spline Sans Mono）のみ Web フォント化。和文はシステムフォント維持で軽量。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700;800&family=Spline+Sans+Mono:wght@500;600;700&display=swap"
+    />
     <title>WCUP 通過シミュレーター</title>
     <meta
       name="description"
