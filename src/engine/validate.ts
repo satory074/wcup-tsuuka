@@ -27,6 +27,14 @@ export function validateTournament(raw: unknown): ValidateResult {
 
   if (!isRecord(raw)) return { ok: false, errors: ["ルートがオブジェクトではない"] };
 
+  // ---- 形式判定 ----
+  // 組数 G（8=2022方式 / 12=2026方式）から期待チーム数・試合数を導出する。
+  // teams==4G・matches==6G・各組4チーム6対戦は G に依らず構造から検証できる。
+  const groupCount = Array.isArray(raw.groups) ? (raw.groups as unknown[]).length : 0;
+  const knownFormat = groupCount === 8 || groupCount === 12;
+  const expectedTeams = groupCount * 4;
+  const expectedMatches = groupCount * 6;
+
   // ---- meta ----
   const meta = raw.meta;
   if (!isRecord(meta)) err("meta が無い");
@@ -36,6 +44,9 @@ export function validateTournament(raw: unknown): ValidateResult {
     }
     if (!Number.isInteger(meta.advancePerGroup) || (meta.advancePerGroup as number) < 1)
       err("meta.advancePerGroup が不正");
+    if (meta.advanceBestThirds !== undefined
+      && (!Number.isInteger(meta.advanceBestThirds) || (meta.advanceBestThirds as number) < 0))
+      err("meta.advanceBestThirds が不正（非負整数）");
     const pts = meta.points;
     if (!isRecord(pts)) err("meta.points が無い");
     else for (const k of ["win", "draw", "loss"]) {
@@ -49,7 +60,8 @@ export function validateTournament(raw: unknown): ValidateResult {
   const teams = raw.teams;
   if (!Array.isArray(teams)) err("teams が配列ではない");
   else {
-    if (teams.length !== 32) err(`teams は32チームであるべき（実際: ${teams.length}）`);
+    if (knownFormat && teams.length !== expectedTeams)
+      err(`teams は${expectedTeams}チームであるべき（実際: ${teams.length}）`);
     for (const [i, t] of teams.entries()) {
       const at = `teams[${i}]`;
       if (!isRecord(t)) { err(`${at} がオブジェクトではない`); continue; }
@@ -70,7 +82,7 @@ export function validateTournament(raw: unknown): ValidateResult {
   const groups = raw.groups;
   if (!Array.isArray(groups)) err("groups が配列ではない");
   else {
-    if (groups.length !== 8) err(`groups は8組であるべき（実際: ${groups.length}）`);
+    if (!knownFormat) err(`groups は8組(2022)か12組(2026)であるべき（実際: ${groups.length}）`);
     for (const [i, g] of groups.entries()) {
       const at = `groups[${i}]`;
       if (!isRecord(g)) { err(`${at} がオブジェクトではない`); continue; }
@@ -104,7 +116,8 @@ export function validateTournament(raw: unknown): ValidateResult {
   const matches = raw.matches;
   if (!Array.isArray(matches)) err("matches が配列ではない");
   else {
-    if (matches.length !== 48) err(`matches は48試合であるべき（実際: ${matches.length}）`);
+    if (knownFormat && matches.length !== expectedMatches)
+      err(`matches は${expectedMatches}試合であるべき（実際: ${matches.length}）`);
     for (const [i, m] of matches.entries()) {
       const at = isRecord(m) && typeof m.id === "string" ? `matches[${i}](${m.id})` : `matches[${i}]`;
       if (!isRecord(m)) { err(`${at} がオブジェクトではない`); continue; }
@@ -184,8 +197,9 @@ export function validateTournament(raw: unknown): ValidateResult {
   }
 
   // ---- 組ごとに 4チームの総当り（6対戦・各チーム3試合）になっているか ----
+  // 宇宙（GROUP_IDS）ではなく、宣言された組だけを回す（2022=8組 / 2026=12組 に追従）。
   if (errors.length === 0) {
-    for (const gid of GROUP_IDS) {
+    for (const gid of groupTeamIds.keys()) {
       const ids = groupTeamIds.get(gid);
       if (!ids || ids.length !== 4) continue;
       const pairs = groupPairs.get(gid) ?? new Set();

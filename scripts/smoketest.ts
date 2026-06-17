@@ -2,15 +2,17 @@
 // セクション: 1) データ検証 2) 2022実順位の再現 3) タイブレーク単体
 //             （P3 以降で 4) マトリックス 5) status 6) URL を追加）
 import worldcupJson from "../src/data/worldcup2022.json";
+import worldcup2026Json from "../src/data/worldcup2026.json";
 import { validateTournament } from "../src/engine/validate";
 import { compileTournament } from "../src/engine/compile";
 import { computeStandings } from "../src/engine/standings";
+import { computeBestThirds } from "../src/engine/thirds";
 import { groupStatus } from "../src/engine/status";
 import { buildMatrix, type ScenarioMatrix } from "../src/engine/scenario/matrix";
 import { defaultPivot } from "../src/engine/scenario/pivot";
 import { buildLiveTimeline, buildStageTimeline, clockOf, kickoffMinutes, scoreAtClock } from "../src/engine/timeline";
 import type { Goal } from "../src/engine/types";
-import type { CompiledTournament, GroupId, Match, Meta, Standings, Team } from "../src/engine/types";
+import type { CompiledTournament, GroupId, Match, Meta, Standings, StandingRow, Team } from "../src/engine/types";
 
 function assert(cond: boolean, msg: string): void {
   if (!cond) {
@@ -395,4 +397,125 @@ function sortedAdv(a: string[]): string {
   console.log("[timeline] 試合単位＋分刻み OK（全8組 最終一致・組E 70'の暫定逆転・決定性）");
 }
 
-console.log("✅ smoketest（P1-P5）通過");
+// ---- 8) 2026 データ検証 + 実データ best-thirds（thirds.ts） ----
+{
+  const v = validateTournament(worldcup2026Json);
+  if (!v.ok) {
+    console.error("❌ worldcup2026.json が不正:");
+    for (const e of v.errors) console.error(`  - ${e}`);
+    process.exit(1);
+  }
+  assert(v.tournament.teams.length === 48, "2026: 48チーム");
+  assert(v.tournament.groups.length === 12, "2026: 12組");
+  assert(v.tournament.matches.length === 72, "2026: 72試合");
+
+  const ct26 = compileTournament(worldcup2026Json);
+  assert(ct26.groups.length === 12, "2026: compile 12組");
+  for (const gid of ct26.groups) {
+    assert(ct26.teamsByGroup.get(gid)!.length === 4, `2026: 組${gid} 4チーム`);
+    assert(ct26.matchesByGroup.get(gid)!.length === 6, `2026: 組${gid} 6試合`);
+  }
+  console.log("[data] worldcup2026.json OK（チーム48 / 組12 / 試合72）");
+
+  // 進行中の部分タイムライン: goals がある組（I）は live 生成・無い組（A）は null・未消化組（K）は null
+  const liveI = buildLiveTimeline(ct26, "I");
+  assert(liveI !== null, "2026: 組I は goals があり live 生成");
+  const iGoals = ct26.matchesByGroup.get("I")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
+  assert(liveI!.length === iGoals, `2026: 組I live は消化分の全ゴール数(${iGoals})`);
+  assert(sortedAdv(liveI![liveI!.length - 1].advancing) === "fra,nor", "2026: 組I 第1節後の暫定通過は fra,nor");
+  assert(buildLiveTimeline(ct26, "A") === null, "2026: 組A は goals 無し → live 不可（stage へ）");
+  assert(buildLiveTimeline(ct26, "K") === null, "2026: 組K は未消化 → live 不可");
+  assert(buildStageTimeline(ct26, "A").length === 6, "2026: 組A の試合単位は6スナップ");
+
+  // 実データ best-thirds: グループステージ進行中＝全エントリ contention・undecided
+  const sbg = new Map<GroupId, Standings>();
+  for (const gid of ct26.groups) {
+    const ms = ct26.matchesByGroup.get(gid)!;
+    const tids = ct26.teamsByGroup.get(gid)!.map((t) => t.id);
+    sbg.set(gid, computeStandings(gid, ms, tids, ct26.meta));
+  }
+  const bt = computeBestThirds(ct26, sbg);
+  assert(bt.slots === 8, "2026: best-thirds slots=8");
+  assert(bt.entries.length >= 1 && bt.entries.length <= 12, "2026: 3位エントリは1..12組");
+  assert(bt.entries.every((e) => !e.groupComplete && e.state === "contention"), "2026: 進行中は全エントリ contention");
+  assert(bt.undecided, "2026: 進行中は未確定");
+  assert(JSON.stringify(computeBestThirds(ct26, sbg)) === JSON.stringify(computeBestThirds(ct26, sbg)), "2026: best-thirds 決定的");
+
+  // 2022（advanceBestThirds 未指定）は空を返す（no-regression 契約）
+  const sbg22 = new Map<GroupId, Standings>();
+  for (const gid of CT.groups) sbg22.set(gid, standingsFor(gid));
+  const bt22 = computeBestThirds(CT, sbg22);
+  assert(bt22.slots === 0 && bt22.entries.length === 0 && !bt22.undecided, "2022: best-thirds は空（slots=0）");
+  console.log("[thirds] 2026 実データ best-thirds OK（進行中=全組暫定）＋ 2022 空");
+}
+
+// ---- 9) ベスト3位の単体（合成12組フィクスチャ） ----
+const GROUPS12 = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"] as GroupId[];
+function mkThirdStandings(group: GroupId, third: { points: number; gd: number; gf: number }, complete = true): Standings {
+  const pl = complete ? 3 : 1;
+  const row = (teamId: string, points: number, gd: number, gf: number, rank: number, advances: boolean): StandingRow => ({
+    teamId, played: pl, won: 0, drawn: 0, lost: 0, gf, ga: gf - gd, gd, points, rank, advances,
+  });
+  // 1位・2位・4位はダミー。best-thirds は rank=3 行のみ読む（rank フィールド基準）。
+  return {
+    group,
+    rows: [
+      row(`${group}1`, 9, 9, 9, 1, true),
+      row(`${group}2`, 6, 6, 6, 2, true),
+      row(`${group}3`, third.points, third.gd, third.gf, 3, false),
+      row(`${group}4`, 0, -9, 0, 4, false),
+    ],
+    undecided: false,
+  };
+}
+function mkCt12(slots: number): CompiledTournament {
+  return {
+    meta: { ...meta(), advanceBestThirds: slots },
+    teamsById: new Map(),
+    groups: [...GROUPS12],
+    teamsByGroup: new Map(),
+    matchesByGroup: new Map(GROUPS12.map((g) => [g, [] as Match[]])),
+  };
+}
+{
+  // 9a) 明確な境界: 3位が勝点降順 → rank 1..12、上位8通過・9位以降落選・undecided 無し
+  {
+    const ct = mkCt12(8);
+    const sbg = new Map<GroupId, Standings>();
+    GROUPS12.forEach((g, i) => sbg.set(g, mkThirdStandings(g, { points: 12 - i, gd: 0, gf: 0 })));
+    const bt = computeBestThirds(ct, sbg);
+    assert(bt.entries.length === 12, "9a: 12エントリ");
+    assert(bt.entries.every((e, i) => e.rank === i + 1), "9a: rank 1..12 単調");
+    assert(bt.entries.slice(0, 8).every((e) => e.advances), "9a: 上位8は通過");
+    assert(bt.entries.slice(8).every((e) => !e.advances), "9a: 9位以降は非通過");
+    assert(!bt.undecided, "9a: 全確定で undecided 無し");
+  }
+  // 9b) 8位9位タイ（完全同値）: 共有rank・両者非通過・undecided。確定通過は7
+  {
+    const ct = mkCt12(8);
+    const sbg = new Map<GroupId, Standings>();
+    const pts = [12, 11, 10, 9, 8, 7, 6, 5, 5, 4, 3, 2];
+    GROUPS12.forEach((g, i) => sbg.set(g, mkThirdStandings(g, { points: pts[i], gd: 0, gf: 0 })));
+    const bt = computeBestThirds(ct, sbg);
+    const tied = bt.entries.filter((e) => e.points === 5);
+    assert(tied.length === 2, "9b: 同値2エントリ");
+    assert(tied[0].rank === tied[1].rank, "9b: 共有rank（抽選）");
+    assert(tied.every((e) => !e.advances), "9b: 枠線跨ぎは両者非通過（誰が入るか未確定）");
+    assert(bt.undecided, "9b: 跨ぎで undecided");
+    assert(bt.entries.filter((e) => e.advances).length === 7, "9b: 確定通過は7組");
+  }
+  // 9c) 組未完: 数値が明確でも未完組は contention・undecided（順序を捏造しない）
+  {
+    const ct = mkCt12(8);
+    const sbg = new Map<GroupId, Standings>();
+    GROUPS12.forEach((g, i) => sbg.set(g, mkThirdStandings(g, { points: 12 - i, gd: 0, gf: 0 }, g !== "A")));
+    const bt = computeBestThirds(ct, sbg);
+    const a = bt.entries.find((e) => e.group === "A")!;
+    assert(a.state === "contention" && a.undecided && !a.groupComplete, "9c: 未完組は contention");
+    assert(bt.undecided, "9c: 未完が混ざれば全体 undecided");
+    assert(bt.entries.filter((e) => e.group !== "A").every((e) => e.state === "confirmed"), "9c: 他の完了組は confirmed");
+  }
+  console.log("[thirds] best-thirds 単体 OK（境界/同値跨ぎ/組未完）");
+}
+
+console.log("✅ smoketest（P1-P5 + 2026/thirds）通過");

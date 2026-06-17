@@ -197,4 +197,31 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   console.log("[dom] フッタ OK");
 }
 
+// ---- 8) 大会切替（?cup=2026: 12組・ベスト3位パネル） ----
+{
+  const dom = setupDom(`${BASE_URL}?cup=2026`);
+  boot(app(dom));
+  const root = app(dom);
+  assert(root.querySelectorAll(".cup-tab").length === 2, "8: 大会タブ2");
+  assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2026", "8: 2026 が選択状態");
+  assert(root.querySelectorAll(".group-tab").length === 12, `8: 2026 はグループタブ12（実際: ${root.querySelectorAll(".group-tab").length}）`);
+  assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "8: 既定はグループA");
+  assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "8: 順位表4行（単一組）");
+  assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
+  assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
+  assert(root.querySelectorAll("#best-thirds .tie-badge").length >= 1, "8: 進行中は暫定/抽選バッジ");
+  console.log("[dom] 大会切替 ?cup=2026（12組・3位比較パネル）OK");
+}
+
+// ---- 8b) 2022 は best-thirds 非表示（DOM 不変・既定大会） ----
+{
+  const dom = setupDom(BASE_URL);
+  boot(app(dom));
+  const root = app(dom);
+  assert(root.querySelectorAll(".cup-tab").length === 2, "8b: 大会タブ2");
+  assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2022", "8b: 既定は2022");
+  assert((root.querySelector("#best-thirds")?.innerHTML ?? "").trim() === "", "8b: 2022 は best-thirds 空");
+  console.log("[dom] 2022 は best-thirds 非表示 OK");
+}
+
 console.log("✅ domtest 通過");

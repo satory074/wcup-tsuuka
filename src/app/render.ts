@@ -6,12 +6,20 @@ import { scoreLabel, tricode } from "../engine/format";
 import type { TeamStatus } from "../engine/status";
 import type { ScenarioMatrix, Outcome } from "../engine/scenario/matrix";
 import type { Snapshot } from "../engine/timeline";
+import type { BestThirdsResult, ThirdEntry } from "../engine/thirds";
+import type { Cup } from "./url";
 
 export type ViewMode = "live" | "stage";
+
+const CUPS: { id: Cup; label: string }[] = [
+  { id: "2022", label: "2022 カタール" },
+  { id: "2026", label: "2026 北中米" },
+];
 
 export type Command =
   | { type: "set-group"; group: GroupId }
   | { type: "set-view"; view: ViewMode }
+  | { type: "set-cup"; cup: Cup }
   | { type: "set-pivot"; pivotId: string }
   | { type: "set-assume"; matchId: string; score: Score };
 export type Dispatch = (cmd: Command) => void;
@@ -21,6 +29,8 @@ export interface RenderView {
   view: ViewMode;
   standings: Standings;
   status: TeamStatus[];
+  /** 2026方式のベスト3位（advanceBestThirds>0 のときのみ中身が出る） */
+  bestThirds?: BestThirdsResult;
   liveTimeline: Snapshot[] | null;
   stageTimeline: Snapshot[];
   // もしものスコア（マトリックス）用
@@ -39,20 +49,28 @@ const PALETTE = 8;
 const colorClass = (i: number) => `cell-c${i % PALETTE}`;
 const swatchVar = (i: number) => `var(--cell-${i % PALETTE})`;
 
-export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispatch: Dispatch) {
+export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: Cup, dispatch: Dispatch) {
   const team = (id: string) => ct.teamsById.get(id)!;
   const tlabel = (id: string) => `${team(id).flag} ${esc(team(id).name)}`;
   const tc = (id: string) => esc(tricode(team(id)));
 
+  const cupTabs = CUPS
+    .map((c) => `<button type="button" class="cup-tab seg-btn${c.id === cup ? " seg-on" : ""}" data-action="set-cup" data-cup="${c.id}">${esc(c.label)}</button>`)
+    .join("");
+
   const groupTabs = ct.groups
     .map((g) => `<button type="button" class="group-tab" data-action="set-group" data-group="${g}">${g}</button>`)
     .join("");
+
+  const btSlots = ct.meta.advanceBestThirds ?? 0;
+  const btNote = btSlots > 0 ? ` ＋ 各組3位の上位${btSlots}` : "";
 
   root.innerHTML = `
     <div class="wrap">
       <header class="site-header">
         <h1>⚽ WCUP 通過シミュレーター</h1>
         <p class="site-sub">${esc(ct.meta.title)} ／ いつ誰が得点して、その時点で通過国がどう入れ替わったかを時系列で可視化します。</p>
+        <nav class="cup-tabs seg" id="cup-tabs" aria-label="大会選択">${cupTabs}</nav>
       </header>
 
       <nav class="group-tabs" id="group-tabs" aria-label="グループ選択">${groupTabs}</nav>
@@ -60,13 +78,14 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
       <div id="standings"></div>
       <div id="status"></div>
+      <div id="best-thirds"></div>
 
       <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位</span></h2>
       <div class="view-toggle seg" role="group" aria-label="タイムライン表示モード">
         <button type="button" class="seg-btn" data-action="set-view" data-view="live">全試合（分刻み）</button>
         <button type="button" class="seg-btn" data-action="set-view" data-view="stage">大会全体（試合単位）</button>
       </div>
-      <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}） ／ ▲▼ 直前からの順位変動</p>
+      <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ ▲▼ 直前からの順位変動</p>
       <div id="timeline"></div>
 
       <details class="matrix-details" id="matrix-details">
@@ -90,6 +109,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
   const $ = <T extends HTMLElement>(sel: string): T => root.querySelector(sel) as T;
   const elStandings = $("#standings");
   const elStatus = $("#status");
+  const elBestThirds = $("#best-thirds");
   const elTimeline = $("#timeline");
   const elPivot = $("#pivot");
   const elMatrix = $("#matrix");
@@ -102,6 +122,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
     if (!t) return;
     if (t.dataset.action === "set-group") dispatch({ type: "set-group", group: t.dataset.group as GroupId });
     else if (t.dataset.action === "set-view") dispatch({ type: "set-view", view: t.dataset.view as ViewMode });
+    else if (t.dataset.action === "set-cup") dispatch({ type: "set-cup", cup: t.dataset.cup as Cup });
   });
   root.addEventListener("change", (ev) => {
     const t = ev.target as HTMLElement;
@@ -166,6 +187,43 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
     return `
       <p class="site-sub">🟢 突破確定 ／ 🟠 可能性あり ／ ⚪ 敗退</p>
       <div class="status-chips">${chips}</div>`;
+  }
+
+  // ---- ベスト3位（2026方式: 各組3位を横断ランキングし上位 slots 組が通過） ----
+  function bestThirdsHTML(bt: BestThirdsResult): string {
+    if (bt.slots <= 0 || bt.entries.length === 0) return "";
+    const stateBadge = (e: ThirdEntry): string => {
+      if (!e.groupComplete) return `<span class="tie-badge">暫定</span>`;
+      if (e.undecided) return `<span class="tie-badge">抽選</span>`;
+      return "";
+    };
+    const rows = bt.entries
+      .map((e) => {
+        const cls = [e.advances ? "row-advance" : "", e.rank === bt.slots ? "advance-line" : ""].filter(Boolean).join(" ");
+        return `
+          <tr class="bt-row ${cls}">
+            <td class="col-rank"><span class="rank-badge">${e.rank}</span></td>
+            <td class="bt-group">${e.group}</td>
+            <td class="col-team"><span class="team-cell"><span class="team-flag">${team(e.teamId).flag}</span><span class="team-name">${esc(team(e.teamId).name)}</span>${stateBadge(e)}</span></td>
+            <td>${e.points}</td><td>${gdLabel(e.gd)}</td><td>${e.gf}</td>
+          </tr>`;
+      })
+      .join("");
+    const note = bt.undecided
+      ? `<p class="site-sub">⚠️ グループステージ進行中のため暫定です（🟩＝現時点で上位${bt.slots}圏／🎲抽選・暫定あり）。</p>`
+      : "";
+    return `
+      <h2 class="section-title">3位チーム比較 <span class="hint">各組3位を横断ランキング → 上位${bt.slots}組が通過（R32）</span></h2>
+      ${note}
+      <div class="card bt-card tnum">
+        <table class="bt-table">
+          <thead><tr>
+            <th class="col-rank">順</th><th class="bt-group">組</th><th class="col-team">チーム</th>
+            <th>点</th><th>差</th><th>得</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
   }
 
   // ---- タイムライン（主役・横グリッド: 列=時間, 行=チーム, セル=順位） ----
@@ -419,6 +477,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
     elCaption.textContent = `グループ ${view.group}`;
     elStandings.innerHTML = standingsHTML(view.standings);
     elStatus.innerHTML = statusHTML(view.status);
+    elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
     elPivot.innerHTML = pivotHTML(view);
     elMatrix.innerHTML = matrixHTML(view.matrix);

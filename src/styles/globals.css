@@ -121,6 +121,32 @@ body {
   color: #fff;
 }
 
+/* ---- 大会切替（2022 / 2026） ---- */
+.cup-tabs {
+  display: inline-flex;
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.cup-tab {
+  padding: 0.4rem 1.1rem;
+  font-size: 0.85rem;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-weight: 700;
+}
+.cup-tab:hover {
+  background: var(--bg);
+}
+.cup-tab.seg-on {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* ---- 順位表 ---- */
 .standings {
   margin-top: 0.5rem;
@@ -200,6 +226,39 @@ table.standings-table {
   border-radius: 999px;
   padding: 0.05rem 0.45rem;
   margin-left: 0.35rem;
+}
+
+/* ---- ベスト3位（2026: 各組3位の横断ランキング → 上位8通過） ---- */
+.bt-card {
+  margin-top: 0.5rem;
+  padding: 0.25rem;
+  overflow-x: auto;
+}
+table.bt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.bt-table th,
+.bt-table td {
+  padding: 0.45rem 0.4rem;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.bt-table th {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.bt-table tr:last-child td {
+  border-bottom: none;
+}
+.bt-group {
+  text-align: center !important;
+  font-weight: 800;
+  color: var(--ink-soft);
+  width: 2.2rem;
 }
 
 /* ---- 通過ステータスチップ ---- */

@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "title": "WCUP 通過シミュレーター",
+    "edition": "2026 北中米",
+    "advancePerGroup": 2,
+    "advanceBestThirds": 8,
+    "points": { "win": 3, "draw": 1, "loss": 0 },
+    "dataLastUpdated": "2026-06-17",
+    "source": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup",
+    "disclaimer": "2026年北中米大会（48カ国・12組）の非公式可視化です。グループステージ進行中につき、消化済みの試合のみ実スコアを反映しています（残りは未消化）。各組上位2＋3位の上位8の通過判定は暫定です。"
+  },
+  "teams": [
+    { "id": "mex", "name": "メキシコ", "nameEn": "Mexico", "group": "A", "flag": "🇲🇽" },
+    { "id": "kor", "name": "韓国", "nameEn": "South Korea", "group": "A", "flag": "🇰🇷" },
+    { "id": "rsa", "name": "南アフリカ", "nameEn": "South Africa", "group": "A", "flag": "🇿🇦" },
+    { "id": "cze", "name": "チェコ", "nameEn": "Czechia", "group": "A", "flag": "🇨🇿" },
+
+    { "id": "can", "name": "カナダ", "nameEn": "Canada", "group": "B", "flag": "🇨🇦" },
+    { "id": "sui", "name": "スイス", "nameEn": "Switzerland", "group": "B", "flag": "🇨🇭" },
+    { "id": "qat", "name": "カタール", "nameEn": "Qatar", "group": "B", "flag": "🇶🇦" },
+    { "id": "bih", "name": "ボスニア・ヘルツェゴビナ", "nameEn": "Bosnia and Herzegovina", "group": "B", "flag": "🇧🇦" },
+
+    { "id": "bra", "name": "ブラジル", "nameEn": "Brazil", "group": "C", "flag": "🇧🇷" },
+    { "id": "mar", "name": "モロッコ", "nameEn": "Morocco", "group": "C", "flag": "🇲🇦" },
+    { "id": "sco", "name": "スコットランド", "nameEn": "Scotland", "group": "C", "flag": "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
+    { "id": "hai", "name": "ハイチ", "nameEn": "Haiti", "group": "C", "flag": "🇭🇹" },
+
+    { "id": "usa", "name": "アメリカ", "nameEn": "United States", "group": "D", "flag": "🇺🇸" },
+    { "id": "par", "name": "パラグアイ", "nameEn": "Paraguay", "group": "D", "flag": "🇵🇾" },
+    { "id": "aus", "name": "オーストラリア", "nameEn": "Australia", "group": "D", "flag": "🇦🇺" },
+    { "id": "tur", "name": "トルコ", "nameEn": "Türkiye", "group": "D", "flag": "🇹🇷" },
+
+    { "id": "ger", "name": "ドイツ", "nameEn": "Germany", "group": "E", "flag": "🇩🇪" },
+    { "id": "ecu", "name": "エクアドル", "nameEn": "Ecuador", "group": "E", "flag": "🇪🇨" },
+    { "id": "civ", "name": "コートジボワール", "nameEn": "Ivory Coast", "group": "E", "flag": "🇨🇮" },
+    { "id": "cuw", "name": "キュラソー", "nameEn": "Curaçao", "group": "E", "flag": "🇨🇼" },
+
+    { "id": "ned", "name": "オランダ", "nameEn": "Netherlands", "group": "F", "flag": "🇳🇱" },
+    { "id": "jpn", "name": "日本", "nameEn": "Japan", "group": "F", "flag": "🇯🇵" },
+    { "id": "tun", "name": "チュニジア", "nameEn": "Tunisia", "group": "F", "flag": "🇹🇳" },
+    { "id": "swe", "name": "スウェーデン", "nameEn": "Sweden", "group": "F", "flag": "🇸🇪" },
+
+    { "id": "bel", "name": "ベルギー", "nameEn": "Belgium", "group": "G", "flag": "🇧🇪" },
+    { "id": "irn", "name": "イラン", "nameEn": "Iran", "group": "G", "flag": "🇮🇷" },
+    { "id": "egy", "name": "エジプト", "nameEn": "Egypt", "group": "G", "flag": "🇪🇬" },
+    { "id": "nzl", "name": "ニュージーランド", "nameEn": "New Zealand", "group": "G", "flag": "🇳🇿" },
+
+    { "id": "esp", "name": "スペイン", "nameEn": "Spain", "group": "H", "flag": "🇪🇸" },
+    { "id": "uru", "name": "ウルグアイ", "nameEn": "Uruguay", "group": "H", "flag": "🇺🇾" },
+    { "id": "ksa", "name": "サウジアラビア", "nameEn": "Saudi Arabia", "group": "H", "flag": "🇸🇦" },
+    { "id": "cpv", "name": "カーボベルデ", "nameEn": "Cape Verde", "group": "H", "flag": "🇨🇻" },
+
+    { "id": "fra", "name": "フランス", "nameEn": "France", "group": "I", "flag": "🇫🇷" },
+    { "id": "sen", "name": "セネガル", "nameEn": "Senegal", "group": "I", "flag": "🇸🇳" },
+    { "id": "nor", "name": "ノルウェー", "nameEn": "Norway", "group": "I", "flag": "🇳🇴" },
+    { "id": "irq", "name": "イラク", "nameEn": "Iraq", "group": "I", "flag": "🇮🇶" },
+
+    { "id": "arg", "name": "アルゼンチン", "nameEn": "Argentina", "group": "J", "flag": "🇦🇷" },
+    { "id": "aut", "name": "オーストリア", "nameEn": "Austria", "group": "J", "flag": "🇦🇹" },
+    { "id": "alg", "name": "アルジェリア", "nameEn": "Algeria", "group": "J", "flag": "🇩🇿" },
+    { "id": "jor", "name": "ヨルダン", "nameEn": "Jordan", "group": "J", "flag": "🇯🇴" },
+
+    { "id": "por", "name": "ポルトガル", "nameEn": "Portugal", "group": "K", "flag": "🇵🇹" },
+    { "id": "col", "name": "コロンビア", "nameEn": "Colombia", "group": "K", "flag": "🇨🇴" },
+    { "id": "uzb", "name": "ウズベキスタン", "nameEn": "Uzbekistan", "group": "K", "flag": "🇺🇿" },
+    { "id": "cod", "name": "コンゴ民主共和国", "nameEn": "DR Congo", "group": "K", "flag": "🇨🇩" },
+
+    { "id": "eng", "name": "イングランド", "nameEn": "England", "group": "L", "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+    { "id": "cro", "name": "クロアチア", "nameEn": "Croatia", "group": "L", "flag": "🇭🇷" },
+    { "id": "pan", "name": "パナマ", "nameEn": "Panama", "group": "L", "flag": "🇵🇦" },
+    { "id": "gha", "name": "ガーナ", "nameEn": "Ghana", "group": "L", "flag": "🇬🇭" }
+  ],
+  "groups": [
+    { "id": "A", "teamIds": ["mex", "kor", "rsa", "cze"] },
+    { "id": "B", "teamIds": ["can", "sui", "qat", "bih"] },
+    { "id": "C", "teamIds": ["bra", "mar", "sco", "hai"] },
+    { "id": "D", "teamIds": ["usa", "par", "aus", "tur"] },
+    { "id": "E", "teamIds": ["ger", "ecu", "civ", "cuw"] },
+    { "id": "F", "teamIds": ["ned", "jpn", "tun", "swe"] },
+    { "id": "G", "teamIds": ["bel", "irn", "egy", "nzl"] },
+    { "id": "H", "teamIds": ["esp", "uru", "ksa", "cpv"] },
+    { "id": "I", "teamIds": ["fra", "sen", "nor", "irq"] },
+    { "id": "J", "teamIds": ["arg", "aut", "alg", "jor"] },
+    { "id": "K", "teamIds": ["por", "col", "uzb", "cod"] },
+    { "id": "L", "teamIds": ["eng", "cro", "pan", "gha"] }
+  ],
+  "matches": [
+    { "id": "A-1", "group": "A", "matchday": 1, "kickoff": "2026-06-11T13:00", "home": "mex", "away": "rsa", "score": { "home": 2, "away": 0 } },
+    { "id": "A-2", "group": "A", "matchday": 1, "kickoff": "2026-06-11T20:00", "home": "kor", "away": "cze", "score": { "home": 2, "away": 1 } },
+    { "id": "A-3", "group": "A", "matchday": 2, "kickoff": "2026-06-18T12:00", "home": "cze", "away": "rsa" },
+    { "id": "A-4", "group": "A", "matchday": 2, "kickoff": "2026-06-18T19:00", "home": "mex", "away": "kor" },
+    { "id": "A-5", "group": "A", "matchday": 3, "kickoff": "2026-06-24T19:00", "home": "cze", "away": "mex" },
+    { "id": "A-6", "group": "A", "matchday": 3, "kickoff": "2026-06-24T19:00", "home": "rsa", "away": "kor" },
+
+    { "id": "B-1", "group": "B", "matchday": 1, "kickoff": "2026-06-12T15:00", "home": "can", "away": "bih", "score": { "home": 1, "away": 1 } },
+    { "id": "B-2", "group": "B", "matchday": 1, "kickoff": "2026-06-13T12:00", "home": "qat", "away": "sui", "score": { "home": 1, "away": 1 } },
+    { "id": "B-3", "group": "B", "matchday": 2, "kickoff": "2026-06-18T12:00", "home": "sui", "away": "bih" },
+    { "id": "B-4", "group": "B", "matchday": 2, "kickoff": "2026-06-18T15:00", "home": "can", "away": "qat" },
+    { "id": "B-5", "group": "B", "matchday": 3, "kickoff": "2026-06-24T12:00", "home": "sui", "away": "can" },
+    { "id": "B-6", "group": "B", "matchday": 3, "kickoff": "2026-06-24T12:00", "home": "bih", "away": "qat" },
+
+    { "id": "C-1", "group": "C", "matchday": 1, "kickoff": "2026-06-13T18:00", "home": "bra", "away": "mar", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 21, "side": "away", "player": "サイビリ" }, { "minute": 32, "side": "home", "player": "ヴィニシウス" } ] },
+    { "id": "C-2", "group": "C", "matchday": 1, "kickoff": "2026-06-13T21:00", "home": "hai", "away": "sco", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 28, "side": "away", "player": "マッギン" } ] },
+    { "id": "C-3", "group": "C", "matchday": 2, "kickoff": "2026-06-19T18:00", "home": "sco", "away": "mar" },
+    { "id": "C-4", "group": "C", "matchday": 2, "kickoff": "2026-06-19T20:30", "home": "bra", "away": "hai" },
+    { "id": "C-5", "group": "C", "matchday": 3, "kickoff": "2026-06-24T18:00", "home": "sco", "away": "bra" },
+    { "id": "C-6", "group": "C", "matchday": 3, "kickoff": "2026-06-24T18:00", "home": "mar", "away": "hai" },
+
+    { "id": "D-1", "group": "D", "matchday": 1, "kickoff": "2026-06-12T18:00", "home": "usa", "away": "par", "score": { "home": 4, "away": 1 } },
+    { "id": "D-2", "group": "D", "matchday": 1, "kickoff": "2026-06-13T21:00", "home": "aus", "away": "tur", "score": { "home": 2, "away": 0 } },
+    { "id": "D-3", "group": "D", "matchday": 2, "kickoff": "2026-06-19T12:00", "home": "usa", "away": "aus" },
+    { "id": "D-4", "group": "D", "matchday": 2, "kickoff": "2026-06-19T20:00", "home": "tur", "away": "par" },
+    { "id": "D-5", "group": "D", "matchday": 3, "kickoff": "2026-06-25T19:00", "home": "tur", "away": "usa" },
+    { "id": "D-6", "group": "D", "matchday": 3, "kickoff": "2026-06-25T19:00", "home": "par", "away": "aus" },
+
+    { "id": "E-1", "group": "E", "matchday": 1, "kickoff": "2026-06-14T12:00", "home": "ger", "away": "cuw", "score": { "home": 7, "away": 1 } },
+    { "id": "E-2", "group": "E", "matchday": 1, "kickoff": "2026-06-14T19:00", "home": "civ", "away": "ecu", "score": { "home": 1, "away": 0 } },
+    { "id": "E-3", "group": "E", "matchday": 2, "kickoff": "2026-06-20T16:00", "home": "ger", "away": "civ" },
+    { "id": "E-4", "group": "E", "matchday": 2, "kickoff": "2026-06-20T19:00", "home": "ecu", "away": "cuw" },
+    { "id": "E-5", "group": "E", "matchday": 3, "kickoff": "2026-06-25T16:00", "home": "cuw", "away": "civ" },
+    { "id": "E-6", "group": "E", "matchday": 3, "kickoff": "2026-06-25T16:00", "home": "ecu", "away": "ger" },
+
+    { "id": "F-1", "group": "F", "matchday": 1, "kickoff": "2026-06-14T15:00", "home": "ned", "away": "jpn", "score": { "home": 2, "away": 2 } },
+    { "id": "F-2", "group": "F", "matchday": 1, "kickoff": "2026-06-14T20:00", "home": "swe", "away": "tun", "score": { "home": 5, "away": 1 } },
+    { "id": "F-3", "group": "F", "matchday": 2, "kickoff": "2026-06-20T12:00", "home": "ned", "away": "swe" },
+    { "id": "F-4", "group": "F", "matchday": 2, "kickoff": "2026-06-20T22:00", "home": "tun", "away": "jpn" },
+    { "id": "F-5", "group": "F", "matchday": 3, "kickoff": "2026-06-25T18:00", "home": "jpn", "away": "swe" },
+    { "id": "F-6", "group": "F", "matchday": 3, "kickoff": "2026-06-25T18:00", "home": "tun", "away": "ned" },
+
+    { "id": "G-1", "group": "G", "matchday": 1, "kickoff": "2026-06-15T12:00", "home": "bel", "away": "egy", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 19, "side": "away", "player": "アシュール" }, { "minute": 66, "side": "home", "player": "ハニー(OG)" } ] },
+    { "id": "G-2", "group": "G", "matchday": 1, "kickoff": "2026-06-15T18:00", "home": "irn", "away": "nzl", "score": { "home": 2, "away": 2 }, "goals": [ { "minute": 7, "side": "away", "player": "ジャスト" }, { "minute": 32, "side": "home", "player": "レザイアン" }, { "minute": 54, "side": "away", "player": "ジャスト" }, { "minute": 64, "side": "home", "player": "モヘビ" } ] },
+    { "id": "G-3", "group": "G", "matchday": 2, "kickoff": "2026-06-21T12:00", "home": "bel", "away": "irn" },
+    { "id": "G-4", "group": "G", "matchday": 2, "kickoff": "2026-06-21T18:00", "home": "nzl", "away": "egy" },
+    { "id": "G-5", "group": "G", "matchday": 3, "kickoff": "2026-06-26T20:00", "home": "egy", "away": "irn" },
+    { "id": "G-6", "group": "G", "matchday": 3, "kickoff": "2026-06-26T20:00", "home": "nzl", "away": "bel" },
+
+    { "id": "H-1", "group": "H", "matchday": 1, "kickoff": "2026-06-15T12:00", "home": "esp", "away": "cpv", "score": { "home": 0, "away": 0 }, "goals": [] },
+    { "id": "H-2", "group": "H", "matchday": 1, "kickoff": "2026-06-15T18:00", "home": "ksa", "away": "uru", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 41, "side": "home", "player": "アル＝アムリ" }, { "minute": 80, "side": "away", "player": "アラウホ" } ] },
+    { "id": "H-3", "group": "H", "matchday": 2, "kickoff": "2026-06-21T12:00", "home": "esp", "away": "ksa" },
+    { "id": "H-4", "group": "H", "matchday": 2, "kickoff": "2026-06-21T18:00", "home": "uru", "away": "cpv" },
+    { "id": "H-5", "group": "H", "matchday": 3, "kickoff": "2026-06-26T19:00", "home": "cpv", "away": "ksa" },
+    { "id": "H-6", "group": "H", "matchday": 3, "kickoff": "2026-06-26T18:00", "home": "uru", "away": "esp" },
+
+    { "id": "I-1", "group": "I", "matchday": 1, "kickoff": "2026-06-16T15:00", "home": "fra", "away": "sen", "score": { "home": 3, "away": 1 }, "goals": [ { "minute": 66, "side": "home", "player": "ムバッペ" }, { "minute": 82, "side": "home", "player": "バルコラ" }, { "minute": 90, "plus": 5, "side": "away", "player": "ンバイェ" }, { "minute": 90, "plus": 6, "side": "home", "player": "ムバッペ" } ] },
+    { "id": "I-2", "group": "I", "matchday": 1, "kickoff": "2026-06-16T18:00", "home": "irq", "away": "nor", "score": { "home": 1, "away": 4 }, "goals": [ { "minute": 29, "side": "away", "player": "ハーランド" }, { "minute": 39, "side": "home", "player": "フセイン" }, { "minute": 43, "side": "away", "player": "ハーランド" }, { "minute": 76, "side": "away", "player": "オスティゴール" }, { "minute": 90, "plus": 6, "side": "away", "player": "フセイン(OG)" } ] },
+    { "id": "I-3", "group": "I", "matchday": 2, "kickoff": "2026-06-22T17:00", "home": "fra", "away": "irq" },
+    { "id": "I-4", "group": "I", "matchday": 2, "kickoff": "2026-06-22T20:00", "home": "nor", "away": "sen" },
+    { "id": "I-5", "group": "I", "matchday": 3, "kickoff": "2026-06-26T15:00", "home": "nor", "away": "fra" },
+    { "id": "I-6", "group": "I", "matchday": 3, "kickoff": "2026-06-26T15:00", "home": "sen", "away": "irq" },
+
+    { "id": "J-1", "group": "J", "matchday": 1, "kickoff": "2026-06-16T20:00", "home": "arg", "away": "alg", "score": { "home": 3, "away": 0 }, "goals": [ { "minute": 17, "side": "home", "player": "メッシ" }, { "minute": 60, "side": "home", "player": "メッシ" }, { "minute": 76, "side": "home", "player": "メッシ" } ] },
+    { "id": "J-2", "group": "J", "matchday": 1, "kickoff": "2026-06-16T21:00", "home": "aut", "away": "jor", "score": { "home": 3, "away": 1 }, "goals": [ { "minute": 21, "side": "home", "player": "シュミット" }, { "minute": 50, "side": "away", "player": "オルワン" }, { "minute": 77, "side": "home", "player": "アル＝アラブ(OG)" }, { "minute": 90, "plus": 12, "side": "home", "player": "アルナウトビッチ(PK)" } ] },
+    { "id": "J-3", "group": "J", "matchday": 2, "kickoff": "2026-06-22T12:00", "home": "arg", "away": "aut" },
+    { "id": "J-4", "group": "J", "matchday": 2, "kickoff": "2026-06-22T20:00", "home": "jor", "away": "alg" },
+    { "id": "J-5", "group": "J", "matchday": 3, "kickoff": "2026-06-27T21:00", "home": "alg", "away": "aut" },
+    { "id": "J-6", "group": "J", "matchday": 3, "kickoff": "2026-06-27T21:00", "home": "jor", "away": "arg" },
+
+    { "id": "K-1", "group": "K", "matchday": 1, "kickoff": "2026-06-17T12:00", "home": "por", "away": "cod" },
+    { "id": "K-2", "group": "K", "matchday": 1, "kickoff": "2026-06-17T20:00", "home": "uzb", "away": "col" },
+    { "id": "K-3", "group": "K", "matchday": 2, "kickoff": "2026-06-23T12:00", "home": "por", "away": "uzb" },
+    { "id": "K-4", "group": "K", "matchday": 2, "kickoff": "2026-06-23T20:00", "home": "col", "away": "cod" },
+    { "id": "K-5", "group": "K", "matchday": 3, "kickoff": "2026-06-27T19:30", "home": "col", "away": "por" },
+    { "id": "K-6", "group": "K", "matchday": 3, "kickoff": "2026-06-27T19:30", "home": "cod", "away": "uzb" },
+
+    { "id": "L-1", "group": "L", "matchday": 1, "kickoff": "2026-06-17T15:00", "home": "eng", "away": "cro" },
+    { "id": "L-2", "group": "L", "matchday": 1, "kickoff": "2026-06-17T19:00", "home": "gha", "away": "pan" },
+    { "id": "L-3", "group": "L", "matchday": 2, "kickoff": "2026-06-23T16:00", "home": "eng", "away": "gha" },
+    { "id": "L-4", "group": "L", "matchday": 2, "kickoff": "2026-06-23T19:00", "home": "pan", "away": "cro" },
+    { "id": "L-5", "group": "L", "matchday": 3, "kickoff": "2026-06-27T17:00", "home": "pan", "away": "eng" },
+    { "id": "L-6", "group": "L", "matchday": 3, "kickoff": "2026-06-27T17:00", "home": "cro", "away": "gha" }
+  ]
+}

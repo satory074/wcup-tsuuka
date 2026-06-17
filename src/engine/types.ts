@@ -1,8 +1,13 @@
 // 全エンジンが共有する型。DOM・Date 非依存。
 // worldcup2022.json の生スキーマ（Tournament 配下）と、実行時の派生型をここに集約する。
 
-export type GroupId = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
-export const GROUP_IDS: readonly GroupId[] = ["A", "B", "C", "D", "E", "F", "G", "H"];
+// A–H は 2022方式（8組）、A–L は 2026方式（12組）。GROUP_IDS は「妥当な組レターの宇宙」で、
+// 大会ごとの実際の組は compile が宣言（teams/groups）から導出する（GROUP_IDS を直接ループしない）。
+export type GroupId =
+  | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L";
+export const GROUP_IDS: readonly GroupId[] = [
+  "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
+];
 
 export interface Points {
   win: number;
@@ -15,6 +20,8 @@ export interface Meta {
   edition: string;
   /** 各組から決勝トーナメントへ進む数（2022方式は2） */
   advancePerGroup: number;
+  /** 全組の3位から追加で通過する数（2022=未指定→0 / 2026=8）。省略時は0。 */
+  advanceBestThirds?: number;
   points: Points;
   dataLastUpdated: string;
   source: string;

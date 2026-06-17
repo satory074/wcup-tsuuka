@@ -135,23 +135,28 @@ export function kickoffMinutes(iso: string): number {
   return (month * 31 + day) * 24 * 60 + hh * 60 + mm;
 }
 
-/** (B) 全試合（第1〜3節）を分刻みで。全試合に goals 配列と kickoff が要る。無ければ null。
+/** (B) 全試合（第1〜3節）を分刻みで。消化済み試合に goals 配列と kickoff が要る。無ければ null。
+    大会進行中（一部が未消化）でも可: 未消化試合は「未来」として常に未消化側に落ちる。
     並べ替えは「キックオフ日時＋経過分」の絶対時刻順＝被る試合（同時刻開催）は分で並列、
     被らない試合は時系列で前後に並ぶ。 */
 export function buildLiveTimeline(ct: CompiledTournament, group: GroupId): Snapshot[] | null {
   const all = ct.matchesByGroup.get(group);
   if (!all || all.length === 0) return null;
   const teamIds = ct.teamsByGroup.get(group)!.map((t) => t.id);
-  // 全試合に goals 配列と kickoff が必要（0-0 は []）
-  if (all.some((m) => !Array.isArray(m.goals) || !m.kickoff)) return null;
+  // 消化済み試合には goals 配列と kickoff が必要（0-0 は []）。1試合も消化していなければ null。
+  const played = all.filter(isPlayed);
+  if (played.length === 0) return null;
+  if (played.some((m) => !Array.isArray(m.goals) || !m.kickoff)) return null;
 
-  // 各試合のキックオフ絶対分
-  const koMin = new Map<string, number>(all.map((m) => [m.id, kickoffMinutes(m.kickoff!)]));
+  // 各試合のキックオフ絶対分（kickoff 無しの未消化は +∞＝常に未来）
+  const koMin = new Map<string, number>(
+    all.map((m) => [m.id, m.kickoff ? kickoffMinutes(m.kickoff) : Number.POSITIVE_INFINITY]),
+  );
 
-  // 全6試合の全ゴールを絶対時刻 (キックオフ + 経過分) 昇順で統合
+  // 消化済み試合の全ゴールを絶対時刻 (キックオフ + 経過分) 昇順で統合
   type Ev = { matchId: string; abs: number; clock: number; goal: Goal };
   const events: Ev[] = [];
-  for (const m of all) {
+  for (const m of played) {
     for (const g of m.goals!) {
       const abs = koMin.get(m.id)! + g.minute + (g.plus ?? 0);
       events.push({ matchId: m.id, abs, clock: clockOf(g), goal: g });
@@ -166,11 +171,15 @@ export function buildLiveTimeline(ct: CompiledTournament, group: GroupId): Snaps
   const running = new Map<string, Score>(all.map((m) => [m.id, { home: 0, away: 0 }]));
 
   // 絶対時刻 absT 時点の試合スコア:
-  //   kickoff <= absT … running（進行中/消化済み。0-0 進行中は現在引分扱い）
-  //   kickoff >  absT … 未消化（score なし）
-  // → 被らない試合は前の試合が終わってから次が running 入りし、被る試合は両方 running で分並列。
+  //   消化済み かつ kickoff <= absT … running（進行中/消化済み。0-0 進行中は現在引分扱い）
+  //   それ以外（未来 or 未消化）       … 未消化（score なし）
+  // → 未消化試合はデータが無いので常に順位計算へ寄与しない。
   const viewAt = (absT: number): Match[] =>
-    all.map((m) => (koMin.get(m.id)! <= absT ? { ...m, score: { ...running.get(m.id)! } } : { ...m, score: undefined }));
+    all.map((m) =>
+      isPlayed(m) && koMin.get(m.id)! <= absT
+        ? { ...m, score: { ...running.get(m.id)! } }
+        : { ...m, score: undefined },
+    );
 
   const snaps: Snapshot[] = [];
   let prev: Standings | null = null;
