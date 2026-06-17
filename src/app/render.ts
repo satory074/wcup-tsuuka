@@ -442,12 +442,20 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         </div>`;
     }
     if (q.phase === "final-round") {
+      const watch = q.tiebreakWatch ?? [];
+      let tb = "";
+      if (watch.length > 0) {
+        const names = watch.map((id) => `${team(id).flag}${esc(team(id).name)}`);
+        const joined = names.length === 2 ? names.join("と") : names.join("・");
+        tb = `<p class="scenario-note">⚠️ ${joined} が<b>勝点で並ぶ可能性</b>。並んだ場合は ②総得失点差 → ③総得点 → 直接対決 の順で決まります。</p>`;
+      }
       const simul = q.simultaneous
         ? `<p class="scenario-note">⏱️ 最終節の2試合は<b>同時刻キックオフ</b>。「他会場しだい」はもう1試合の結果に依存します。</p>`
         : "";
       const cards = q.teams.map((t) => teamCondHTML(t, q.phase)).join("");
       return `
         <p class="scenario-intro">最終節の結果しだいで通過が決まります。各チームが<b>自分の試合でどうすれば通過するか</b>:</p>
+        ${tb}
         ${simul}
         <div class="scenario-teams">${cards}</div>`;
     }

@@ -271,6 +271,9 @@ function synthCt(teamIds: string[], matches: Match[]): CompiledTournament {
   assert(condB("win") === "advance", "4b: B は C に勝てば突破");
   assert(condB("loss") === "out", "4b: B は C に敗れると敗退");
   assert(condB("draw") === "depends", "4b: B は引き分けなら他会場しだい");
+  // 前向きタイブレーク予告: 勝点で並びうるのは上位争いの B・C（引分で4並び）。D は最大3で除外。
+  assert(!!qFR.tiebreakWatch && qFR.tiebreakWatch.includes("B") && qFR.tiebreakWatch.includes("C"), "4b: tiebreakWatch に B・C");
+  assert(!qFR.tiebreakWatch!.includes("D"), "4b: tiebreakWatch に D は含まない");
 
   // 4c) early（合成: 2試合消化・4試合未消化）→ 条件は出さず次戦のみ
   const earlyCt = synthCt(
@@ -281,6 +284,7 @@ function synthCt(teamIds: string[], matches: Match[]): CompiledTournament {
   assert(qEarly.phase === "early", "4c: 未消化が多い（列挙不能）は early");
   assert(qEarly.teams.every((t) => t.conditions.length === 0), "4c: early は条件を出さない");
   assert(qEarly.teams.some((t) => t.nextOpponent), "4c: early は次戦相手を出す");
+  assert(qEarly.tiebreakWatch === undefined, "4c: early は tiebreakWatch を出さない");
 
   console.log("[qualify] 通過条件シナリオ OK（decided 決め手/final-round 条件/early/決定性）");
 }

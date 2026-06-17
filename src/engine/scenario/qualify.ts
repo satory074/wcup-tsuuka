@@ -73,6 +73,8 @@ export interface GroupQualification {
   remaining: Match[];
   /** final-round かつ未消化が同時刻（同一 kickoff）2試合以上 */
   simultaneous: boolean;
+  /** final-round: 勝点で並びうる（＝タイブレークで通過/上位が決まりうる）チーム。現順位昇順。 */
+  tiebreakWatch?: string[];
 }
 
 /** 1試合あたりの片側得点レンジ（0..5）。status.ts と同じ刻み。 */
@@ -262,6 +264,7 @@ export function analyzeGroup(ct: CompiledTournament, group: GroupId): GroupQuali
 
   // ---- final-round: 自チーム結果別の通過条件 ----
   let simultaneous = false;
+  let tiebreakWatch: string[] | undefined;
   if (phase === "final-round") {
     const kicks = new Set(unplayed.map((m) => m.kickoff ?? ""));
     simultaneous = unplayed.length >= 2 && kicks.size === 1 && !kicks.has("");
@@ -271,8 +274,9 @@ export function analyzeGroup(ct: CompiledTournament, group: GroupId): GroupQuali
       ownMatch.set(m.home, m);
       ownMatch.set(m.away, m);
     }
-    // 1回の列挙で全チーム分のサンプルを集める。
+    // 1回の列挙で全チーム分のサンプルと「勝点で並びうるチーム」を集める。
     const samples = new Map<string, BucketSample[]>(teamIds.map((id) => [id, []]));
+    const tieWatch = new Set<string>();
     enumerate(unplayed, (overrides) => {
       const ovById = new Map(overrides.map((o) => [o.matchId, o.score]));
       const st = computeStandings(group, matches, teamIds, meta, overrides);
@@ -291,7 +295,22 @@ export function analyzeGroup(ct: CompiledTournament, group: GroupId): GroupQuali
           contested: !r.advances && r.rank <= adv,
         });
       }
+      // このシナリオで勝点が等しい連続ラン（先頭 rank<=adv＝通過/上位争いに絡む）を集める。
+      const sr = st.rows;
+      for (let i = 0; i < sr.length; ) {
+        let j = i;
+        while (j + 1 < sr.length && sr[j + 1].points === sr[i].points) j++;
+        if (j > i && sr[i].rank <= adv) {
+          for (let k = i; k <= j; k++) tieWatch.add(sr[k].teamId);
+        }
+        i = j + 1;
+      }
     });
+    if (tieWatch.size > 0) {
+      tiebreakWatch = [...tieWatch].sort(
+        (a, b) => rowOf.get(a)!.rank - rowOf.get(b)!.rank || (a < b ? -1 : a > b ? 1 : 0),
+      );
+    }
 
     for (const tq of teams) {
       const own = ownMatch.get(tq.teamId);
@@ -331,5 +350,5 @@ export function analyzeGroup(ct: CompiledTournament, group: GroupId): GroupQuali
     }
   }
 
-  return { group, phase, teams, boundaries, remaining: unplayed, simultaneous };
+  return { group, phase, teams, boundaries, remaining: unplayed, simultaneous, tiebreakWatch };
 }
