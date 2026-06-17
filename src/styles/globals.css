@@ -93,10 +93,7 @@ body {
 .tl-ch-score,
 .tl-code,
 .tl-dateband,
-.cell .cell-1st,
-.cell .cell-2nd,
-.legend-count,
-.matrix th {
+.cond-stat {
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
 }
@@ -508,196 +505,149 @@ table.bt-table {
   border-color: var(--border);
 }
 
-/* ---- ピボット操作 ---- */
-.pivot-controls {
-  margin-top: 0.5rem;
-  padding: 0.95rem 1.05rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-.pivot-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.pivot-field-label {
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-.pivot-field select {
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-sm);
-  background: #fff;
-  padding: 0.5rem 0.6rem;
-  font-size: 0.95rem;
-  width: 100%;
-  cursor: pointer;
-}
-.assume-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  border-top: 1px dashed var(--border-strong);
-  padding-top: 0.75rem;
-}
-.assume-hint {
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--alive-ink);
-}
-.assume-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+/* ---- 通過条件シナリオ ---- */
+.scenario-intro {
   font-size: 0.9rem;
-  flex-wrap: wrap;
-}
-.assume-row .assume-team {
-  font-weight: 700;
-}
-.assume-row input {
-  width: 3rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-sm);
-  padding: 0.3rem 0.4rem;
-  font-family: var(--font-num);
-  font-size: 0.95rem;
-  text-align: center;
-  background: #fffdf5;
-}
-
-/* ---- シナリオ・マトリックス ---- */
-.matrix-wrap {
-  margin-top: 0.5rem;
-  padding: 0.85rem;
-  overflow: hidden;
-}
-.matrix-axislabel {
-  font-size: 0.86rem;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--ink-soft);
-  margin-bottom: 0.5rem;
+  margin: 0.25rem 0 0.85rem;
 }
-.matrix-axislabel b {
+.scenario-intro b {
   color: var(--ink);
 }
-.matrix-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.scenario-note {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--alive-ink);
+  background: var(--alive-soft);
+  border-radius: var(--r-sm);
+  padding: 0.55rem 0.75rem;
+  margin: 0 0 0.85rem;
 }
-table.matrix {
-  border-collapse: collapse;
-  margin: 0 auto;
-}
-.matrix th {
+.scenario-block-title {
   font-size: 0.86rem;
-  font-weight: 700;
-  color: var(--ink-soft);
-  padding: 0.25rem;
-  text-align: center;
-}
-.matrix .corner {
-  font-size: 0.76rem;
-  color: var(--ink-soft);
-  font-weight: 600;
-  white-space: nowrap;
-  padding: 0.25rem 0.4rem;
-  line-height: 1.3;
-}
-.matrix .corner .axis-x {
-  color: var(--cell-1);
-}
-.matrix .corner .axis-y {
-  color: var(--cell-0);
-}
-.matrix .head-x {
-  color: var(--cell-1);
-}
-.matrix .head-y {
-  color: var(--cell-0);
-}
-.matrix td.cell {
-  width: 3.9rem;
-  height: 3.5rem;
-  padding: 0.15rem;
-  text-align: center;
-  vertical-align: middle;
-  color: #fff;
-  font-size: 0.82rem;
-  line-height: 1.3;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 2px;
-  cursor: default;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-.cell .cell-1st,
-.cell .cell-2nd {
-  display: block;
-  white-space: nowrap;
-}
-.cell .cell-1st {
   font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 0.6rem;
 }
-.cell .cell-2nd {
+.scenario-boundaries {
+  padding: 0.95rem 1.05rem;
+}
+.boundary-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.boundary-note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-left: 0.7rem;
+  border-left: 3px solid var(--border-strong);
+  line-height: 1.55;
+}
+.boundary-note.is-cutoff {
+  border-left-color: var(--advance);
+}
+.boundary-rank {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.boundary-sep {
+  color: var(--ink-soft);
   font-weight: 600;
-  opacity: 0.95;
+  margin: 0 0.15rem;
 }
-.cell.is-draw {
-  outline: 2px solid #0f1b2d;
-  outline-offset: -3px;
+.boundary-prose {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
 }
-.cell.is-undecided {
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.28) 0,
-    rgba(255, 255, 255, 0.28) 5px,
-    transparent 5px,
-    transparent 10px
-  );
+.scenario-teams {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.7rem;
 }
-.cell-c0 { background: var(--cell-0); }
-.cell-c1 { background: var(--cell-1); }
-.cell-c2 { background: var(--cell-2); }
-.cell-c3 { background: var(--cell-3); }
-.cell-c4 { background: var(--cell-4); }
-.cell-c5 { background: var(--cell-5); }
-.cell-c6 { background: var(--cell-6); }
-.cell-c7 { background: var(--cell-7); }
-.cell-ctie { background: var(--cell-tie); }
-
-/* ---- 凡例 ---- */
-.legend {
-  margin-top: 0.75rem;
-  padding: 0.85rem 1.05rem;
+.team-cond {
+  padding: 0.7rem 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
 }
-.legend-title {
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: var(--ink-soft);
-}
-.legend-item {
+.cond-head {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  font-size: 0.92rem;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
-.legend-swatch {
-  flex: 0 0 auto;
-  width: 1.15rem;
-  height: 1.15rem;
-  border-radius: 5px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+.cond-rank {
+  font-weight: 800;
+  font-size: 1rem;
 }
-.legend-count {
-  margin-left: auto;
-  font-size: 0.82rem;
+.cond-flag {
+  font-size: 1.15rem;
+}
+.cond-name {
+  font-weight: 700;
+}
+.cond-stat {
+  font-size: 0.8rem;
   color: var(--ink-soft);
+}
+.cond-status {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+  border: 1px solid transparent;
+}
+.cond-status.is-advanced {
+  background: var(--advance-soft);
+  color: var(--advance-ink);
+}
+.cond-status.is-alive {
+  background: var(--alive-soft);
+  color: var(--alive-ink);
+}
+.cond-status.is-eliminated {
+  background: var(--eliminated-soft);
+  color: var(--ink-soft);
+  border-color: var(--border);
+}
+.cond-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.cond-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.cond-icon {
+  flex: 0 0 auto;
+}
+.cond-line b {
+  font-weight: 800;
+}
+.cond-advance b {
+  color: var(--advance-ink);
+}
+.cond-out b {
+  color: var(--eliminated-ink, var(--ink-soft));
+}
+.cond-note,
+.cond-next {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.cond-next b {
+  color: var(--ink);
 }
 
 /* ---- メッセージ・フッタ ---- */
@@ -979,8 +929,8 @@ table.tl-grid {
   color: var(--danger);
 }
 
-/* ---- もしものスコア（マトリックス・折りたたみ） ---- */
-.matrix-details {
+/* ---- 通過条件シナリオ（折りたたみ） ---- */
+.scenario-details {
   margin-top: 1.75rem;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
@@ -988,7 +938,7 @@ table.tl-grid {
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
-.matrix-details > summary {
+.scenario-details > summary {
   cursor: pointer;
   padding: 0.95rem 1.1rem;
   font-family: var(--font-display);
@@ -998,20 +948,20 @@ table.tl-grid {
   list-style: none;
   transition: background 0.15s ease;
 }
-.matrix-details > summary:hover {
+.scenario-details > summary:hover {
   background: var(--surface-2);
 }
-.matrix-details > summary::-webkit-details-marker {
+.scenario-details > summary::-webkit-details-marker {
   display: none;
 }
-.matrix-details > summary::before {
+.scenario-details > summary::before {
   content: "▸ ";
   color: var(--pitch-deep);
 }
-.matrix-details[open] > summary::before {
+.scenario-details[open] > summary::before {
   content: "▾ ";
 }
-.matrix-details-body {
+.scenario-details-body {
   padding: 0 1.1rem 1.1rem;
 }
 
@@ -1030,10 +980,8 @@ table.tl-grid {
   .hero-inner {
     padding: 1.3rem 0.75rem 1.25rem;
   }
-  .matrix td.cell {
-    width: 3.1rem;
-    height: 3.1rem;
-    font-size: 0.74rem;
+  .scenario-teams {
+    grid-template-columns: 1fr;
   }
   /* グループタブ A〜L は横スクロール1行で破綻を防ぐ */
   .group-tabs {

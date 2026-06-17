@@ -1,4 +1,4 @@
-// アプリの配線: compileTournament → standings / thirds / status / matrix → render → URL クエリ同期。
+// アプリの配線: compileTournament → standings / thirds / status / qualify → render → URL クエリ同期。
 // エンジン（純TS）と render（DOM）をつなぐ唯一の場所。大会（2022/2026）は ?cup で選ぶ。
 import worldcup2022 from "../data/worldcup2022.json";
 import worldcup2026 from "../data/worldcup2026.json";
@@ -6,10 +6,9 @@ import { compileTournament } from "../engine/compile";
 import { computeStandings } from "../engine/standings";
 import { computeBestThirds } from "../engine/thirds";
 import { groupStatus } from "../engine/status";
-import { buildMatrix } from "../engine/scenario/matrix";
-import { defaultPivot, otherUnplayed } from "../engine/scenario/pivot";
+import { analyzeGroup } from "../engine/scenario/qualify";
 import { buildLiveTimeline, buildStageTimeline } from "../engine/timeline";
-import type { CompiledTournament, GroupId, ResultOverride, Score, Standings } from "../engine/types";
+import type { CompiledTournament, GroupId, Standings } from "../engine/types";
 import { createRenderer, type ViewMode } from "./render";
 import { decodeQuery, encodeQuery, type Cup } from "./url";
 
@@ -36,17 +35,12 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
 
   let group: GroupId = ct.groups[0];
   let view: ViewMode = "live";
-  let pivotId = "";
-  // 他の未消化試合に置く仮定スコア（matchId → Score）。グループ切替でクリア。
-  const assumeValues = new Map<string, Score>();
 
   const renderer = createRenderer(root, ct, cup, (cmd) => {
     switch (cmd.type) {
       case "set-group":
         if (!ct.groups.includes(cmd.group)) return;
         group = cmd.group;
-        assumeValues.clear();
-        pivotId = defaultPivot(ct.matchesByGroup.get(group)!);
         rerender();
         syncUrl();
         break;
@@ -56,31 +50,11 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
         syncUrl();
         break;
       case "set-cup":
-        // 大会切替は ?cup だけにして全再読込（group/pivot/assume を破棄・リスナー重複も回避）。
+        // 大会切替は ?cup だけにして全再読込（group/view を破棄・リスナー重複も回避）。
         if (cmd.cup !== cup) location.search = `cup=${cmd.cup}`;
-        break;
-      case "set-pivot": {
-        const matches = ct.matchesByGroup.get(group)!;
-        if (matches.some((m) => m.id === cmd.pivotId)) pivotId = cmd.pivotId;
-        rerender();
-        syncUrl();
-        break;
-      }
-      case "set-assume":
-        assumeValues.set(cmd.matchId, cmd.score);
-        rerender();
-        syncUrl();
         break;
     }
   });
-
-  function currentAssumptions(): ResultOverride[] {
-    const matches = ct.matchesByGroup.get(group)!;
-    return otherUnplayed(pivotId, matches).map((m) => ({
-      matchId: m.id,
-      score: assumeValues.get(m.id) ?? { home: 0, away: 0 },
-    }));
-  }
 
   function rerender(): void {
     // 全組の順位を計算し、ベスト3位（2026方式）を横断算出する（12組×4チームで安価）。
@@ -93,14 +67,12 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
     const standings = standingsByGroup.get(group)!;
     const bestThirds = computeBestThirds(ct, standingsByGroup);
 
-    const matches = ct.matchesByGroup.get(group)!;
     const status = groupStatus(ct, group);
     const liveTimeline = buildLiveTimeline(ct, group);
     const stageTimeline = buildStageTimeline(ct, group);
     // live データが無い組では stage にフォールバック
     if (view === "live" && liveTimeline === null) view = "stage";
-    const assumeMatches = otherUnplayed(pivotId, matches);
-    const matrix = buildMatrix({ ct, group, pivotMatchId: pivotId, assumptions: currentAssumptions() });
+    const qualification = analyzeGroup(ct, group);
     renderer.render({
       group,
       view,
@@ -109,16 +81,12 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
       bestThirds,
       liveTimeline,
       stageTimeline,
-      matrix,
-      pivotId,
-      pivotOptions: matches,
-      assumeMatches,
-      assumeValues,
+      qualification,
     });
   }
 
   function syncUrl(): void {
-    const qs = encodeQuery({ cup, group, view, pivot: pivotId, assume: currentAssumptions() });
+    const qs = encodeQuery({ cup, group, view });
     history.replaceState(null, "", `${location.pathname}${qs}`);
   }
 
@@ -126,14 +94,6 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
   const q = decodeQuery(location.search);
   if (q.group && ct.groups.includes(q.group)) group = q.group;
   if (q.view) view = q.view;
-  const matches = ct.matchesByGroup.get(group)!;
-  pivotId = q.pivot && matches.some((m) => m.id === q.pivot) ? q.pivot : defaultPivot(matches);
-  if (q.assume) {
-    const others = new Set(otherUnplayed(pivotId, matches).map((m) => m.id));
-    for (const o of q.assume) {
-      if (others.has(o.matchId)) assumeValues.set(o.matchId, o.score);
-    }
-  }
 
   rerender();
   syncUrl();

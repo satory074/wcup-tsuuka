@@ -8,8 +8,7 @@ import { compileTournament } from "../src/engine/compile";
 import { computeStandings } from "../src/engine/standings";
 import { computeBestThirds } from "../src/engine/thirds";
 import { groupStatus } from "../src/engine/status";
-import { buildMatrix, type ScenarioMatrix } from "../src/engine/scenario/matrix";
-import { defaultPivot } from "../src/engine/scenario/pivot";
+import { analyzeGroup } from "../src/engine/scenario/qualify";
 import { buildLiveTimeline, buildStageTimeline, clockOf, kickoffMinutes, scoreAtClock } from "../src/engine/timeline";
 import type { Goal } from "../src/engine/types";
 import type { CompiledTournament, GroupId, Match, Meta, Standings, StandingRow, Team } from "../src/engine/types";
@@ -204,56 +203,7 @@ function synth(matches: Match[], teamIds: string[]): Standings {
   console.log("[standings] タイブレーク単体 OK（総GD/総GF/h2h/3すくみ抽選/1-2位タイ）");
 }
 
-// ---- 4) シナリオ・マトリックス ----
-function cellAt(m: ScenarioMatrix, a: number, b: number) {
-  return m.cells.find((c) => c.a === a && c.b === b)!;
-}
-{
-  // 組E、ピボット = 日本(home) vs スペイン(away)。他5試合は実結果（全消化）
-  const matchesE = CT.matchesByGroup.get("E")!;
-  const pivotId = "E-5"; // jpn vs esp
-  const m = buildMatrix({ ct: CT, group: "E", pivotMatchId: pivotId, assumptions: [] });
-
-  assert(m.cells.length === 49, "4: 7x7=49セル");
-  assert(m.teamA === "jpn" && m.teamB === "esp", "4: 軸は home=jpn × away=esp");
-  assert(m.cells.every((c) => c.outcome.label.length > 0), "4: 全セルにラベル");
-  const sum = m.legend.reduce((acc, l) => acc + l.count, 0);
-  assert(sum === 49, `4: 凡例のセル数合計=49（実際: ${sum}）`);
-  assert(m.legend.length >= 2, "4: 結果領域は2つ以上");
-
-  // 既定ピボットが最終節の最小id（E-5）
-  assert(defaultPivot(matchesE) === "E-5", "4: defaultPivot=E-5");
-
-  // 既知セルの手計算一致
-  // 実際の結果 日本 2-1 スペイン → ①日本 ②スペイン
-  const real = cellAt(m, 2, 1);
-  assert(real.outcome.first === "jpn" && real.outcome.second === "esp", "4: (2,1) は ①jpn ②esp");
-  // 日本 0-5 スペイン → ①スペイン ②ドイツ（日本敗退）
-  const blowout = cellAt(m, 0, 5);
-  assert(blowout.outcome.first === "esp" && blowout.outcome.second === "ger", "4: (0,5) は ①esp ②ger");
-  assert(blowout.outcome.eliminated.includes("jpn"), "4: (0,5) は日本敗退");
-
-  // 引き分け対角（a==b）が意味を持つ: 隣接セルと結果が変わる箇所がある
-  const drawCells = m.cells.filter((c) => c.isDraw);
-  assert(drawCells.length === 7, "4: 対角（引分）セルは7");
-  let drawMatters = false;
-  for (let a = 1; a <= m.maxGoals; a++) {
-    if (cellAt(m, a, a).outcome.outcomeKey !== cellAt(m, a, a - 1).outcome.outcomeKey) drawMatters = true;
-  }
-  assert(drawMatters, "4: 引き分けが隣の勝ち結果と異なる（引分が有効）");
-
-  // オーバーフローバケット 6+ が存在
-  assert(!!cellAt(m, 6, 6), "4: (6,6) オーバーフローセルが存在");
-
-  // 決定性
-  const once = JSON.stringify(buildMatrix({ ct: CT, group: "E", pivotMatchId: pivotId, assumptions: [] }));
-  const twice = JSON.stringify(buildMatrix({ ct: CT, group: "E", pivotMatchId: pivotId, assumptions: [] }));
-  assert(once === twice, "4: 同入力なら同一マトリックス（決定的）");
-
-  console.log("[matrix] シナリオ・マトリックス OK（49セル/既知セル/引分有効/決定性）");
-}
-
-// ---- 5) 通過ステータス（status.ts） ----
+// 合成 CompiledTournament 用ヘルパー（section 4・5 共有）
 function mkU(home: string, away: string): Match {
   mid++;
   return { id: `m-${mid}`, group: "A", matchday: 3, home, away };
@@ -271,6 +221,71 @@ function synthCt(teamIds: string[], matches: Match[]): CompiledTournament {
   };
 }
 
+// ---- 4) 通過条件シナリオ（qualify.ts） ----
+{
+  // 4a) decided（2022 全消化）: 隣接順位を分けた決め手（タイブレーク）を解説
+  const qE = analyzeGroup(CT, "E");
+  assert(qE.phase === "decided", "4: 2022 組E は decided");
+  assert(qE.teams.length === 4, "4: 4チーム");
+  assert(qE.boundaries.length === 2, "4: 境界は 1↔2 と 2↔3 の2件");
+  const eB12 = qE.boundaries.find((b) => b.rankHigher === 1)!;
+  assert(eB12.higher === "jpn" && eB12.lower === "esp" && eB12.reason === "points", "4: E 1↔2 は勝点で jpn>esp");
+  const eB23 = qE.boundaries.find((b) => b.rankHigher === 2)!;
+  assert(eB23.higher === "esp" && eB23.lower === "ger" && eB23.reason === "gd" && eB23.cutoff, "4: E 2↔3(通過境界)は総得失点差で esp>ger");
+
+  // H: 2↔3 = kor>uru は総得点（4-2）
+  const qH = analyzeGroup(CT, "H");
+  const hB23 = qH.boundaries.find((b) => b.rankHigher === 2)!;
+  assert(hB23.higher === "kor" && hB23.lower === "uru" && hB23.reason === "gf", "4: H 2↔3 は総得点で kor>uru");
+  assert(hB23.detail.includes("4-2"), `4: H 決め手 detail に 4-2（実際: ${hB23.detail}）`);
+
+  // decided は alive 無し・条件空（反実仮想を出さない）
+  assert(qE.teams.every((t) => t.status !== "alive" && t.conditions.length === 0), "4: decided は alive 無し・条件空");
+
+  // 決定性
+  assert(JSON.stringify(analyzeGroup(CT, "E")) === JSON.stringify(analyzeGroup(CT, "E")), "4: 同入力なら同一（決定的）");
+
+  // 4b) final-round（合成: 4試合消化・最終節2試合未消化）
+  // 既消化: A>B 1-0, C>D 1-0, A>C 1-0, B>D 1-0 → A=6, B=3, C=3, D=0
+  // 未消化: A-D, B-C（同時刻の最終節）
+  const frCt = synthCt(
+    ["A", "B", "C", "D"],
+    [
+      mk("A", "B", 1, 0),
+      mk("C", "D", 1, 0),
+      mk("A", "C", 1, 0),
+      mk("B", "D", 1, 0),
+      mkU("A", "D"),
+      mkU("B", "C"),
+    ],
+  );
+  const qFR = analyzeGroup(frCt, "A");
+  assert(qFR.phase === "final-round", "4b: 最終節のみ未消化は final-round");
+  assert(qFR.remaining.length === 2, "4b: 未消化2試合");
+  const fr = new Map(qFR.teams.map((t) => [t.teamId, t]));
+  assert(fr.get("A")!.status === "advanced", "4b: A は突破確定");
+  assert(fr.get("D")!.status === "eliminated", "4b: D は敗退");
+  const tB = fr.get("B")!;
+  assert(tB.status === "alive", "4b: B は可能性あり");
+  const condB = (r: "win" | "draw" | "loss") => tB.conditions.find((c) => c.result === r)?.verdict;
+  assert(condB("win") === "advance", "4b: B は C に勝てば突破");
+  assert(condB("loss") === "out", "4b: B は C に敗れると敗退");
+  assert(condB("draw") === "depends", "4b: B は引き分けなら他会場しだい");
+
+  // 4c) early（合成: 2試合消化・4試合未消化）→ 条件は出さず次戦のみ
+  const earlyCt = synthCt(
+    ["A", "B", "C", "D"],
+    [mk("A", "B", 1, 0), mk("C", "D", 1, 0), mkU("A", "C"), mkU("B", "D"), mkU("A", "D"), mkU("B", "C")],
+  );
+  const qEarly = analyzeGroup(earlyCt, "A");
+  assert(qEarly.phase === "early", "4c: 未消化が多い（列挙不能）は early");
+  assert(qEarly.teams.every((t) => t.conditions.length === 0), "4c: early は条件を出さない");
+  assert(qEarly.teams.some((t) => t.nextOpponent), "4c: early は次戦相手を出す");
+
+  console.log("[qualify] 通過条件シナリオ OK（decided 決め手/final-round 条件/early/決定性）");
+}
+
+// ---- 5) 通過ステータス（status.ts） ----
 {
   // 5a) シードデータ（全消化）: alive は無く、clinched == advances、上位2が advanced
   for (const gid of CT.groups) {

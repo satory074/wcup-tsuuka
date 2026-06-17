@@ -1,10 +1,10 @@
 // 唯一の DOM 層。グループ選択・順位表・通過ステータス・タイムライン（主役）・
-// もしものスコア=マトリックス（折りたたみ）を描画する。
-// イベントはルートの click / change リスナーで data-action 委譲（kisei/moshirasu パターン）。
-import type { CompiledTournament, GroupId, Match, Score, Standings } from "../engine/types";
-import { scoreLabel, tricode } from "../engine/format";
+// 通過条件シナリオ（折りたたみ）を描画する。
+// イベントはルートの click リスナーで data-action 委譲（kisei/moshirasu パターン）。
+import type { CompiledTournament, GroupId, Match, Standings } from "../engine/types";
+import { rankMark, tricode } from "../engine/format";
 import type { TeamStatus } from "../engine/status";
-import type { ScenarioMatrix, Outcome } from "../engine/scenario/matrix";
+import type { GroupQualification, TeamQualification, BoundaryNote, TeamCondition } from "../engine/scenario/qualify";
 import type { Snapshot } from "../engine/timeline";
 import type { BestThirdsResult, ThirdEntry } from "../engine/thirds";
 import type { Cup } from "./url";
@@ -19,9 +19,7 @@ const CUPS: { id: Cup; label: string }[] = [
 export type Command =
   | { type: "set-group"; group: GroupId }
   | { type: "set-view"; view: ViewMode }
-  | { type: "set-cup"; cup: Cup }
-  | { type: "set-pivot"; pivotId: string }
-  | { type: "set-assume"; matchId: string; score: Score };
+  | { type: "set-cup"; cup: Cup };
 export type Dispatch = (cmd: Command) => void;
 
 export interface RenderView {
@@ -33,25 +31,16 @@ export interface RenderView {
   bestThirds?: BestThirdsResult;
   liveTimeline: Snapshot[] | null;
   stageTimeline: Snapshot[];
-  // もしものスコア（マトリックス）用
-  matrix: ScenarioMatrix;
-  pivotId: string;
-  pivotOptions: Match[];
-  assumeMatches: Match[];
-  assumeValues: Map<string, Score>;
+  /** 通過条件（シナリオ）パネル用 */
+  qualification: GroupQualification;
 }
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-const PALETTE = 8;
-const colorClass = (i: number) => `cell-c${i % PALETTE}`;
-const swatchVar = (i: number) => `var(--cell-${i % PALETTE})`;
-
 export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: Cup, dispatch: Dispatch) {
   const team = (id: string) => ct.teamsById.get(id)!;
-  const tlabel = (id: string) => `${team(id).flag} ${esc(team(id).name)}`;
   const tc = (id: string) => esc(tricode(team(id)));
 
   const cupTabs = CUPS
@@ -89,13 +78,10 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ ▲▼ 直前からの順位変動</p>
       <div id="timeline"></div>
 
-      <details class="matrix-details" id="matrix-details">
-        <summary>もしものスコア（通過条件マトリックス）を見る</summary>
-        <div class="matrix-details-body">
-          <p class="site-sub">決着試合のスコアを2軸に振り、各スコアでの通過結果（①1位 ②2位／敗退）を色分け表示します。</p>
-          <div id="pivot"></div>
-          <div id="matrix"></div>
-          <div id="legend"></div>
+      <details class="scenario-details" id="scenario-details">
+        <summary>通過条件（シナリオ）を見る</summary>
+        <div class="scenario-details-body">
+          <div id="scenario"></div>
         </div>
       </details>
 
@@ -112,9 +98,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elStatus = $("#status");
   const elBestThirds = $("#best-thirds");
   const elTimeline = $("#timeline");
-  const elPivot = $("#pivot");
-  const elMatrix = $("#matrix");
-  const elLegend = $("#legend");
+  const elScenario = $("#scenario");
   const elCaption = $("#group-caption");
 
   // ---- イベント委譲 ----
@@ -124,17 +108,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     if (t.dataset.action === "set-group") dispatch({ type: "set-group", group: t.dataset.group as GroupId });
     else if (t.dataset.action === "set-view") dispatch({ type: "set-view", view: t.dataset.view as ViewMode });
     else if (t.dataset.action === "set-cup") dispatch({ type: "set-cup", cup: t.dataset.cup as Cup });
-  });
-  root.addEventListener("change", (ev) => {
-    const t = ev.target as HTMLElement;
-    if (t.id === "pivot-select") {
-      dispatch({ type: "set-pivot", pivotId: (t as HTMLSelectElement).value });
-    } else if (t.classList.contains("assume-input")) {
-      const matchId = (t as HTMLInputElement).dataset.match!;
-      const home = Number((root.querySelector(`.assume-input[data-match="${matchId}"][data-side="home"]`) as HTMLInputElement).value || "0");
-      const away = Number((root.querySelector(`.assume-input[data-match="${matchId}"][data-side="away"]`) as HTMLInputElement).value || "0");
-      dispatch({ type: "set-assume", matchId, score: { home: Math.max(0, home), away: Math.max(0, away) } });
-    }
   });
 
   function gdLabel(gd: number): string {
@@ -366,112 +339,123 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       </div>`;
   }
 
-  // ---- もしものスコア（マトリックス・折りたたみ内） ----
-  function matchOptionLabel(m: Match): string {
-    return `${team(m.home).flag} ${team(m.home).name} × ${team(m.away).name} ${team(m.away).flag}（第${m.matchday}節）`;
+  // ---- 通過条件シナリオ（折りたたみ内） ----
+  const STATUS_META: Record<TeamStatus["status"], { cls: string; word: string }> = {
+    advanced: { cls: "is-advanced", word: "突破確定" },
+    alive: { cls: "is-alive", word: "可能性あり" },
+    eliminated: { cls: "is-eliminated", word: "敗退" },
+  };
+
+  function statusBadge(status: TeamStatus["status"]): string {
+    const m = STATUS_META[status];
+    return `<span class="cond-status ${m.cls}">${m.word}</span>`;
   }
 
-  function pivotHTML(view: RenderView): string {
-    const options = view.pivotOptions
-      .map((m) => `<option value="${m.id}"${m.id === view.pivotId ? " selected" : ""}>${esc(matchOptionLabel(m))}</option>`)
-      .join("");
+  // decided: 隣接順位を分けた決め手（タイブレーク）を1行の文章に。
+  function boundaryHTML(b: BoundaryNote, st: Standings): string {
+    const rowOf = (id: string) => st.rows.find((r) => r.teamId === id)!;
+    const h = rowOf(b.higher);
+    const l = rowOf(b.lower);
+    const hN = `${team(b.higher).flag}${esc(team(b.higher).name)}`;
+    const lN = `${team(b.lower).flag}${esc(team(b.lower).name)}`;
+    const verb = b.cutoff ? "通過" : "上位";
+    let prose: string;
+    switch (b.reason) {
+      case "points":
+        prose = `勝点 ${h.points}-${l.points} で ${hN} が${verb}`;
+        break;
+      case "gd":
+        prose = `勝点${h.points}で並び → 総得失点差 ${gdLabel(h.gd)} / ${gdLabel(l.gd)} で ${hN} が${verb}`;
+        break;
+      case "gf":
+        prose = `勝点${h.points}・得失点差${gdLabel(h.gd)} で並び → 総得点 ${h.gf}-${l.gf} で ${hN} が${verb}`;
+        break;
+      case "h2h_pts":
+      case "h2h_gd":
+      case "h2h_gf":
+        prose = `総合成績が並び → ${esc(b.detail)}で ${hN} が${verb}`;
+        break;
+      case "fairplay":
+        prose = `総合・直接対決とも並び → フェアプレー（警告少）で ${hN} が${verb}`;
+        break;
+      default:
+        prose = `総合・直接対決とも並び → 🎲抽選で決定`;
+    }
+    return `
+      <li class="boundary-note${b.cutoff ? " is-cutoff" : ""}">
+        <span class="boundary-rank">${rankMark(h.rank)}${hN} <span class="boundary-sep">/</span> ${rankMark(l.rank)}${lN}</span>
+        <span class="boundary-prose">${prose}</span>
+      </li>`;
+  }
 
-    let assume = "";
-    if (view.assumeMatches.length > 0) {
-      const rows = view.assumeMatches
-        .map((m) => {
-          const sc = view.assumeValues.get(m.id) ?? { home: 0, away: 0 };
-          return `
-            <div class="assume-row">
-              <span class="assume-team">${tlabel(m.home)}</span>
-              <input class="assume-input" type="number" min="0" inputmode="numeric" data-match="${m.id}" data-side="home" value="${sc.home}" aria-label="${esc(team(m.home).name)}の得点" />
-              <span>-</span>
-              <input class="assume-input" type="number" min="0" inputmode="numeric" data-match="${m.id}" data-side="away" value="${sc.away}" aria-label="${esc(team(m.away).name)}の得点" />
-              <span class="assume-team">${tlabel(m.away)}</span>
-            </div>`;
-        })
-        .join("");
-      assume = `
-        <div class="assume-list">
-          <p class="assume-hint">⚠️ 他にも未消化の試合があります。仮のスコアを入れてください。</p>
-          ${rows}
+  // final-round: 自チームの結果（勝/分/敗）ごとの通過可否を ✅⚠️❌ で。
+  function conditionHTML(c: TeamCondition): string {
+    const ante =
+      c.result === "win"
+        ? c.verdict === "advance" && c.note
+          ? esc(c.note)
+          : "勝てば"
+        : c.result === "draw"
+          ? "引き分けなら"
+          : "敗れると";
+    const cons = c.verdict === "advance" ? "突破" : c.verdict === "out" ? "敗退" : "他会場・得失点しだい";
+    const icon = c.verdict === "advance" ? "✅" : c.verdict === "out" ? "❌" : "⚠️";
+    return `<li class="cond-line cond-${c.verdict}"><span class="cond-icon">${icon}</span><span>${ante}<b>${cons}</b></span></li>`;
+  }
+
+  function teamCondHTML(tq: TeamQualification, phase: GroupQualification["phase"]): string {
+    const head = `
+      <div class="cond-head">
+        <span class="cond-rank">${rankMark(tq.rank)}</span>
+        <span class="cond-flag">${team(tq.teamId).flag}</span>
+        <span class="cond-name">${esc(team(tq.teamId).name)}</span>
+        <span class="cond-stat tnum">勝点${tq.points}・${gdLabel(tq.gd)}</span>
+        ${statusBadge(tq.status)}
+      </div>`;
+
+    let body = "";
+    if (phase === "early") {
+      body = tq.nextOpponent
+        ? `<p class="cond-next">次戦: <b>${team(tq.nextOpponent).flag}${esc(team(tq.nextOpponent).name)}</b></p>`
+        : "";
+    } else if (tq.status === "advanced") {
+      body = `<p class="cond-note">✅ すでに突破確定</p>`;
+    } else if (tq.status === "eliminated") {
+      body = `<p class="cond-note">❌ すでに敗退</p>`;
+    } else if (tq.conditions.length > 0) {
+      body = `<ul class="cond-list">${tq.conditions.map(conditionHTML).join("")}</ul>`;
+    } else {
+      body = `<p class="cond-note">⚠️ 他会場の結果しだい</p>`;
+    }
+    return `<div class="card team-cond">${head}${body}</div>`;
+  }
+
+  function scenarioHTML(view: RenderView): string {
+    const q = view.qualification;
+    if (q.phase === "decided") {
+      const notes = q.boundaries.map((b) => boundaryHTML(b, view.standings)).join("");
+      return `
+        <p class="scenario-intro">全試合が終了。各順位を分けた<b>決め手（タイブレーク）</b>を解説します。</p>
+        <div class="card scenario-boundaries">
+          <p class="scenario-block-title">決着の分かれ目</p>
+          <ul class="boundary-list">${notes}</ul>
         </div>`;
     }
-
-    return `
-      <div class="card pivot-controls">
-        <div class="pivot-field">
-          <label class="pivot-field-label" for="pivot-select">マトリックスの2軸にする試合</label>
-          <select id="pivot-select">${options}</select>
-        </div>
-        ${assume}
-      </div>`;
-  }
-
-  function cellContent(o: Outcome): string {
-    if (!o.undecided && o.first && o.second) {
-      return `<span class="cell-1st">①${tc(o.first)}</span><span class="cell-2nd">②${tc(o.second)}</span>`;
+    if (q.phase === "final-round") {
+      const simul = q.simultaneous
+        ? `<p class="scenario-note">⏱️ 最終節の2試合は<b>同時刻キックオフ</b>。「他会場しだい」はもう1試合の結果に依存します。</p>`
+        : "";
+      const cards = q.teams.map((t) => teamCondHTML(t, q.phase)).join("");
+      return `
+        <p class="scenario-intro">最終節の結果しだいで通過が決まります。各チームが<b>自分の試合でどうすれば通過するか</b>:</p>
+        ${simul}
+        <div class="scenario-teams">${cards}</div>`;
     }
-    if (o.contested.length > 0) {
-      const top = o.advancing.length > 0 ? `<span class="cell-1st">①${o.advancing.map(tc).join("/")}</span>` : "";
-      return `${top}<span class="cell-2nd">🎲抽選</span>`;
-    }
-    return `<span class="cell-1st">${o.advancing.map(tc).join("/")}</span><span class="cell-2nd">🎲順</span>`;
-  }
-
-  function cellTitle(o: Outcome): string {
-    const elim = o.eliminated.length > 0 ? ` ／ ${o.eliminated.map((id) => team(id).name).join("・")} 敗退` : "";
-    return esc(`${o.label}${elim}`);
-  }
-
-  function matrixHTML(m: ScenarioMatrix): string {
-    const cols = Array.from({ length: m.maxGoals + 1 }, (_, b) => `<th class="head-x">${scoreLabel(b, m.maxGoals, m.overflow)}</th>`).join("");
-    const cellByAB = new Map<string, ScenarioMatrix["cells"][number]>();
-    for (const c of m.cells) cellByAB.set(`${c.a}:${c.b}`, c);
-
-    const body = Array.from({ length: m.maxGoals + 1 }, (_, a) => {
-      const tds = Array.from({ length: m.maxGoals + 1 }, (_, b) => {
-        const c = cellByAB.get(`${a}:${b}`)!;
-        const cls = ["cell", colorClass(c.colorIndex), c.isDraw ? "is-draw" : "", c.outcome.undecided ? "is-undecided" : ""]
-          .filter(Boolean)
-          .join(" ");
-        return `<td class="${cls}" data-a="${a}" data-b="${b}" title="${cellTitle(c.outcome)}">${cellContent(c.outcome)}</td>`;
-      }).join("");
-      return `<tr><th class="head-y">${scoreLabel(a, m.maxGoals, m.overflow)}</th>${tds}</tr>`;
-    }).join("");
-
+    // early
+    const cards = q.teams.map((t) => teamCondHTML(t, q.phase)).join("");
     return `
-      <div class="card matrix-wrap">
-        <p class="matrix-axislabel">
-          行（縦）= <b class="axis-y">${team(m.teamA).flag} ${esc(team(m.teamA).name)}</b> の得点 ／
-          列（横）= <b class="axis-x">${team(m.teamB).flag} ${esc(team(m.teamB).name)}</b> の得点
-        </p>
-        <div class="matrix-scroll">
-          <table class="matrix tnum">
-            <thead><tr><th class="corner"><span class="axis-y">↓${tc(m.teamA)}</span><br><span class="axis-x">→${tc(m.teamB)}</span></th>${cols}</tr></thead>
-            <tbody>${body}</tbody>
-          </table>
-        </div>
-      </div>`;
-  }
-
-  function legendHTML(m: ScenarioMatrix): string {
-    const items = m.legend
-      .map((l) => {
-        const dice = l.undecided ? " 🎲" : "";
-        return `
-          <div class="legend-item">
-            <span class="legend-swatch" style="background:${swatchVar(l.colorIndex)}"></span>
-            <span>${esc(l.label)}${dice}</span>
-            <span class="legend-count">${l.count}通り</span>
-          </div>`;
-      })
-      .join("");
-    return `
-      <div class="card legend">
-        <p class="legend-title">凡例（このピボットでの通過結果・全49通りの内訳）</p>
-        ${items}
-      </div>`;
+      <p class="scenario-intro">このグループは残り<b>${q.remaining.length}試合</b>。通過条件が固まるのは最終節です。各チームの次戦:</p>
+      <div class="scenario-teams">${cards}</div>`;
   }
 
   function render(view: RenderView): void {
@@ -489,9 +473,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     elStatus.innerHTML = statusHTML(view.status);
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
-    elPivot.innerHTML = pivotHTML(view);
-    elMatrix.innerHTML = matrixHTML(view.matrix);
-    elLegend.innerHTML = legendHTML(view.matrix);
+    elScenario.innerHTML = scenarioHTML(view);
   }
 
   return { render };
