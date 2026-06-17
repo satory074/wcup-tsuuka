@@ -37,6 +37,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelectorAll(".group-tab").length === 8, "1: グループタブ8");
+  assert((root.querySelector("#overview") as HTMLElement).hidden === true, "1: 既定は詳細（一覧は非表示）");
+  assert((root.querySelector("#detail-view") as HTMLElement).hidden === false, "1: 既定は詳細表示");
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "1: 順位表4行");
   assert(!!root.querySelector(".standings .tiebreak-legend"), "1: タイブレーク優先順位の凡例がある");
   assert(root.querySelectorAll(".standings-table thead .th-pri").length === 3, "1: 列見出しに優先順位番号3つ(点/差/得)");
@@ -161,6 +163,43 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2022", "8b: 既定は2022");
   assert((root.querySelector("#best-thirds")?.innerHTML ?? "").trim() === "", "8b: 2022 は best-thirds 空");
   console.log("[dom] 2022 は best-thirds 非表示 OK");
+}
+
+// ---- 9) 一覧（overview）2022: 8カード + ドリルイン ----
+{
+  const dom = setupDom(BASE_URL);
+  boot(app(dom));
+  const root = app(dom);
+  const ovBtn = root.querySelector<HTMLElement>('.scope-toggle [data-scope="overview"]')!;
+  click(dom, ovBtn);
+  assert(decodeQuery(dom.window.location.search).scope === "overview", "9: URL に scope=overview");
+  assert((root.querySelector("#overview") as HTMLElement).hidden === false, "9: 一覧が表示");
+  assert((root.querySelector("#detail-view") as HTMLElement).hidden === true, "9: 詳細は非表示");
+  assert(root.querySelectorAll(".overview-grid .mini-group").length === 8, "9: 2022 はカード8");
+  assert(root.querySelectorAll(".overview-grid .mini-group .mini-table tbody tr").length === 32, "9: 8組×4行=32");
+  assert(root.querySelectorAll(".overview-grid .mini-group .row-advance").length === 16, "9: 各組上位2が緑=計16");
+  assert(!root.querySelector(".overview-bt"), "9: 2022 はベスト3位表なし");
+  // カード E をクリック → 詳細（E）へドリルイン
+  const cardE = root.querySelector<HTMLElement>('.mini-group[data-group="E"]')!;
+  click(dom, cardE);
+  assert(decodeQuery(dom.window.location.search).scope === undefined, "9: ドリルで scope が消える（detail）");
+  assert((root.querySelector("#detail-view") as HTMLElement).hidden === false, "9: ドリル後は詳細表示");
+  assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "E", "9: ドリル先は E");
+  assert(!!root.querySelector("table.tl-grid"), "9: ドリル後にタイムライン描画");
+  console.log("[dom] 一覧 2022（8カード・ドリルイン）OK");
+}
+
+// ---- 9b) 一覧（overview）2026: 12カード + ベスト3位表 ----
+{
+  const dom = setupDom(`${BASE_URL}?cup=2026&scope=overview`);
+  boot(app(dom));
+  const root = app(dom);
+  assert((root.querySelector("#overview") as HTMLElement).hidden === false, "9b: 一覧が復元表示");
+  assert(root.querySelector('.scope-toggle [data-scope="overview"]')?.classList.contains("seg-on") === true, "9b: 一覧トグルが選択状態で復元");
+  assert(root.querySelectorAll(".overview-grid .mini-group").length === 12, `9b: 2026 はカード12（実際: ${root.querySelectorAll(".overview-grid .mini-group").length}）`);
+  assert(!!root.querySelector(".overview-bt .bt-table"), "9b: 一覧にベスト3位表がある");
+  assert(root.querySelectorAll(".overview-bt .tie-badge").length >= 1, "9b: 進行中は暫定/抽選バッジ");
+  console.log("[dom] 一覧 2026（12カード・ベスト3位表）OK");
 }
 
 console.log("✅ domtest 通過");

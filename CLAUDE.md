@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ワールドカップ グループステージの **通過タイムライン** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。主役は**タイムライン＝順位バンプチャート（横1表）**（縦＝順位1〜4・列＝時間が右へ流れる・各セルにその順位の国旗が入り上下に動く・列ヘッダに得点選手）。2モード = 全試合の分刻みライブ（第1〜3節）／大会全体の試合単位。副機能として**通過条件（シナリオ）パネル**（グループの状態に適応：決着済みは「決め手＝タイブレーク解説」、最終節は各チームの「勝/分/敗で何が必要か」＋タイブレーク予告、序盤＝複数節残りは**非表示**＝シナリオがある時だけ出す）を折りたたみで残置。
 
+**表示範囲（scope）= 2つ**（ヘッダ下「一覧／詳細」トグル＝`?scope=overview`、既定は **detail**＝上記の1グループ詳細＝タイムライン主役）:
+- **detail**（既定）= 1グループの順位表＋通過ステータス＋タイムライン＋シナリオ（従来の画面そのまま。`?group=` の共有URLを温存）。
+- **overview**（一覧）= 全グループのコンパクト順位表カードをレスポンシブグリッド表示（NBC/ESPN 型）。各カード＝組文字＋**進行フェーズバッジ**（確定/最終節/進行中）＋4行ミニ表（順位・国旗・略号・得失点差・勝点。上位2緑＋カットオフ点線・🎲抽選・未消化は「– –」）。2026 はグリッド下に全幅でベスト3位表（既存 `bestThirdsHTML` 再利用）。カードクリック（`data-action="drill-group"`）でそのグループの **detail** へドリルイン。一覧は `Standings` の純投影のみで、列挙コストのある `analyzeGroup`/`groupStatus`/timeline は detail のときだけ計算する（フェーズバッジは消化試合数からの安価な `derivePhase` で導出）。
+
 **2大会を切替表示**（ヘッダの大会タブ＝`?cup=2022|2026`、既定は 2022）:
 - **2022方式**（32カ国・8組 A–H・各組上位2通過）= 2022年カタール大会の全48試合・実スコア＋全48試合のゴール分刻み（得点選手名つき）。
 - **2026方式**（48カ国・12組 A–L・各組上位2 ＋ **全12組の3位の上位8** が R32 へ）= 2026年北中米大会。**大会進行中につき消化済み試合のみ実スコア**（残りは未消化）。`engine/thirds.ts` の `computeBestThirds` が3位の横断ランキングを算出し、順位表の下に**「3位チーム比較」パネル**（上位8緑・進行中は暫定/抽選）を出す。
@@ -26,7 +30,7 @@ npm run test       # tsx scripts/smoketest.ts && tsx scripts/domtest.ts
 - **DOM に触れるのは `src/app/`（`render.ts` / `main.ts`）と `src/pages/` のみ**。`render.ts` が唯一の描画層で、イベントはルートの click を `data-action` 委譲で捌く（kisei/moshirasu パターン）。
 - **データ検証は手書き `engine/validate.ts`（Zod 不使用）**。順位・シナリオ（通過条件）をクライアントで計算するためエンジンをバンドルする → Zod は載せない。検証は smoketest と boot の両方で走る。**形式非依存**: 組数 G は 8 か 12、`teams==4G`・`matches==6G`・各組4チーム6対戦を構造から検証（32/8/48 をハードコードしない）。ラウンドロビン検査は宣言済みの組だけを回す（`GROUP_IDS`＝A–L の宇宙は直接ループしない）。
 - `GroupId`/`GROUP_IDS` は A–L（12組）。`compile.ts` は宣言された組（`t.groups`）から `ct.groups` を導出するので 2022→A–H / 2026→A–L に自動追従（タブ・既定組もこれに従う）。
-- 内部リンクは `src/lib/url.ts` の `siteLink()`（`import.meta.env.BASE_URL`）。`src/app/url.ts` が表示状態⇔クエリ（`cup`/`group`/`view` のみ。旧 `pivot`/`assume` は廃止）。
+- 内部リンクは `src/lib/url.ts` の `siteLink()`（`import.meta.env.BASE_URL`）。`src/app/url.ts` が表示状態⇔クエリ（`cup`/`group`/`view`/`scope`。既定 `scope=detail` は URL に出さない＝既存の共有URLを温存。旧 `pivot`/`assume` は廃止）。
 - `astro.config.mjs` の Tailwind v4 プラグインは型不一致回避で `any` キャスト。`color-scheme: only light` でライト固定。
 
 ## データ
@@ -70,7 +74,7 @@ FIFA 2022 順:
 ## テスト
 
 - `scripts/smoketest.ts`: ①データ検証（壊した複製・goals本数!=scoreを弾く） ②2022 全8組の実順位再現 ③タイブレーク単体（総GD/総GF/h2h/3すくみ抽選/1-2位タイ） ④通過条件シナリオ（decided=組E/H の決め手 reason・final-round=合成最終節で勝→advance/分→depends/敗→out・early=条件出さず次戦・決定性） ⑤status ⑦タイムライン（全8組の最終スナップ==最終順位・**組E 70'でコスタリカが暫定通過圏入り→最終は日本/スペイン**・scoreAtClock境界・決定性） ⑧2026検証（48/12/72・組Iの部分ライブ・組A/Kはstage） ⑨best-thirds（合成12組の境界/同値跨ぎ/組未完・2026実データは全組contention・2022は空）。
-- `scripts/domtest.ts`: jsdom で boot→描画（タイムライン主役）→モード切替(view=)→グループ切替→共有URL(group/view)復元→**大会切替(`?cup=2026`で12タブ＋3位パネル＋早期はシナリオ非表示=`#scenario-details` hidden、2022は best-thirds 空・decided は決め手ノート2件)**。シナリオは `<details#scenario-details>` 内。**既定 cup は 2022**（既存 URL・既存 domtest を温存）。
+- `scripts/domtest.ts`: jsdom で boot→描画（タイムライン主役）→モード切替(view=)→グループ切替→共有URL(group/view)復元→**大会切替(`?cup=2026`で12タブ＋3位パネル＋早期はシナリオ非表示=`#scenario-details` hidden、2022は best-thirds 空・decided は決め手ノート2件)**→**一覧(scope=overview)切替**（2022=`#overview`表示/`#detail-view`非表示・`.mini-group` 8枚×4行=32・上位2緑16・ベスト3位表なし→カードクリックで detail E にドリルイン＝`scope` 消滅・タブE・タイムライン描画／2026=`scope=overview` 復元で12枚＋`.overview-bt .bt-table`）。既定は detail（`#overview` hidden で既存ブロック不変）。シナリオは `<details#scenario-details>` 内。**既定 cup は 2022**（既存 URL・既存 domtest を温存）。
 - エンジン変更後は `npm run typecheck` も（tsx は型を見ない）。
 
 ## デプロイ

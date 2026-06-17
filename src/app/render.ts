@@ -7,9 +7,11 @@ import type { TeamStatus } from "../engine/status";
 import type { GroupQualification, TeamQualification, BoundaryNote, TeamCondition } from "../engine/scenario/qualify";
 import type { Snapshot } from "../engine/timeline";
 import type { BestThirdsResult, ThirdEntry } from "../engine/thirds";
-import type { Cup } from "./url";
+import type { Cup, Scope } from "./url";
 
 export type ViewMode = "live" | "stage";
+/** 一覧カードの安価な進行フェーズ（消化試合数から導出。列挙ベースの analyzeGroup とは別物）。 */
+export type OverviewPhase = "early" | "final-round" | "decided";
 
 const CUPS: { id: Cup; label: string }[] = [
   { id: "2022", label: "2022 カタール" },
@@ -19,20 +21,28 @@ const CUPS: { id: Cup; label: string }[] = [
 export type Command =
   | { type: "set-group"; group: GroupId }
   | { type: "set-view"; view: ViewMode }
-  | { type: "set-cup"; cup: Cup };
+  | { type: "set-cup"; cup: Cup }
+  | { type: "set-scope"; scope: Scope };
 export type Dispatch = (cmd: Command) => void;
 
 export interface RenderView {
+  /** 表示範囲（overview=全組一覧 / detail=1組詳細） */
+  scope: Scope;
   group: GroupId;
   view: ViewMode;
-  standings: Standings;
-  status: TeamStatus[];
+  /** 一覧用: 全組の順位（detail でも算出済みなので常に渡す） */
+  standingsByGroup: Map<GroupId, Standings>;
+  /** 一覧用: 各組の安価な進行フェーズ（バッジ表示） */
+  phaseByGroup: Map<GroupId, OverviewPhase>;
   /** 2026方式のベスト3位（advanceBestThirds>0 のときのみ中身が出る） */
   bestThirds?: BestThirdsResult;
-  liveTimeline: Snapshot[] | null;
-  stageTimeline: Snapshot[];
+  // ---- 以下は detail のときだけ渡る（overview では未使用） ----
+  standings?: Standings;
+  status?: TeamStatus[];
+  liveTimeline?: Snapshot[] | null;
+  stageTimeline?: Snapshot[];
   /** 通過条件（シナリオ）パネル用 */
-  qualification: GroupQualification;
+  qualification?: GroupQualification;
 }
 
 function esc(s: string): string {
@@ -65,25 +75,34 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     <div class="wrap">
       <nav class="group-tabs" id="group-tabs" aria-label="グループ選択">${groupTabs}</nav>
 
-      <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
-      <div id="standings"></div>
-      <div id="status"></div>
-      <div id="best-thirds"></div>
-
-      <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位</span></h2>
-      <div class="view-toggle seg" role="group" aria-label="タイムライン表示モード">
-        <button type="button" class="seg-btn" data-action="set-view" data-view="live">全試合（分刻み）</button>
-        <button type="button" class="seg-btn" data-action="set-view" data-view="stage">大会全体（試合単位）</button>
+      <div class="scope-toggle seg" role="group" aria-label="表示範囲">
+        <button type="button" class="seg-btn" data-action="set-scope" data-scope="overview">一覧</button>
+        <button type="button" class="seg-btn" data-action="set-scope" data-scope="detail">詳細</button>
       </div>
-      <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ ▲▼ 直前からの順位変動</p>
-      <div id="timeline"></div>
 
-      <details class="scenario-details" id="scenario-details">
-        <summary>通過条件（シナリオ）を見る</summary>
-        <div class="scenario-details-body">
-          <div id="scenario"></div>
+      <div id="overview" hidden></div>
+
+      <div id="detail-view">
+        <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
+        <div id="standings"></div>
+        <div id="status"></div>
+        <div id="best-thirds"></div>
+
+        <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位</span></h2>
+        <div class="view-toggle seg" role="group" aria-label="タイムライン表示モード">
+          <button type="button" class="seg-btn" data-action="set-view" data-view="live">全試合（分刻み）</button>
+          <button type="button" class="seg-btn" data-action="set-view" data-view="stage">大会全体（試合単位）</button>
         </div>
-      </details>
+        <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ ▲▼ 直前からの順位変動</p>
+        <div id="timeline"></div>
+
+        <details class="scenario-details" id="scenario-details">
+          <summary>通過条件（シナリオ）を見る</summary>
+          <div class="scenario-details-body">
+            <div id="scenario"></div>
+          </div>
+        </details>
+      </div>
 
       <footer class="site-footer">
         <p class="disclaimer">⚠️ ${esc(ct.meta.disclaimer)}</p>
@@ -94,6 +113,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   `;
 
   const $ = <T extends HTMLElement>(sel: string): T => root.querySelector(sel) as T;
+  const elOverview = $("#overview");
+  const elDetail = $("#detail-view");
   const elStandings = $("#standings");
   const elStatus = $("#status");
   const elBestThirds = $("#best-thirds");
@@ -109,6 +130,12 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     if (t.dataset.action === "set-group") dispatch({ type: "set-group", group: t.dataset.group as GroupId });
     else if (t.dataset.action === "set-view") dispatch({ type: "set-view", view: t.dataset.view as ViewMode });
     else if (t.dataset.action === "set-cup") dispatch({ type: "set-cup", cup: t.dataset.cup as Cup });
+    else if (t.dataset.action === "set-scope") dispatch({ type: "set-scope", scope: t.dataset.scope as Scope });
+    else if (t.dataset.action === "drill-group") {
+      // 一覧カード → そのグループの詳細へ（単機能 Command 2連発）。
+      dispatch({ type: "set-group", group: t.dataset.group as GroupId });
+      dispatch({ type: "set-scope", scope: "detail" });
+    }
   });
 
   function gdLabel(gd: number): string {
@@ -208,6 +235,53 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
           <tbody>${rows}</tbody>
         </table>
       </div>`;
+  }
+
+  // ---- 一覧（全グループ）: コンパクト順位表カードのグリッド ----
+  function phaseBadge(p: OverviewPhase): string {
+    if (p === "decided") return `<span class="phase-badge is-decided">確定</span>`;
+    if (p === "final-round") return `<span class="phase-badge is-final">最終節</span>`;
+    return `<span class="phase-badge is-early">進行中</span>`;
+  }
+
+  function miniStandingsCard(gid: GroupId, st: Standings, phase: OverviewPhase): string {
+    const adv = ct.meta.advancePerGroup;
+    const rows = st.rows
+      .map((r, i) => {
+        const cls = [r.advances ? "row-advance" : "", i + 1 === adv ? "advance-line" : ""].filter(Boolean).join(" ");
+        const tie = r.tiedGroupKey ? `<span class="tie-badge">🎲</span>` : "";
+        // 未消化（played=0）の組は勝点・得失点差を 0-0-0 に見せず「–」表示。
+        const gd = r.played === 0 ? "–" : gdLabel(r.gd);
+        const pts = r.played === 0 ? "–" : String(r.points);
+        return `
+          <tr class="${cls}">
+            <td class="mini-rank">${r.rank}</td>
+            <td class="mini-team"><span class="mini-flag">${team(r.teamId).flag}</span><span class="mini-code">${tc(r.teamId)}</span>${tie}</td>
+            <td class="mini-gd">${gd}</td>
+            <td class="mini-pts">${pts}</td>
+          </tr>`;
+      })
+      .join("");
+    return `
+      <button type="button" class="card mini-group" data-action="drill-group" data-group="${gid}" aria-label="グループ${gid}の詳細へ">
+        <div class="mini-head"><span class="mini-letter">${gid}</span>${phaseBadge(phase)}</div>
+        <table class="mini-table tnum"><tbody>${rows}</tbody></table>
+      </button>`;
+  }
+
+  function overviewHTML(view: RenderView): string {
+    const cards = ct.groups
+      .map((gid) => miniStandingsCard(gid, view.standingsByGroup.get(gid)!, view.phaseByGroup.get(gid) ?? "early"))
+      .join("");
+    // 2026方式: グリッド下に全幅でベスト3位表（既存ビルダーを再利用）。2022は空。
+    const bt =
+      view.bestThirds && view.bestThirds.slots > 0
+        ? `<div class="overview-bt">${bestThirdsHTML(view.bestThirds)}</div>`
+        : "";
+    return `
+      <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}） ／ 🎲 抽選 ／ カードをタップでそのグループの詳細（タイムライン）へ</p>
+      <div class="overview-grid">${cards}</div>
+      ${bt}`;
   }
 
   // ---- タイムライン（主役・横グリッド: 列=時間, 行=チーム, セル=順位） ----
@@ -429,9 +503,9 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   }
 
   function scenarioHTML(view: RenderView): string {
-    const q = view.qualification;
+    const q = view.qualification!;
     if (q.phase === "decided") {
-      const notes = q.boundaries.map((b) => boundaryHTML(b, view.standings)).join("");
+      const notes = q.boundaries.map((b) => boundaryHTML(b, view.standings!)).join("");
       return `
         <p class="scenario-intro">全試合が終了。各順位を分けた<b>決め手（タイブレーク）</b>を解説します。</p>
         <div class="card scenario-boundaries">
@@ -462,22 +536,39 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   }
 
   function render(view: RenderView): void {
+    // グループタブのハイライトは両モード共通で同期。
     for (const tab of root.querySelectorAll<HTMLElement>(".group-tab")) {
       tab.classList.toggle("is-on", tab.dataset.group === view.group);
     }
+    // 表示範囲トグル（一覧／詳細）の状態と表示切替。
+    const isOverview = view.scope === "overview";
+    for (const btn of root.querySelectorAll<HTMLElement>(".scope-toggle .seg-btn")) {
+      btn.classList.toggle("seg-on", btn.dataset.scope === view.scope);
+    }
+    elOverview.hidden = !isOverview;
+    elDetail.hidden = isOverview;
+    (root.querySelector(".wrap") as HTMLElement).classList.toggle("is-overview", isOverview);
+
+    if (isOverview) {
+      elOverview.innerHTML = overviewHTML(view);
+      return; // detail 専用フィールドには触れない
+    }
+
+    // ---- detail（1グループ）。main.ts が detail のとき必ず渡す。 ----
+    const qualification = view.qualification!;
     // 表示モードトグル（live が無い組では live を隠す）
     for (const btn of root.querySelectorAll<HTMLElement>(".view-toggle .seg-btn")) {
       const mode = btn.dataset.view as ViewMode;
       btn.classList.toggle("seg-on", mode === view.view);
-      btn.hidden = mode === "live" && view.liveTimeline === null;
+      btn.hidden = mode === "live" && (view.liveTimeline ?? null) === null;
     }
     elCaption.textContent = `グループ ${view.group}`;
-    elStandings.innerHTML = standingsHTML(view.standings);
-    elStatus.innerHTML = statusHTML(view.status);
+    elStandings.innerHTML = standingsHTML(view.standings!);
+    elStatus.innerHTML = statusHTML(view.status!);
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
     // シナリオが定まらない early フェーズはパネルごと隠す（意味がある時だけ出す）。
-    if (view.qualification.phase === "early") {
+    if (qualification.phase === "early") {
       elScenarioDetails.hidden = true;
       elScenario.innerHTML = "";
     } else {
