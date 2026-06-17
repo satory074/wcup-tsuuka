@@ -66,6 +66,8 @@ export interface Match {
   id: string;
   group: GroupId;
   matchday: 1 | 2 | 3;
+  /** キックオフ日時（ISO 現地＝カタール時間 "2022-11-23T16:00"）。タイムラインの絶対時刻並べ替え用 */
+  kickoff?: string;
   /** チームid（行＝home） */
   home: string;
   /** チームid（列＝away） */

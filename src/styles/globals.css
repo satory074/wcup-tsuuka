@@ -564,6 +564,16 @@ table.tl-grid {
 .tl-band-corner {
   background: var(--bg);
 }
+.tl-dateband {
+  background: var(--surface);
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  text-align: center;
+  padding: 0.2rem 0.3rem;
+  border-left: 2px solid var(--border);
+  white-space: nowrap;
+}
 .tl-th-time {
   background: var(--bg);
   font-weight: 800;

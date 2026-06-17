@@ -224,28 +224,40 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       return `<tr><th scope="row" class="tl-poscol${advCls}">${pos + 1}</th>${cells}</tr>`;
     }).join("");
 
-    // ヘッダ: live は「節帯 + 時刻行 + 2レーン（試合①/②）」、stage は1行（試合ごとの列）
+    // ヘッダ: live は「第n節帯 + 日時帯 + 時刻行 + 2レーン（試合①/②）」、stage は1行（試合ごとの列）
     let theadHTML: string;
     if (view.view === "live") {
-      // 節ごとの2試合を matchId 昇順で slotA/slotB に
+      const matches = ct.matchesByGroup.get(view.group) ?? [];
+      const koByMatch = new Map(matches.map((m) => [m.id, m.kickoff ?? ""]));
+      // 節ごとの試合を (kickoff, matchId) 昇順で slotA/slotB に（早いキックオフ＝試合①）
       const byMd = new Map<number, Match[]>();
-      for (const m of ct.matchesByGroup.get(view.group) ?? []) {
+      for (const m of matches) {
         const arr = byMd.get(m.matchday) ?? [];
         arr.push(m);
         byMd.set(m.matchday, arr);
       }
-      for (const arr of byMd.values()) arr.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      const koCmp = (a: Match, b: Match) =>
+        (a.kickoff ?? "") < (b.kickoff ?? "") ? -1 : (a.kickoff ?? "") > (b.kickoff ?? "") ? 1 : a.id < b.id ? -1 : 1;
+      for (const arr of byMd.values()) arr.sort(koCmp);
       const slotOf = (s: Snapshot): 0 | 1 => (byMd.get(s.event!.matchday)![0]?.id === s.event!.matchId ? 0 : 1);
 
-      // 節帯（matchday 連続列を colspan でまとめる。snaps は matchday 昇順）
-      const bandCells: string[] = [];
-      for (let bi = 0; bi < snaps.length; ) {
-        const md = snaps[bi].event!.matchday;
-        let span = 0;
-        while (bi + span < snaps.length && snaps[bi + span].event!.matchday === md) span++;
-        bandCells.push(`<th class="tl-band" colspan="${span}">第${md}節</th>`);
-        bi += span;
-      }
+      // 連続列を keyFn でまとめて colspan 帯を作る（snaps は絶対時刻昇順なので matchday も kickoff も連続）
+      const bandRow = (keyFn: (s: Snapshot) => string, label: (key: string) => string, cls: string): string => {
+        let cells = "";
+        for (let bi = 0; bi < snaps.length; ) {
+          const key = keyFn(snaps[bi]);
+          let span = 0;
+          while (bi + span < snaps.length && keyFn(snaps[bi + span]) === key) span++;
+          cells += `<th class="${cls}" colspan="${span}">${esc(label(key))}</th>`;
+          bi += span;
+        }
+        return cells;
+      };
+      const fmtKO = (iso: string): string =>
+        iso.length >= 16 ? `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))} ${iso.slice(11, 16)}` : iso;
+
+      const mdBand = bandRow((s) => String(s.event!.matchday), (k) => `第${k}節`, "tl-band");
+      const koBand = bandRow((s) => koByMatch.get(s.event!.matchId) ?? "", (k) => fmtKO(k), "tl-dateband");
 
       const timeCells = snaps
         .map((s) => `<th class="tl-th-time ${slotOf(s) === 0 ? "is-A" : "is-B"}">${esc(s.clockLabel)}</th>`)
@@ -267,7 +279,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       };
 
       theadHTML = `
-        <tr><th class="tl-corner tl-band-corner"></th>${bandCells.join("")}</tr>
+        <tr><th class="tl-corner tl-band-corner"></th>${mdBand}</tr>
+        <tr><th class="tl-corner tl-band-corner"></th>${koBand}</tr>
         <tr><th class="tl-corner">時刻</th>${timeCells}</tr>
         ${laneRow(0, "is-A", "試合①")}
         ${laneRow(1, "is-B", "試合②")}`;

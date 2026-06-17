@@ -123,35 +123,54 @@ export function buildStageTimeline(ct: CompiledTournament, group: GroupId): Snap
   return snaps;
 }
 
-/** (B) 全試合（第1〜3節）を分刻みで。全試合に goals 配列が要る。無ければ null。
-    時間軸は (matchday, clock, matchId) 昇順＝節ごとに2試合を分で統合（第3節の同時刻ドラマは維持）。 */
+/** キックオフ日時 "YYYY-MM-DDThh:mm" を順序保証の整数（分）に。Date 不使用・同年前提。 */
+export function kickoffMinutes(iso: string): number {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(iso);
+  if (!m) return 0;
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const hh = Number(m[4]);
+  const mm = Number(m[5]);
+  // 月内日数差より十分大きい単位で日を分離（順序のみ保証できればよい）
+  return (month * 31 + day) * 24 * 60 + hh * 60 + mm;
+}
+
+/** (B) 全試合（第1〜3節）を分刻みで。全試合に goals 配列と kickoff が要る。無ければ null。
+    並べ替えは「キックオフ日時＋経過分」の絶対時刻順＝被る試合（同時刻開催）は分で並列、
+    被らない試合は時系列で前後に並ぶ。 */
 export function buildLiveTimeline(ct: CompiledTournament, group: GroupId): Snapshot[] | null {
   const all = ct.matchesByGroup.get(group);
   if (!all || all.length === 0) return null;
   const teamIds = ct.teamsByGroup.get(group)!.map((t) => t.id);
-  // 全試合に goals 配列が必要（0-0 は []）
-  if (all.some((m) => !Array.isArray(m.goals))) return null;
+  // 全試合に goals 配列と kickoff が必要（0-0 は []）
+  if (all.some((m) => !Array.isArray(m.goals) || !m.kickoff)) return null;
 
-  // 全6試合の全ゴールを (matchday, clock, matchId) 昇順で統合
-  type Ev = { matchday: number; matchId: string; clock: number; goal: Goal };
+  // 各試合のキックオフ絶対分
+  const koMin = new Map<string, number>(all.map((m) => [m.id, kickoffMinutes(m.kickoff!)]));
+
+  // 全6試合の全ゴールを絶対時刻 (キックオフ + 経過分) 昇順で統合
+  type Ev = { matchId: string; abs: number; clock: number; goal: Goal };
   const events: Ev[] = [];
   for (const m of all) {
-    for (const g of m.goals!) events.push({ matchday: m.matchday, matchId: m.id, clock: clockOf(g), goal: g });
+    for (const g of m.goals!) {
+      const abs = koMin.get(m.id)! + g.minute + (g.plus ?? 0);
+      events.push({ matchId: m.id, abs, clock: clockOf(g), goal: g });
+    }
   }
   if (events.length === 0) return null;
   events.sort(
-    (a, b) => a.matchday - b.matchday || a.clock - b.clock || (a.matchId < b.matchId ? -1 : a.matchId > b.matchId ? 1 : 0),
+    (a, b) => a.abs - b.abs || (a.matchId < b.matchId ? -1 : a.matchId > b.matchId ? 1 : 0) || a.clock - b.clock,
   );
 
   const matchById = new Map(all.map((m) => [m.id, m]));
   const running = new Map<string, Score>(all.map((m) => [m.id, { home: 0, away: 0 }]));
 
-  // 現在の節までの試合だけスコアを入れる:
-  //   matchday < currentMd … running（＝満了済みの実スコア）
-  //   matchday === currentMd … running（進行中。0-0 は現在引分扱い）
-  //   matchday > currentMd … 未消化（score なし）
-  const viewAt = (currentMd: number): Match[] =>
-    all.map((m) => (m.matchday <= currentMd ? { ...m, score: { ...running.get(m.id)! } } : { ...m, score: undefined }));
+  // 絶対時刻 absT 時点の試合スコア:
+  //   kickoff <= absT … running（進行中/消化済み。0-0 進行中は現在引分扱い）
+  //   kickoff >  absT … 未消化（score なし）
+  // → 被らない試合は前の試合が終わってから次が running 入りし、被る試合は両方 running で分並列。
+  const viewAt = (absT: number): Match[] =>
+    all.map((m) => (koMin.get(m.id)! <= absT ? { ...m, score: { ...running.get(m.id)! } } : { ...m, score: undefined }));
 
   const snaps: Snapshot[] = [];
   let prev: Standings | null = null;
@@ -161,7 +180,7 @@ export function buildLiveTimeline(ct: CompiledTournament, group: GroupId): Snaps
     if (ev.goal.side === "home") sc.home++;
     else sc.away++;
     const m = matchById.get(ev.matchId)!;
-    const snap = snapshotFrom(group, teamIds, ct, viewAt(ev.matchday), prev, {
+    const snap = snapshotFrom(group, teamIds, ct, viewAt(ev.abs), prev, {
       key: `${group}-live-${i}`,
       clockLabel: clockLabel(ev.goal),
       kind: "goal",
@@ -171,7 +190,7 @@ export function buildLiveTimeline(ct: CompiledTournament, group: GroupId): Snaps
         awayId: m.away,
         homeScore: sc.home,
         awayScore: sc.away,
-        matchday: ev.matchday,
+        matchday: m.matchday,
         scorerSide: ev.goal.side,
         scorer: ev.goal.player,
       },

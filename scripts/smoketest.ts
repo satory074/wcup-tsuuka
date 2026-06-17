@@ -8,7 +8,7 @@ import { computeStandings } from "../src/engine/standings";
 import { groupStatus } from "../src/engine/status";
 import { buildMatrix, type ScenarioMatrix } from "../src/engine/scenario/matrix";
 import { defaultPivot } from "../src/engine/scenario/pivot";
-import { buildLiveTimeline, buildStageTimeline, clockOf, scoreAtClock } from "../src/engine/timeline";
+import { buildLiveTimeline, buildStageTimeline, clockOf, kickoffMinutes, scoreAtClock } from "../src/engine/timeline";
 import type { Goal } from "../src/engine/types";
 import type { CompiledTournament, GroupId, Match, Meta, Standings, Team } from "../src/engine/types";
 
@@ -61,8 +61,10 @@ function assert(cond: boolean, msg: string): void {
   assert(!validateTournament(b5).ok, "対戦の重複/欠落を弾く");
 
   // 全48試合に goals があり、本数が score と一致
-  const allMatches = worldcupJson.matches as { matchday: number; goals?: unknown; score: { home: number; away: number } }[];
+  const allMatches = worldcupJson.matches as { matchday: number; goals?: unknown; kickoff?: string; score: { home: number; away: number } }[];
   for (const m of allMatches) assert(Array.isArray(m.goals), "全試合に goals 配列がある");
+  // 全48試合に妥当な kickoff（YYYY-MM-DDThh:mm）
+  for (const m of allMatches) assert(typeof m.kickoff === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(m.kickoff), "全試合に kickoff");
   const md3 = allMatches.filter((m) => m.matchday === 3);
   assert(md3.length === 16, `第3節は16試合（実際: ${md3.length}）`);
   // 本数不一致を弾く（E-5 のゴールを1つ削る → home 2→1 で score.home 2 と不一致）
@@ -348,6 +350,20 @@ function sortedAdv(a: string[]): string {
   assert(liveE!.length === eGoals, `7: 組E ライブは全ゴール数(${eGoals})スナップ（実際: ${liveE!.length}）`);
   assert(liveE![0].kind === "goal", "7: 先頭はゴール（キックオフ列なし）");
   assert(liveE!.some((s) => s.event?.matchday === 1) && liveE!.some((s) => s.event?.matchday === 3), "7: 第1節〜第3節を含む");
+
+  // kickoffMinutes 単体（順序）: 23日16:00 < 23日19:00 < 27日13:00
+  assert(kickoffMinutes("2022-11-23T16:00") < kickoffMinutes("2022-11-23T19:00"), "7: 同日 時刻順");
+  assert(kickoffMinutes("2022-11-23T19:00") < kickoffMinutes("2022-11-27T13:00"), "7: 別日 日付順");
+
+  // 被らない第1節は時系列: E-1(16:00) の全ゴールが E-2(19:00) より前
+  const idxOf = (mid: string) => liveE!.map((s, i) => ({ s, i })).filter((x) => x.s.event?.matchId === mid).map((x) => x.i);
+  const e1 = idxOf("E-1");
+  const e2 = idxOf("E-2");
+  assert(Math.max(...e1) < Math.min(...e2), "7: 第1節は時系列（E-1 全ゴールが E-2 より前）");
+  // 被る第3節は並列（分で交互）: E-5 と E-6 の index 範囲が重なる
+  const e5 = idxOf("E-5");
+  const e6 = idxOf("E-6");
+  assert(Math.max(...e5) > Math.min(...e6) && Math.max(...e6) > Math.min(...e5), "7: 第3節は並列（E-5/E-6 が交互）");
   // 得点者がスナップショットに載る（48' E-5 堂安）
   const e48 = liveE!.find((s) => s.event?.matchId === "E-5" && s.clockLabel === "48'");
   assert(e48?.event?.scorer === "堂安", `7: 48' の得点者が堂安（実際: ${e48?.event?.scorer}）`);

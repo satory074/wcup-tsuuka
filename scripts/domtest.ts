@@ -51,6 +51,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".tl-grid tbody tr").length === 4, "1: 行=4順位");
   assert(root.querySelectorAll(".tl-th-time").length === 15, `1: 組A 全15ゴール列（実際: ${root.querySelectorAll(".tl-th-time").length}）`);
   assert(root.querySelectorAll(".tl-band").length === 3, "1: 節帯は3（第1〜3節）");
+  assert(root.querySelectorAll(".tl-dateband").length === 5, `1: 日時帯は5枠（第1節2＋第2節2＋第3節1）（実際: ${root.querySelectorAll(".tl-dateband").length}）`);
+  assert([...root.querySelectorAll(".tl-dateband")].some((e) => /\d+\/\d+ \d{2}:\d{2}/.test(e.textContent ?? "")), "1: 日時帯に M/D HH:MM");
   assert(root.querySelectorAll(".tl-lane-label").length === 2, "1: 2レーン（試合①/②）");
   assert(root.querySelectorAll(".tl-poscol").length === 4, "1: 先頭列に順位ラベル4");
   assert(root.querySelectorAll(".tl-flagcell").length === 60, "1: 国旗セル=4順位×15列=60");
@@ -79,8 +81,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const stageBtn = root.querySelector<HTMLElement>('.view-toggle [data-view="stage"]')!;
   click(dom, stageBtn);
   assert(decodeQuery(dom.window.location.search).view === "stage", "1b: URL に view=stage");
-  // stage: 試合単位（節帯/レーン無し・colhead 6列・第n節ラベル）
+  // stage: 試合単位（節帯/日時帯/レーン無し・colhead 6列・第n節ラベル）
   assert(root.querySelectorAll(".tl-band").length === 0, "1b: stage は節帯無し");
+  assert(root.querySelectorAll(".tl-dateband").length === 0, "1b: stage は日時帯無し");
   assert(root.querySelectorAll(".tl-lane-label").length === 0, "1b: stage はレーン無し");
   assert(root.querySelectorAll(".tl-grid thead .tl-colhead").length === 6, "1b: 組E stage は6列（6試合）");
   assert([...root.querySelectorAll(".tl-colhead .tl-ch-time")].some((e) => (e.textContent ?? "").includes("第")), "1b: stage は第n節ラベル");

@@ -116,6 +116,8 @@ export function validateTournament(raw: unknown): ValidateResult {
       const gid = m.group as GroupId;
 
       if (m.matchday !== 1 && m.matchday !== 2 && m.matchday !== 3) err(`${at}.matchday が 1..3 ではない`);
+      if (typeof m.kickoff !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(m.kickoff))
+        err(`${at}.kickoff が "YYYY-MM-DDThh:mm" ではない`);
 
       const home = m.home;
       const away = m.away;
