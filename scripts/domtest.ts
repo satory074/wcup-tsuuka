@@ -146,9 +146,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
   assert(root.querySelectorAll("#best-thirds .tie-badge").length >= 1, "8: 進行中は暫定/抽選バッジ");
-  // 2026 組A は進行中（early）= チーム条件カード4・次戦表示
-  assert(root.querySelectorAll("#scenario-details .team-cond").length === 4, "8: 2026 早期はチーム条件カード4");
-  assert(root.querySelectorAll("#scenario-details .cond-next").length >= 1, "8: 早期は次戦を表示");
+  // 2026 組A は進行中（early）= シナリオが定まらないためパネル非表示
+  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === true, "8: 2026 早期はシナリオパネル非表示");
+  assert((root.querySelector("#scenario")?.innerHTML ?? "") === "", "8: 早期は #scenario 空");
   console.log("[dom] 大会切替 ?cup=2026（12組・3位比較パネル）OK");
 }
 

@@ -99,6 +99,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elBestThirds = $("#best-thirds");
   const elTimeline = $("#timeline");
   const elScenario = $("#scenario");
+  const elScenarioDetails = $("#scenario-details");
   const elCaption = $("#group-caption");
 
   // ---- イベント委譲 ----
@@ -403,7 +404,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     return `<li class="cond-line cond-${c.verdict}"><span class="cond-icon">${icon}</span><span>${ante}<b>${cons}</b></span></li>`;
   }
 
-  function teamCondHTML(tq: TeamQualification, phase: GroupQualification["phase"]): string {
+  // final-round のチームカード（decided は決め手リスト・early はパネル非表示なので呼ばれない）。
+  function teamCondHTML(tq: TeamQualification): string {
     const head = `
       <div class="cond-head">
         <span class="cond-rank">${rankMark(tq.rank)}</span>
@@ -413,12 +415,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         ${statusBadge(tq.status)}
       </div>`;
 
-    let body = "";
-    if (phase === "early") {
-      body = tq.nextOpponent
-        ? `<p class="cond-next">次戦: <b>${team(tq.nextOpponent).flag}${esc(team(tq.nextOpponent).name)}</b></p>`
-        : "";
-    } else if (tq.status === "advanced") {
+    let body: string;
+    if (tq.status === "advanced") {
       body = `<p class="cond-note">✅ すでに突破確定</p>`;
     } else if (tq.status === "eliminated") {
       body = `<p class="cond-note">❌ すでに敗退</p>`;
@@ -452,18 +450,15 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       const simul = q.simultaneous
         ? `<p class="scenario-note">⏱️ 最終節の2試合は<b>同時刻キックオフ</b>。「他会場しだい」はもう1試合の結果に依存します。</p>`
         : "";
-      const cards = q.teams.map((t) => teamCondHTML(t, q.phase)).join("");
+      const cards = q.teams.map((t) => teamCondHTML(t)).join("");
       return `
         <p class="scenario-intro">最終節の結果しだいで通過が決まります。各チームが<b>自分の試合でどうすれば通過するか</b>:</p>
         ${tb}
         ${simul}
         <div class="scenario-teams">${cards}</div>`;
     }
-    // early
-    const cards = q.teams.map((t) => teamCondHTML(t, q.phase)).join("");
-    return `
-      <p class="scenario-intro">このグループは残り<b>${q.remaining.length}試合</b>。通過条件が固まるのは最終節です。各チームの次戦:</p>
-      <div class="scenario-teams">${cards}</div>`;
+    // early はパネルごと非表示（render が呼ばない）。防御的に空を返す。
+    return "";
   }
 
   function render(view: RenderView): void {
@@ -481,7 +476,14 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     elStatus.innerHTML = statusHTML(view.status);
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
-    elScenario.innerHTML = scenarioHTML(view);
+    // シナリオが定まらない early フェーズはパネルごと隠す（意味がある時だけ出す）。
+    if (view.qualification.phase === "early") {
+      elScenarioDetails.hidden = true;
+      elScenario.innerHTML = "";
+    } else {
+      elScenarioDetails.hidden = false;
+      elScenario.innerHTML = scenarioHTML(view);
+    }
   }
 
   return { render };
