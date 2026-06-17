@@ -39,8 +39,10 @@
   --advance: var(--pitch-deep); /* 突破（上位2） */
   --advance-soft: #e6f6ec;
   --advance-edge: var(--pitch);
+  --advance-ink: #0e6b33; /* 淡緑面の上で AA を満たす濃緑文字 */
   --alive: #c0680a; /* 可能性あり（AA のため濃いめ橙） */
   --alive-soft: #fcefda;
+  --alive-ink: #9a5208; /* クリーム面の上で AA を満たす濃橙文字 */
   --eliminated: #8a97a8; /* 敗退（沈んだ灰） */
   --eliminated-soft: #eef1f5;
   --danger: #dc2626;
@@ -49,11 +51,11 @@
      白文字が乗る中濃度。色覚配慮: 色相だけでなく「明度差」も付け、
      赤緑が隣接で紛れないよう配列（凡例＝色＋文字＋件数で色のみ依存を回避）。 */
   --cell-0: #2563eb; /* 青（明） */
-  --cell-1: #cf3a3a; /* 赤 */
-  --cell-2: #15803d; /* 緑（ブランド突破色と一致） */
+  --cell-1: #c22f2f; /* 赤（白文字 AA 用に微暗化） */
+  --cell-2: #147336; /* 緑（白文字 AA 用に微暗化・ブランド突破色系） */
   --cell-3: #7338c9; /* 紫 */
-  --cell-4: #b45309; /* 琥珀（暗） */
-  --cell-5: #0e7c93; /* ティール */
+  --cell-4: #a64c08; /* 琥珀（暗） */
+  --cell-5: #0b6a7d; /* ティール（白文字 AA 用に微暗化） */
   --cell-6: #c02d6f; /* ローズ */
   --cell-7: #41526b; /* スレート（最暗・明度で判別可） */
   --cell-tie: #64748b;
@@ -174,10 +176,11 @@ body {
   color: var(--pitch-bright);
 }
 .site-header .site-sub {
-  color: rgba(233, 240, 250, 0.86);
-  font-size: 0.9rem;
-  margin: 0.55rem 0 0;
+  color: rgba(236, 242, 251, 0.95);
+  font-size: 0.95rem;
+  margin: 0.6rem 0 0;
   max-width: 60ch;
+  line-height: 1.55;
 }
 
 /* 大会切替（2022 / 2026）= 放送風セグメント（ヒーロー帯の上） */
@@ -199,7 +202,7 @@ body {
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: rgba(233, 240, 250, 0.82);
+  color: rgba(236, 242, 251, 0.92);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -216,8 +219,9 @@ body {
 /* =========================== 共通 =========================== */
 .site-sub {
   color: var(--ink-soft);
-  font-size: 0.85rem;
-  margin-top: 0.3rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin-top: 0.35rem;
 }
 
 .card {
@@ -242,7 +246,7 @@ body {
 .section-title .hint {
   font-family: var(--font-jp);
   font-weight: 500;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   color: var(--ink-soft);
 }
 
@@ -296,12 +300,12 @@ table.standings-table {
 }
 .standings-table th,
 .standings-table td {
-  padding: 0.5rem 0.45rem;
+  padding: 0.55rem 0.5rem;
   text-align: right;
   white-space: nowrap;
 }
 .standings-table thead th {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -338,7 +342,7 @@ table.standings-table {
   gap: 0.5rem;
 }
 .team-flag {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
 }
 .team-name {
   font-weight: 700;
@@ -355,8 +359,9 @@ table.standings-table {
 .row-advance:hover {
   background: #dcf1e3;
 }
+/* 視認性優先: 通過行のチーム名は暗い文字（通過はエッジ＋バッジ＋淡緑背景で表現） */
 .row-advance .team-name {
-  color: var(--pitch-deep);
+  color: var(--ink);
 }
 .row-advance .rank-badge {
   background: var(--advance);
@@ -377,17 +382,17 @@ table.standings-table {
   border-bottom: 2px dashed var(--advance) !important;
 }
 .tie-badge {
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: #fff;
   background: var(--cell-tie);
   border-radius: 999px;
-  padding: 0.08rem 0.5rem;
+  padding: 0.1rem 0.5rem;
   margin-left: 0.35rem;
   vertical-align: middle;
 }
 .th-pri {
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   color: var(--pitch-deep);
   font-weight: 800;
   margin-left: 0.05rem;
@@ -400,8 +405,8 @@ table.standings-table {
   margin: 0.5rem 0.35rem 0.2rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--border);
-  font-size: 0.74rem;
-  line-height: 1.5;
+  font-size: 0.82rem;
+  line-height: 1.55;
   color: var(--ink-soft);
 }
 .tiebreak-legend .tb-head {
@@ -429,7 +434,7 @@ table.bt-table {
 }
 .bt-table th,
 .bt-table td {
-  padding: 0.5rem 0.45rem;
+  padding: 0.55rem 0.5rem;
   text-align: right;
   white-space: nowrap;
   border-bottom: 1px solid var(--border);
@@ -439,7 +444,7 @@ table.bt-table {
   font-variant-numeric: tabular-nums;
 }
 .bt-table thead th {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -479,23 +484,23 @@ table.bt-table {
   align-items: center;
   gap: 0.35rem;
   border-radius: 999px;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.83rem;
+  padding: 0.32rem 0.8rem;
+  font-size: 0.88rem;
   font-weight: 700;
   border: 1px solid transparent;
 }
 .chip .chip-flag {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
 }
 .chip.is-advanced {
   background: var(--advance-soft);
-  color: var(--pitch-deep);
-  border-color: #bfe6cb;
+  color: var(--advance-ink);
+  border-color: #a9ddbb;
 }
 .chip.is-alive {
   background: var(--alive-soft);
-  color: var(--alive);
-  border-color: #f3dcb6;
+  color: var(--alive-ink);
+  border-color: #eccf9b;
 }
 .chip.is-eliminated {
   background: var(--eliminated-soft);
@@ -517,7 +522,7 @@ table.bt-table {
   gap: 0.3rem;
 }
 .pivot-field-label {
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--ink-soft);
 }
@@ -538,9 +543,9 @@ table.bt-table {
   padding-top: 0.75rem;
 }
 .assume-hint {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 600;
-  color: var(--alive);
+  color: var(--alive-ink);
 }
 .assume-row {
   display: flex;
@@ -570,7 +575,8 @@ table.bt-table {
   overflow: hidden;
 }
 .matrix-axislabel {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
   color: var(--ink-soft);
   margin-bottom: 0.5rem;
 }
@@ -586,19 +592,19 @@ table.matrix {
   margin: 0 auto;
 }
 .matrix th {
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: var(--ink-soft);
-  padding: 0.2rem;
+  padding: 0.25rem;
   text-align: center;
 }
 .matrix .corner {
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   color: var(--ink-soft);
   font-weight: 600;
   white-space: nowrap;
-  padding: 0.2rem 0.35rem;
-  line-height: 1.25;
+  padding: 0.25rem 0.4rem;
+  line-height: 1.3;
 }
 .matrix .corner .axis-x {
   color: var(--cell-1);
@@ -613,18 +619,18 @@ table.matrix {
   color: var(--cell-0);
 }
 .matrix td.cell {
-  width: 3.5rem;
-  height: 3.1rem;
-  padding: 0.1rem;
+  width: 3.9rem;
+  height: 3.5rem;
+  padding: 0.15rem;
   text-align: center;
   vertical-align: middle;
   color: #fff;
-  font-size: 0.76rem;
-  line-height: 1.18;
+  font-size: 0.82rem;
+  line-height: 1.3;
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 2px;
   cursor: default;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .cell .cell-1st,
 .cell .cell-2nd {
@@ -670,7 +676,7 @@ table.matrix {
   gap: 0.45rem;
 }
 .legend-title {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: var(--ink-soft);
 }
@@ -678,7 +684,7 @@ table.matrix {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  font-size: 0.86rem;
+  font-size: 0.92rem;
 }
 .legend-swatch {
   flex: 0 0 auto;
@@ -690,7 +696,7 @@ table.matrix {
 }
 .legend-count {
   margin-left: auto;
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   color: var(--ink-soft);
 }
 
@@ -703,7 +709,7 @@ table.matrix {
   background: var(--surface);
   border: 1px dashed var(--border-strong);
   border-radius: var(--r-md);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
 }
 .error-panel {
   margin: 2rem auto;
@@ -720,14 +726,15 @@ table.matrix {
   margin-top: 2.75rem;
   border-top: 1px solid var(--border);
   padding-top: 1.1rem;
-  font-size: 0.79rem;
+  font-size: 0.84rem;
+  line-height: 1.6;
   color: var(--ink-soft);
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 .disclaimer {
-  color: #92400e;
+  color: #8a3d0b;
 }
 .site-footer a {
   color: var(--link);
@@ -764,7 +771,8 @@ table.matrix {
   box-shadow: 0 2px 6px rgba(21, 128, 61, 0.28);
 }
 .tl-legend-note {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
+  line-height: 1.55;
   color: var(--ink-soft);
   margin: 0.6rem 0 0.3rem;
 }
@@ -804,19 +812,19 @@ table.tl-grid {
   left: 0;
   z-index: 3;
   background: var(--surface-2);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--ink-soft);
   text-align: left;
-  padding: 0.3rem 0.5rem;
+  padding: 0.35rem 0.55rem;
   white-space: nowrap;
   box-shadow: 3px 0 6px rgba(12, 26, 54, 0.06);
 }
 .tl-colhead {
-  min-width: 4.6rem;
-  padding: 0.35rem 0.4rem;
+  min-width: 5.2rem;
+  padding: 0.4rem 0.45rem;
   text-align: center;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 .tl-colhead.tl-goal {
   border-top: 3px solid var(--pitch);
@@ -829,17 +837,18 @@ table.tl-grid {
 }
 .tl-ch-time {
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   color: var(--ink);
 }
 .tl-ch-scorer {
   font-family: var(--font-jp);
-  font-size: 0.76rem;
+  font-size: 0.86rem;
   font-weight: 700;
   white-space: nowrap;
 }
 .tl-ch-score {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--ink-soft);
   white-space: nowrap;
 }
@@ -850,10 +859,10 @@ table.tl-grid {
   color: #fff;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   letter-spacing: 0.02em;
   text-align: center;
-  padding: 0.3rem 0.3rem;
+  padding: 0.35rem 0.3rem;
   border-left: 2px solid rgba(255, 255, 255, 0.25);
 }
 .tl-band-corner {
@@ -865,20 +874,20 @@ table.tl-grid {
 .tl-dateband {
   background: var(--surface);
   font-weight: 700;
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   color: var(--ink-soft);
   text-align: center;
-  padding: 0.25rem 0.3rem;
+  padding: 0.3rem 0.3rem;
   border-left: 2px solid var(--border);
   white-space: nowrap;
 }
 .tl-th-time {
   background: var(--surface-2);
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   text-align: center;
-  padding: 0.32rem 0.4rem;
-  min-width: 4.6rem;
+  padding: 0.36rem 0.4rem;
+  min-width: 5.2rem;
   white-space: nowrap;
 }
 .tl-th-time.is-A {
@@ -901,8 +910,8 @@ table.tl-grid {
 }
 .tl-lane-cell {
   text-align: center;
-  padding: 0.28rem 0.4rem;
-  line-height: 1.2;
+  padding: 0.34rem 0.45rem;
+  line-height: 1.35;
 }
 .tl-lane-label.is-A,
 .tl-lane-cell.is-A {
@@ -926,41 +935,41 @@ table.tl-grid {
   text-align: center;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   color: var(--ink-soft);
   white-space: nowrap;
-  padding: 0.4rem 0.5rem;
-  min-width: 2.8rem;
+  padding: 0.45rem 0.5rem;
+  min-width: 3rem;
   box-shadow: 3px 0 6px rgba(12, 26, 54, 0.06);
 }
 .tl-poscol.is-adv {
   background: var(--advance-soft);
-  color: var(--pitch-deep);
+  color: var(--advance-ink);
   box-shadow: inset 4px 0 0 var(--advance-edge), 3px 0 6px rgba(12, 26, 54, 0.06);
 }
 .tl-flagcell {
   text-align: center;
-  padding: 0.4rem 0.4rem;
+  padding: 0.5rem 0.45rem;
   white-space: nowrap;
 }
 .tl-flagcell.is-adv {
   background: var(--advance-soft);
 }
 .tl-flag {
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   vertical-align: middle;
 }
 .tl-code {
-  font-size: 0.66rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   color: var(--ink-soft);
-  margin-left: 0.15rem;
+  margin-left: 0.18rem;
   vertical-align: middle;
 }
 .tl-mv {
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 800;
-  margin-left: 0.12rem;
+  margin-left: 0.14rem;
   vertical-align: middle;
 }
 .tl-mv.is-up {
@@ -1022,9 +1031,9 @@ table.tl-grid {
     padding: 1.3rem 0.75rem 1.25rem;
   }
   .matrix td.cell {
-    width: 2.8rem;
-    height: 2.8rem;
-    font-size: 0.68rem;
+    width: 3.1rem;
+    height: 3.1rem;
+    font-size: 0.74rem;
   }
   /* グループタブ A〜L は横スクロール1行で破綻を防ぐ */
   .group-tabs {
@@ -1040,10 +1049,13 @@ table.tl-grid {
     padding: 0.4rem 0.5rem;
   }
   .tl-colhead {
-    min-width: 3.9rem;
+    min-width: 4.6rem;
+  }
+  .tl-th-time {
+    min-width: 4.6rem;
   }
   .tl-poscol {
-    min-width: 2.3rem;
+    min-width: 2.6rem;
   }
   .section-title {
     font-size: 1.08rem;
