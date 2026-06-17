@@ -552,7 +552,18 @@ table.tl-grid {
   white-space: nowrap;
 }
 
-/* live ヘッダ: 時間行 + 試合ごとのレーン行 */
+/* live ヘッダ: 節帯 + 時刻行 + 試合ごとのレーン行 */
+.tl-band {
+  background: var(--bg);
+  font-weight: 800;
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 0.25rem 0.3rem;
+  border-left: 2px solid var(--ink-soft);
+}
+.tl-band-corner {
+  background: var(--bg);
+}
 .tl-th-time {
   background: var(--bg);
   font-weight: 800;

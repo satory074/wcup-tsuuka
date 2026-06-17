@@ -123,52 +123,46 @@ export function buildStageTimeline(ct: CompiledTournament, group: GroupId): Snap
   return snaps;
 }
 
-/** (B) 最終節（同時刻2試合）を分刻みで。第3節の全試合に goals が要る。無ければ null。 */
+/** (B) 全試合（第1〜3節）を分刻みで。全試合に goals 配列が要る。無ければ null。
+    時間軸は (matchday, clock, matchId) 昇順＝節ごとに2試合を分で統合（第3節の同時刻ドラマは維持）。 */
 export function buildLiveTimeline(ct: CompiledTournament, group: GroupId): Snapshot[] | null {
   const all = ct.matchesByGroup.get(group);
-  if (!all) return null;
+  if (!all || all.length === 0) return null;
   const teamIds = ct.teamsByGroup.get(group)!.map((t) => t.id);
-  const finalRound = all.filter((m) => m.matchday === 3);
-  if (finalRound.length === 0 || finalRound.some((m) => !Array.isArray(m.goals))) return null;
+  // 全試合に goals 配列が必要（0-0 は []）
+  if (all.some((m) => !Array.isArray(m.goals))) return null;
 
-  // 第1・2節は実スコア固定
-  const prior = all.filter((m) => m.matchday !== 3);
-
-  // 第3節の全ゴールを統合（clock 昇順、同clockは matchId で安定化）
-  type Ev = { matchId: string; clock: number; goal: Goal };
+  // 全6試合の全ゴールを (matchday, clock, matchId) 昇順で統合
+  type Ev = { matchday: number; matchId: string; clock: number; goal: Goal };
   const events: Ev[] = [];
-  for (const m of finalRound) {
-    for (const g of m.goals!) events.push({ matchId: m.id, clock: clockOf(g), goal: g });
+  for (const m of all) {
+    for (const g of m.goals!) events.push({ matchday: m.matchday, matchId: m.id, clock: clockOf(g), goal: g });
   }
-  events.sort((a, b) => a.clock - b.clock || (a.matchId < b.matchId ? -1 : a.matchId > b.matchId ? 1 : 0));
+  if (events.length === 0) return null;
+  events.sort(
+    (a, b) => a.matchday - b.matchday || a.clock - b.clock || (a.matchId < b.matchId ? -1 : a.matchId > b.matchId ? 1 : 0),
+  );
 
-  const matchById = new Map(finalRound.map((m) => [m.id, m]));
-  const running = new Map<string, Score>(finalRound.map((m) => [m.id, { home: 0, away: 0 }]));
+  const matchById = new Map(all.map((m) => [m.id, m]));
+  const running = new Map<string, Score>(all.map((m) => [m.id, { home: 0, away: 0 }]));
 
-  const viewNow = (): Match[] => [
-    ...prior,
-    ...finalRound.map((m) => ({ ...m, score: { ...running.get(m.id)! } })),
-  ];
+  // 現在の節までの試合だけスコアを入れる:
+  //   matchday < currentMd … running（＝満了済みの実スコア）
+  //   matchday === currentMd … running（進行中。0-0 は現在引分扱い）
+  //   matchday > currentMd … 未消化（score なし）
+  const viewAt = (currentMd: number): Match[] =>
+    all.map((m) => (m.matchday <= currentMd ? { ...m, score: { ...running.get(m.id)! } } : { ...m, score: undefined }));
 
   const snaps: Snapshot[] = [];
   let prev: Standings | null = null;
-
-  // キックオフ（第3節すべて 0-0）
-  const kickoff = snapshotFrom(group, teamIds, ct, viewNow(), prev, {
-    key: `${group}-live-0`,
-    clockLabel: "キックオフ",
-    kind: "kickoff",
-  });
-  snaps.push(kickoff);
-  prev = kickoff.standings;
 
   events.forEach((ev, i) => {
     const sc = running.get(ev.matchId)!;
     if (ev.goal.side === "home") sc.home++;
     else sc.away++;
     const m = matchById.get(ev.matchId)!;
-    const snap = snapshotFrom(group, teamIds, ct, viewNow(), prev, {
-      key: `${group}-live-${i + 1}`,
+    const snap = snapshotFrom(group, teamIds, ct, viewAt(ev.matchday), prev, {
+      key: `${group}-live-${i}`,
       clockLabel: clockLabel(ev.goal),
       kind: "goal",
       event: {
@@ -177,7 +171,7 @@ export function buildLiveTimeline(ct: CompiledTournament, group: GroupId): Snaps
         awayId: m.away,
         homeScore: sc.home,
         awayScore: sc.away,
-        matchday: 3,
+        matchday: ev.matchday,
         scorerSide: ev.goal.side,
         scorer: ev.goal.player,
       },

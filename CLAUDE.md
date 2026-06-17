@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 概要
 
-ワールドカップ グループステージの **通過タイムライン** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。主役は**タイムライン＝順位バンプチャート（横1表）**（縦＝順位1〜4・列＝時間が右へ流れる・各セルにその順位の国旗が入り上下に動く・列ヘッダに得点選手）。2モード = 最終節の分刻みライブ／大会全体の試合単位。副機能として**通過条件マトリックス**（もしものスコア。home 得点×away 得点の2軸で各スコアの①②/敗退を色分け）を折りたたみで残置。2022方式（32カ国・8組・各組上位2通過）。初期データは2022年カタール大会の全48試合・実スコア＋第3節16試合のゴール分刻み（得点選手名つき）。
+ワールドカップ グループステージの **通過タイムライン** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。主役は**タイムライン＝順位バンプチャート（横1表）**（縦＝順位1〜4・列＝時間が右へ流れる・各セルにその順位の国旗が入り上下に動く・列ヘッダに得点選手）。2モード = 全試合の分刻みライブ（第1〜3節）／大会全体の試合単位。副機能として**通過条件マトリックス**（もしものスコア。home 得点×away 得点の2軸で各スコアの①②/敗退を色分け）を折りたたみで残置。2022方式（32カ国・8組・各組上位2通過）。初期データは2022年カタール大会の全48試合・実スコア＋全48試合のゴール分刻み（得点選手名つき）。
 
 ```bash
 npm install
@@ -24,11 +24,11 @@ npm run test       # tsx scripts/smoketest.ts && tsx scripts/domtest.ts
 
 ## データ
 
-`src/data/worldcup2022.json` が単一の真実（`meta` / `teams[32]` / `groups[8]` / `matches[48]`）。team id は小文字 FIFA トリコード（表示用は大文字化）。`matches[].score` 省略/null = 未消化。`cards` は任意（無ければフェアプレーは未適用）。`matches[].goals`（任意）= `{minute, plus?, side, player?}` の配列で**最終節の分刻みタイムライン**用。あれば**本数==score を validate が強制**（転記ミス検出）。`player` は得点選手（日本=漢字・他=カタカナ・OG は "名前(OG)"）。第3節16試合に投入済み。`compileTournament()` が `validateTournament()` を通して `CompiledTournament`（Map 索引）にする。
+`src/data/worldcup2022.json` が単一の真実（`meta` / `teams[32]` / `groups[8]` / `matches[48]`）。team id は小文字 FIFA トリコード（表示用は大文字化）。`matches[].score` 省略/null = 未消化。`cards` は任意（無ければフェアプレーは未適用）。`matches[].goals`（任意）= `{minute, plus?, side, player?}` の配列で**分刻みタイムライン**用。あれば**本数==score を validate が強制**（転記ミス検出）。`player` は得点選手（日本=漢字・他=カタカナ・OG は "名前(OG)"）。**全48試合に投入済み**（0-0 は `[]`）。`compileTournament()` が `validateTournament()` を通して `CompiledTournament`（Map 索引）にする。
 
 ## タイムライン（`engine/timeline.ts`）
 
-`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=最終節分刻み（第3節の goals が全試合に揃う組のみ。無ければ null→UI は stage にフォールバック）。**ライブのキックオフは第3節を 0-0（=現在引分扱いで各+1点）として表示**＝放送のライブ表と同じ挙動。各スナップショットは `movements`（直前比の rank 変動 ▲▼）・`advancing`（上位 advancePerGroup の暫定通過圏）・`event.scorer`（得点選手名）を持つ。決定的。**描画（`render.ts`）は順位バンプチャート（横1表）**: スナップショット配列を「列」、**行＝順位(位置 1〜4)**、各セル＝そのスナップショットで `standings.rows[pos]` のチーム国旗（位置ベースで上下＝▲▼）。live のヘッダは『時間行』＋『最終節2試合のレーン行』に分割（得点者・スコアはその試合のレーンにのみ色分け表示。レーンは ct.matchesByGroup の matchday=3 から導出するので0-0試合もレーンが出る）。stage は1行ヘッダ。先頭の順位列・レーンラベルは `position:sticky`。上位 advancePerGroup 行は緑（暫定通過圏）。`?view=live|stage` で URL 同期。
+`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=**全試合分刻み**（全試合に goals 配列が要る。無ければ null→UI は stage にフォールバック）。全6試合の全ゴールを **`(matchday, clock, matchId)` 昇順**に統合し、各イベント時点で「`matchday<=現在節`=running スコア / `>現在節`=未消化」の `Match[]` で `computeStandings`（節ごとに2試合を分で統合。0-0進行中は現在引分扱い）。キックオフ列は無し（先頭がゴール）。各スナップショットは `movements`（rank 変動 ▲▼）・`advancing`（上位 advancePerGroup）・`event`(matchday・scorer 等)。決定的。**描画（`render.ts`）は順位バンプチャート（横1表）**: スナップ配列を「列」、**行＝順位(位置 1〜4)**、各セル＝`standings.rows[pos]` のチーム国旗（位置ベースで上下＝▲▼）。live ヘッダは『第n節の帯（colspan）』＋『時刻行』＋『2レーン（試合①/②＝節ごとに matchId 昇順の slotA/B）』。stage は1行ヘッダ。先頭の順位列・レーンラベル・節帯先頭は `position:sticky`。上位 advancePerGroup 行は緑。`?view=live|stage` で URL 同期。
 
 ## 順位決定ロジック（`engine/standings.ts`）= 正しさの核
 

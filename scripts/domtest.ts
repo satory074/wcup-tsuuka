@@ -46,19 +46,19 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".group-tab").length === 8, "1: グループタブ8");
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "1: 順位表4行");
   assert(root.querySelectorAll(".status-chips .chip").length === 4, "1: ステータスチップ4");
-  // タイムライン（主役・既定 live・バンプチャート: 行=順位, セル=国旗。ヘッダ=時間行+2試合レーン）。組A: キックオフ + A-5(3) + A-6(2) = 6列
+  // タイムライン（主役・既定 live・バンプチャート: 行=順位, セル=国旗。ヘッダ=節帯+時刻行+2レーン）。組Aは全試合15ゴール
   assert(!!root.querySelector("table.tl-grid"), "1: タイムラインが横グリッドで描画される");
   assert(root.querySelectorAll(".tl-grid tbody tr").length === 4, "1: 行=4順位");
-  assert(root.querySelectorAll(".tl-th-time").length === 6, `1: 時間列6（実際: ${root.querySelectorAll(".tl-th-time").length}）`);
-  assert(root.querySelectorAll(".tl-lane-label").length === 2, "1: 2試合分のレーンヘッダ行");
-  assert([...root.querySelectorAll(".tl-th-time")].some((e) => (e.textContent ?? "").includes("キックオフ")), "1: キックオフ列がある");
+  assert(root.querySelectorAll(".tl-th-time").length === 15, `1: 組A 全15ゴール列（実際: ${root.querySelectorAll(".tl-th-time").length}）`);
+  assert(root.querySelectorAll(".tl-band").length === 3, "1: 節帯は3（第1〜3節）");
+  assert(root.querySelectorAll(".tl-lane-label").length === 2, "1: 2レーン（試合①/②）");
   assert(root.querySelectorAll(".tl-poscol").length === 4, "1: 先頭列に順位ラベル4");
-  assert(root.querySelectorAll(".tl-flagcell").length === 24, "1: 国旗セル=4順位×6列=24");
+  assert(root.querySelectorAll(".tl-flagcell").length === 60, "1: 国旗セル=4順位×15列=60");
   assert(root.querySelectorAll(".tl-grid .tl-mv").length > 0, "1: 順位変動（▲▼）マーカーがある");
   // 最終列の1位セルがオランダ（組A優勝）
   const firstRowCells = [...root.querySelectorAll(".tl-grid tbody tr:first-child .tl-flagcell")];
   assert((firstRowCells[firstRowCells.length - 1].textContent ?? "").includes("NED"), "1: 最終列の1位はオランダ(NED)");
-  assert(root.querySelectorAll(".tl-lane-cell .tl-ch-scorer").length === 5, "1: 得点者がレーン内に5（ゴール数）");
+  assert(root.querySelectorAll(".tl-lane-cell .tl-ch-scorer").length === 15, "1: 得点者がレーン内に15（全ゴール数）");
   assert([...root.querySelectorAll(".tl-ch-scorer")].some((e) => (e.textContent ?? "").includes("ガクポ")), "1: 得点者名が表示される");
   // マトリックスは折りたたみ <details> 内に降格
   assert(!!root.querySelector("details#matrix-details"), "1: マトリックスは details 内");
@@ -73,13 +73,14 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const dom = setupDom(`${BASE_URL}?group=E`);
   boot(app(dom));
   const root = app(dom);
-  // 既定 live: 時間行+2レーン
-  assert(root.querySelectorAll(".tl-lane-label").length === 2, "1b: live は2試合レーン");
-  assert([...root.querySelectorAll(".tl-th-time")].some((e) => (e.textContent ?? "").includes("キックオフ")), "1b: live にキックオフ列");
+  // 既定 live: 節帯3 + 2レーン
+  assert(root.querySelectorAll(".tl-band").length === 3, "1b: live は節帯3（第1〜3節）");
+  assert(root.querySelectorAll(".tl-lane-label").length === 2, "1b: live は2レーン");
   const stageBtn = root.querySelector<HTMLElement>('.view-toggle [data-view="stage"]')!;
   click(dom, stageBtn);
   assert(decodeQuery(dom.window.location.search).view === "stage", "1b: URL に view=stage");
-  // stage: 試合単位（レーン無し・colhead 6列・第n節ラベル）
+  // stage: 試合単位（節帯/レーン無し・colhead 6列・第n節ラベル）
+  assert(root.querySelectorAll(".tl-band").length === 0, "1b: stage は節帯無し");
   assert(root.querySelectorAll(".tl-lane-label").length === 0, "1b: stage はレーン無し");
   assert(root.querySelectorAll(".tl-grid thead .tl-colhead").length === 6, "1b: 組E stage は6列（6試合）");
   assert([...root.querySelectorAll(".tl-colhead .tl-ch-time")].some((e) => (e.textContent ?? "").includes("第")), "1b: stage は第n節ラベル");

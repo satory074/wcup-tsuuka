@@ -60,21 +60,20 @@ function assert(cond: boolean, msg: string): void {
   a6.away = "ecu";
   assert(!validateTournament(b5).ok, "対戦の重複/欠落を弾く");
 
-  // 第3節16試合に goals があり、本数が score と一致
-  const md3 = (worldcupJson.matches as { matchday: number; goals?: unknown; score: { home: number; away: number } }[]).filter(
-    (m) => m.matchday === 3,
-  );
+  // 全48試合に goals があり、本数が score と一致
+  const allMatches = worldcupJson.matches as { matchday: number; goals?: unknown; score: { home: number; away: number } }[];
+  for (const m of allMatches) assert(Array.isArray(m.goals), "全試合に goals 配列がある");
+  const md3 = allMatches.filter((m) => m.matchday === 3);
   assert(md3.length === 16, `第3節は16試合（実際: ${md3.length}）`);
-  for (const m of md3) assert(Array.isArray(m.goals), "第3節の全試合に goals がある");
   // 本数不一致を弾く（E-5 のゴールを1つ削る → home 2→1 で score.home 2 と不一致）
   const bg = clone();
   const e5 = (bg.matches as { id: string; goals: unknown[] }[]).find((m) => m.id === "E-5")!;
   e5.goals = e5.goals.slice(0, 2);
   assert(!validateTournament(bg).ok, "ゴール本数と score の不一致を弾く");
-  // 第3節の各ゴールに得点選手名がある
-  for (const m of md3) {
+  // 全ゴールに得点選手名がある
+  for (const m of allMatches) {
     for (const g of (m.goals as { player?: string }[])) {
-      assert(typeof g.player === "string" && g.player.length > 0, "第3節の各ゴールに選手名");
+      assert(typeof g.player === "string" && g.player.length > 0, "全ゴールに選手名");
     }
   }
   console.log("[data] 不正データ検出 + goals 本数==score + 選手名 OK");
@@ -344,10 +343,12 @@ function sortedAdv(a: string[]): string {
   // 最終節 分刻みタイムライン（組E）
   const liveE = buildLiveTimeline(CT, "E");
   assert(liveE !== null, "7: 組E はライブタイムラインを生成");
-  // キックオフ(1) + E-5(3ゴール) + E-6(6ゴール) = 10スナップ
-  assert(liveE!.length === 10, `7: 組E ライブは10スナップ（実際: ${liveE!.length}）`);
-  assert(liveE![0].kind === "kickoff", "7: 先頭はキックオフ");
-  // 得点者がスナップショットに載る
+  // 全試合（第1〜3節）のゴール数ぶんのスナップ（キックオフ列は無し）
+  const eGoals = CT.matchesByGroup.get("E")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
+  assert(liveE!.length === eGoals, `7: 組E ライブは全ゴール数(${eGoals})スナップ（実際: ${liveE!.length}）`);
+  assert(liveE![0].kind === "goal", "7: 先頭はゴール（キックオフ列なし）");
+  assert(liveE!.some((s) => s.event?.matchday === 1) && liveE!.some((s) => s.event?.matchday === 3), "7: 第1節〜第3節を含む");
+  // 得点者がスナップショットに載る（48' E-5 堂安）
   const e48 = liveE!.find((s) => s.event?.matchId === "E-5" && s.clockLabel === "48'");
   assert(e48?.event?.scorer === "堂安", `7: 48' の得点者が堂安（実際: ${e48?.event?.scorer}）`);
 

@@ -63,7 +63,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
 
       <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位</span></h2>
       <div class="view-toggle seg" role="group" aria-label="タイムライン表示モード">
-        <button type="button" class="seg-btn" data-action="set-view" data-view="live">最終節（分刻み）</button>
+        <button type="button" class="seg-btn" data-action="set-view" data-view="live">全試合（分刻み）</button>
         <button type="button" class="seg-btn" data-action="set-view" data-view="stage">大会全体（試合単位）</button>
       </div>
       <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}） ／ ▲▼ 直前からの順位変動</p>
@@ -224,24 +224,38 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
       return `<tr><th scope="row" class="tl-poscol${advCls}">${pos + 1}</th>${cells}</tr>`;
     }).join("");
 
-    // ヘッダ: live は「時間行 + 試合ごとのレーン行」、stage は1行（試合ごとの列）
+    // ヘッダ: live は「節帯 + 時刻行 + 2レーン（試合①/②）」、stage は1行（試合ごとの列）
     let theadHTML: string;
     if (view.view === "live") {
-      const md3 = (ct.matchesByGroup.get(view.group) ?? [])
-        .filter((m) => m.matchday === 3)
-        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      // 節ごとの2試合を matchId 昇順で slotA/slotB に
+      const byMd = new Map<number, Match[]>();
+      for (const m of ct.matchesByGroup.get(view.group) ?? []) {
+        const arr = byMd.get(m.matchday) ?? [];
+        arr.push(m);
+        byMd.set(m.matchday, arr);
+      }
+      for (const arr of byMd.values()) arr.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      const slotOf = (s: Snapshot): 0 | 1 => (byMd.get(s.event!.matchday)![0]?.id === s.event!.matchId ? 0 : 1);
+
+      // 節帯（matchday 連続列を colspan でまとめる。snaps は matchday 昇順）
+      const bandCells: string[] = [];
+      for (let bi = 0; bi < snaps.length; ) {
+        const md = snaps[bi].event!.matchday;
+        let span = 0;
+        while (bi + span < snaps.length && snaps[bi + span].event!.matchday === md) span++;
+        bandCells.push(`<th class="tl-band" colspan="${span}">第${md}節</th>`);
+        bi += span;
+      }
+
       const timeCells = snaps
-        .map((s) => {
-          const cls = s.event ? (s.event.matchId === md3[0]?.id ? "is-A" : "is-B") : "";
-          return `<th class="tl-th-time ${cls}">${esc(s.clockLabel)}</th>`;
-        })
+        .map((s) => `<th class="tl-th-time ${slotOf(s) === 0 ? "is-A" : "is-B"}">${esc(s.clockLabel)}</th>`)
         .join("");
-      const laneRow = (m: Match | undefined, cls: string): string => {
-        if (!m) return "";
+
+      const laneRow = (slot: 0 | 1, cls: string, label: string): string => {
         const cells = snaps
           .map((s) => {
-            const e = s.event;
-            if (s.kind === "goal" && e && e.matchId === m.id) {
+            if (slotOf(s) === slot) {
+              const e = s.event!;
               const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
               const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
               return `<td class="tl-lane-cell ${cls}"><div class="tl-ch-scorer">⚽${who}</div><div class="tl-ch-score">${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}</div></td>`;
@@ -249,12 +263,14 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, dispat
             return `<td class="tl-lane-empty ${cls}"></td>`;
           })
           .join("");
-        return `<tr><th class="tl-lane-label ${cls}" title="${esc(team(m.home).name)} × ${esc(team(m.away).name)}">${team(m.home).flag}${team(m.away).flag}</th>${cells}</tr>`;
+        return `<tr><th class="tl-lane-label ${cls}">${label}</th>${cells}</tr>`;
       };
+
       theadHTML = `
-        <tr><th class="tl-corner">順位</th>${timeCells}</tr>
-        ${laneRow(md3[0], "is-A")}
-        ${laneRow(md3[1], "is-B")}`;
+        <tr><th class="tl-corner tl-band-corner"></th>${bandCells.join("")}</tr>
+        <tr><th class="tl-corner">時刻</th>${timeCells}</tr>
+        ${laneRow(0, "is-A", "試合①")}
+        ${laneRow(1, "is-B", "試合②")}`;
     } else {
       const headCols = snaps.map(colHeadHTML).join("");
       theadHTML = `<tr><th class="tl-corner">順位</th>${headCols}</tr>`;
