@@ -969,6 +969,55 @@ table.bt-table {
 .tl-leg-rank {
   font-variant-numeric: tabular-nums;
 }
+/* 節ラベルに併記する日付（M/D）= 小さく沈める */
+.tl-md-date {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--ink-soft);
+}
+/* 得点ログ（live=ゴール時系列／stage=試合結果）= チャートで失われた誰が・何分にを復活 */
+.tl-log {
+  margin: 0.6rem 0.1rem 0;
+}
+.tl-log-head {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--ink-soft);
+  margin: 0 0 0.4rem;
+}
+.tl-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem 0.4rem;
+}
+.tl-ev {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.32rem;
+  padding: 0.16rem 0.5rem 0.16rem 0.45rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong); /* 既定。live は得点国の線色で上書き */
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.tl-ev-time {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--ink);
+}
+.tl-ev-scorer {
+  font-weight: 700;
+  color: var(--ink);
+}
+.tl-ev-score {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
 
 /* ---- 通過条件シナリオ（折りたたみ） ---- */
 .scenario-details {

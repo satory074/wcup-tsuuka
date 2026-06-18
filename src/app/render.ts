@@ -349,7 +349,18 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       lanes += `<text class="tl-poslabel" x="${plotL - 12}" y="${f1(y)}" dominant-baseline="middle" text-anchor="end">${p + 1}</text>`;
     }
 
-    // 節帯（連続する同 matchday をまとめてラベル＋区切り線）
+    // 節帯（連続する同 matchday をまとめてラベル＋区切り線・節に日付 M/D を併記）
+    const gMatches = ct.matchesByGroup.get(view.group) ?? [];
+    const koByMd = new Map<number, string>(); // matchday → 最早 kickoff iso
+    for (const m of gMatches) {
+      if (!m.kickoff) continue;
+      const prev = koByMd.get(m.matchday);
+      if (prev === undefined || m.kickoff < prev) koByMd.set(m.matchday, m.kickoff);
+    }
+    const mdDateLabel = (md: number): string => {
+      const iso = koByMd.get(md);
+      return iso && iso.length >= 10 ? `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}` : "";
+    };
     let mdBands = "";
     const mdOf = (ci: number) => snaps[ci].event?.matchday ?? 0;
     for (let bi = 0; bi < cols; ) {
@@ -357,7 +368,9 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       let span = 0;
       while (bi + span < cols && mdOf(bi + span) === md) span++;
       const cx = (xAt(bi) + xAt(bi + span - 1)) / 2;
-      mdBands += `<text class="tl-md" x="${f1(cx)}" y="${f1(plotT - 22)}" text-anchor="middle">第${md}節</text>`;
+      const date = mdDateLabel(md);
+      const dateTsp = date ? ` <tspan class="tl-md-date">${date}</tspan>` : "";
+      mdBands += `<text class="tl-md" x="${f1(cx)}" y="${f1(plotT - 22)}" text-anchor="middle">第${md}節${dateTsp}</text>`;
       if (bi > 0) {
         const sep = (xAt(bi - 1) + xAt(bi)) / 2;
         mdBands += `<line class="tl-mdsep" x1="${f1(sep)}" y1="${f1(plotT - 30)}" x2="${f1(sep)}" y2="${f1(plotB)}" />`;
@@ -392,9 +405,29 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       )
       .join("");
 
+    // 得点ログ（live=ゴール時系列／stage=試合結果）。チャートで失われた「誰が・何分に」を可視化。
+    // チップ左ボーダー＝得点国の線色でチャートの折れ線と対応づける。<title> ツールチップは補足として残す。
+    const isLive = view.view === "live";
+    const evChips = snaps
+      .map((s) => {
+        const e = s.event;
+        if (!e) return "";
+        const score = `${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}`;
+        if (isLive) {
+          const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
+          const color = colorOf.get(scorerId) ?? "var(--border-strong)";
+          const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
+          return `<span class="tl-ev" style="border-left-color:${color}"><span class="tl-ev-time">${esc(s.clockLabel)}</span><span class="tl-ev-scorer">⚽${who}</span><span class="tl-ev-score">${score}</span></span>`;
+        }
+        return `<span class="tl-ev"><span class="tl-ev-time">${esc(s.clockLabel)}</span><span class="tl-ev-score">${team(e.homeId).flag}${score}${team(e.awayId).flag}</span></span>`;
+      })
+      .join("");
+    const log = `<div class="tl-log"><p class="tl-log-head">${isLive ? "得点ログ" : "試合結果"}</p><div class="tl-events">${evChips}</div></div>`;
+
     return `
       <div class="timeline-scroll"><div class="tl-chart-wrap">${svg}</div></div>
-      <div class="tl-legend">${legend}</div>`;
+      <div class="tl-legend">${legend}</div>
+      ${log}`;
   }
 
   // ---- 通過条件シナリオ（折りたたみ内） ----

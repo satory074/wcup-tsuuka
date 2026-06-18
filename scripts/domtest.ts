@@ -57,6 +57,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const leg0 = root.querySelector(".tl-legend .tl-leg-item")?.textContent ?? "";
   assert(leg0.includes("オランダ") && leg0.includes("1位"), `1: 凡例先頭=オランダ1位（実際: ${leg0}）`);
   assert((root.querySelector(".tl-chart")?.innerHTML ?? "").includes("ガクポ"), "1: 得点者名がツールチップに表示される");
+  // 得点ログ（チャート下・時系列）と節ラベルの日付
+  assert(root.querySelectorAll(".tl-log .tl-ev").length === 15, `1: 得点ログ=全15ゴール（実際: ${root.querySelectorAll(".tl-log .tl-ev").length}）`);
+  assert((root.querySelector(".tl-log")?.textContent ?? "").includes("ガクポ"), "1: 得点ログに得点者名が見える");
+  assert([...root.querySelectorAll(".tl-md-date")].some((e) => /\d+\/\d+/.test(e.textContent ?? "")), "1: 節ラベルに日付 M/D");
   // 通過条件シナリオは折りたたみ <details> 内に降格（2022 組Aは全消化=決め手解説）
   assert(!!root.querySelector("details#scenario-details"), "1: シナリオは details 内");
   assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "1: decided は決着の分かれ目を表示");
@@ -84,6 +88,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".tl-chart .tl-line").length === 4, "1b: stage も線=4チーム");
   assert(root.querySelectorAll(".tl-chart .tl-md").length === 3, "1b: stage も節ラベル3");
   assert([...root.querySelectorAll(".tl-chart .tl-md")].some((e) => (e.textContent ?? "").includes("第")), "1b: stage は第n節ラベル");
+  assert(root.querySelectorAll(".tl-log .tl-ev").length === 6, `1b: stage は試合結果6件（実際: ${root.querySelectorAll(".tl-log .tl-ev").length}）`);
   console.log("[dom] タイムライン表示モード切替 OK");
 }
 
