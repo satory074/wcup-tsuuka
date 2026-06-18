@@ -1,7 +1,7 @@
 // 唯一の DOM 層。グループ選択・順位表・通過ステータス・タイムライン（主役）・
 // 通過条件シナリオ（折りたたみ）を描画する。
 // イベントはルートの click リスナーで data-action 委譲（kisei/moshirasu パターン）。
-import type { CompiledTournament, GroupId, Match, Standings } from "../engine/types";
+import type { CompiledTournament, GroupId, Standings } from "../engine/types";
 import { rankMark, tricode } from "../engine/format";
 import type { TeamStatus } from "../engine/status";
 import type { GroupQualification, TeamQualification, BoundaryNote, TeamCondition } from "../engine/scenario/qualify";
@@ -93,7 +93,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
           <button type="button" class="seg-btn" data-action="set-view" data-view="live">全試合（分刻み）</button>
           <button type="button" class="seg-btn" data-action="set-view" data-view="stage">大会全体（試合単位）</button>
         </div>
-        <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ ▲▼ 直前からの順位変動</p>
+        <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・点＝得点で動いた瞬間）</p>
         <div id="timeline"></div>
 
         <details class="scenario-details" id="scenario-details">
@@ -203,8 +203,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   // ---- ベスト3位（2026方式: 各組3位を横断ランキングし上位 slots 組が通過） ----
   function bestThirdsHTML(bt: BestThirdsResult): string {
     if (bt.slots <= 0 || bt.entries.length === 0) return "";
+    // 行ごとの「暫定」は全行に並んで冗長（下の注記が一括で説明）。本当に未決着な3位タイ＝🎲抽選だけ行に出す。
     const stateBadge = (e: ThirdEntry): string => {
-      if (!e.groupComplete) return `<span class="tie-badge">暫定</span>`;
       if (e.undecided) return `<span class="tie-badge">抽選</span>`;
       return "";
     };
@@ -221,7 +221,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       })
       .join("");
     const note = bt.undecided
-      ? `<p class="site-sub">⚠️ グループステージ進行中のため暫定です（🟩＝現時点で上位${bt.slots}圏／🎲抽選・暫定あり）。</p>`
+      ? `<p class="site-sub bt-note">⚠️ グループステージ進行中のため<b>全行が暫定</b>です（🟩＝現時点で上位${bt.slots}圏／🎲＝3位タイの抽選）。</p>`
       : "";
     return `
       <h2 class="section-title">3位チーム比較 <span class="hint">各組3位を横断ランキング → 上位${bt.slots}組が通過（R32）</span></h2>
@@ -249,7 +249,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const rows = st.rows
       .map((r, i) => {
         const cls = [r.advances ? "row-advance" : "", i + 1 === adv ? "advance-line" : ""].filter(Boolean).join(" ");
-        const tie = r.tiedGroupKey ? `<span class="tie-badge">🎲</span>` : "";
+        // 🎲 は「消化済みなのに並んで未決着」のときだけ。未消化（played=0）は「–」表示で足り、🎲 の多発はノイズ。
+        const tie = r.tiedGroupKey && r.played > 0 ? `<span class="tie-badge">🎲</span>` : "";
         // 未消化（played=0）の組は勝点・得失点差を 0-0-0 に見せず「–」表示。
         const gd = r.played === 0 ? "–" : gdLabel(r.gd);
         const pts = r.played === 0 ? "–" : String(r.points);
@@ -284,32 +285,22 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       ${bt}`;
   }
 
-  // ---- タイムライン（主役・横グリッド: 列=時間, 行=チーム, セル=順位） ----
-  function moveMark(kind: "up" | "down" | "same"): string {
-    if (kind === "up") return `<span class="tl-mv is-up">▲</span>`;
-    if (kind === "down") return `<span class="tl-mv is-down">▼</span>`;
-    return "";
-  }
+  // ---- タイムライン（主役・順位バンプチャート: x=イベント時系列, y=順位, 線=各国の推移） ----
+  // 線にすることで全節が1画面に収まり、各国の軌跡を一目で追える（旧: 横スクロールする国旗の格子）。
+  // engine の Snapshot[]（各列の standings 並び＝位置）をそのまま座標列に使う＝engine は不変。
+  const TEAM_LINE_COLORS = ["#2563eb", "#ea7317", "#7c3aed", "#0d9488", "#db2777", "#475569"];
+  const rawTc = (id: string) => tricode(team(id));
 
-  function colHeadHTML(snap: Snapshot): string {
-    if (snap.kind === "kickoff") {
-      return `<th class="tl-colhead tl-kickoff"><div class="tl-ch-time">${esc(snap.clockLabel)}</div><div class="tl-ch-score">0-0</div></th>`;
+  // 頂点ツールチップ: 「国名・順位｜クロック スコア（得点者）」。
+  function tipText(tid: string, snap: Snapshot, scoring: boolean): string {
+    const pos = snap.standings.rows.findIndex((r) => r.teamId === tid) + 1;
+    let s = `${team(tid).name}・${pos}位`;
+    const e = snap.event;
+    if (e) {
+      s += `｜${snap.clockLabel} ${rawTc(e.homeId)} ${e.homeScore}-${e.awayScore} ${rawTc(e.awayId)}`;
+      if (scoring && e.scorer) s += ` ⚽${e.scorer}`;
     }
-    const e = snap.event!;
-    if (snap.kind === "goal") {
-      const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
-      const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
-      return `<th class="tl-colhead tl-goal">
-        <div class="tl-ch-time">${esc(snap.clockLabel)}</div>
-        <div class="tl-ch-scorer">⚽${who}</div>
-        <div class="tl-ch-score">${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}</div>
-      </th>`;
-    }
-    // matchEnd（試合単位）
-    return `<th class="tl-colhead tl-matchend">
-      <div class="tl-ch-time">${esc(snap.clockLabel)}</div>
-      <div class="tl-ch-score">${team(e.homeId).flag}${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}${team(e.awayId).flag}</div>
-    </th>`;
+    return esc(s);
   }
 
   function timelineHTML(view: RenderView): string {
@@ -318,100 +309,92 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       return `<p class="empty-msg">このグループにはタイムラインデータがありません。</p>`;
     }
     const adv = ct.meta.advancePerGroup;
-    // 行＝順位（位置）, 列＝時間。各スナップショットの「位置index → teamId」「teamId → 位置index」
+    const cols = snaps.length;
     const posByCol = snaps.map((s) => s.standings.rows.map((r) => r.teamId)); // [col][pos] = teamId
     const idxByCol = posByCol.map((arr) => new Map(arr.map((id, i) => [id, i])));
     const teamCount = posByCol[0].length;
 
-    const bodyRows = Array.from({ length: teamCount }, (_, pos) => {
-      const advCls = pos < adv ? " is-adv" : "";
-      const cells = posByCol
-        .map((col, ci) => {
-          const tid = col[pos];
-          // 位置ベースの上下（直前列での同チームの位置と比較）= 国旗が上下する動き
-          let mv: "up" | "down" | "same" = "same";
-          if (ci > 0) {
-            const prev = idxByCol[ci - 1].get(tid);
-            if (prev !== undefined) mv = pos < prev ? "up" : pos > prev ? "down" : "same";
-          }
-          return `<td class="tl-flagcell${advCls}" title="${esc(team(tid).name)}"><span class="tl-flag">${team(tid).flag}</span><span class="tl-code">${tc(tid)}</span>${moveMark(mv)}</td>`;
-        })
-        .join("");
-      return `<tr><th scope="row" class="tl-poscol${advCls}">${pos + 1}</th>${cells}</tr>`;
-    }).join("");
+    // 色は最終順位（最後の列の位置順）で固定割当＝1位から順に同じ色。決定的。
+    const finalOrder = posByCol[cols - 1];
+    const colorOf = new Map<string, string>(
+      finalOrder.map((id, i) => [id, TEAM_LINE_COLORS[i % TEAM_LINE_COLORS.length]]),
+    );
 
-    // ヘッダ: live は「第n節帯 + 日時帯 + 時刻行 + 2レーン（試合①/②）」、stage は1行（試合ごとの列）
-    let theadHTML: string;
-    if (view.view === "live") {
-      const matches = ct.matchesByGroup.get(view.group) ?? [];
-      const koByMatch = new Map(matches.map((m) => [m.id, m.kickoff ?? ""]));
-      // 節ごとの試合を (kickoff, matchId) 昇順で slotA/slotB に（早いキックオフ＝試合①）
-      const byMd = new Map<number, Match[]>();
-      for (const m of matches) {
-        const arr = byMd.get(m.matchday) ?? [];
-        arr.push(m);
-        byMd.set(m.matchday, arr);
-      }
-      const koCmp = (a: Match, b: Match) =>
-        (a.kickoff ?? "") < (b.kickoff ?? "") ? -1 : (a.kickoff ?? "") > (b.kickoff ?? "") ? 1 : a.id < b.id ? -1 : 1;
-      for (const arr of byMd.values()) arr.sort(koCmp);
-      const slotOf = (s: Snapshot): 0 | 1 => (byMd.get(s.event!.matchday)![0]?.id === s.event!.matchId ? 0 : 1);
+    // ジオメトリ（SVG ユーザー単位・幅1000固定で width:100% スケール）
+    const VBW = 1000;
+    const mL = 36;
+    const mR = 132;
+    const mT = 36;
+    const mB = 16;
+    const rowGap = 64;
+    const plotL = mL;
+    const plotR = VBW - mR;
+    const plotT = mT;
+    const plotB = plotT + rowGap * (teamCount - 1);
+    const VBH = plotB + mB;
+    const xAt = (ci: number) => (cols === 1 ? (plotL + plotR) / 2 : plotL + ((plotR - plotL) * ci) / (cols - 1));
+    const yAt = (pos: number) => plotT + rowGap * pos;
+    const f1 = (n: number) => n.toFixed(1);
 
-      // 連続列を keyFn でまとめて colspan 帯を作る（snaps は絶対時刻昇順なので matchday も kickoff も連続）
-      const bandRow = (keyFn: (s: Snapshot) => string, label: (key: string) => string, cls: string): string => {
-        let cells = "";
-        for (let bi = 0; bi < snaps.length; ) {
-          const key = keyFn(snaps[bi]);
-          let span = 0;
-          while (bi + span < snaps.length && keyFn(snaps[bi + span]) === key) span++;
-          cells += `<th class="${cls}" colspan="${span}">${esc(label(key))}</th>`;
-          bi += span;
-        }
-        return cells;
-      };
-      const fmtKO = (iso: string): string =>
-        iso.length >= 16 ? `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))} ${iso.slice(11, 16)}` : iso;
+    // 暫定通過圏バンド（上位 adv 位のレーン）
+    const bandTop = yAt(0) - rowGap * 0.3;
+    const bandBot = yAt(adv - 1) + rowGap * 0.3;
+    const band = `<rect class="tl-advband" x="${plotL}" y="${f1(bandTop)}" width="${plotR - plotL}" height="${f1(bandBot - bandTop)}" />`;
 
-      const mdBand = bandRow((s) => String(s.event!.matchday), (k) => `第${k}節`, "tl-band");
-      const koBand = bandRow((s) => koByMatch.get(s.event!.matchId) ?? "", (k) => fmtKO(k), "tl-dateband");
-
-      const timeCells = snaps
-        .map((s) => `<th class="tl-th-time ${slotOf(s) === 0 ? "is-A" : "is-B"}">${esc(s.clockLabel)}</th>`)
-        .join("");
-
-      const laneRow = (slot: 0 | 1, cls: string, label: string): string => {
-        const cells = snaps
-          .map((s) => {
-            if (slotOf(s) === slot) {
-              const e = s.event!;
-              const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
-              const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
-              return `<td class="tl-lane-cell ${cls}"><div class="tl-ch-scorer">⚽${who}</div><div class="tl-ch-score">${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}</div></td>`;
-            }
-            return `<td class="tl-lane-empty ${cls}"></td>`;
-          })
-          .join("");
-        return `<tr><th class="tl-lane-label ${cls}">${label}</th>${cells}</tr>`;
-      };
-
-      theadHTML = `
-        <tr><th class="tl-corner tl-band-corner"></th>${mdBand}</tr>
-        <tr><th class="tl-corner tl-band-corner"></th>${koBand}</tr>
-        <tr><th class="tl-corner">時刻</th>${timeCells}</tr>
-        ${laneRow(0, "is-A", "試合①")}
-        ${laneRow(1, "is-B", "試合②")}`;
-    } else {
-      const headCols = snaps.map(colHeadHTML).join("");
-      theadHTML = `<tr><th class="tl-corner">順位</th>${headCols}</tr>`;
+    // レーン線＋順位ラベル（左）
+    let lanes = "";
+    for (let p = 0; p < teamCount; p++) {
+      const y = yAt(p);
+      lanes += `<line class="tl-lane" x1="${plotL}" y1="${f1(y)}" x2="${plotR}" y2="${f1(y)}" />`;
+      lanes += `<text class="tl-poslabel" x="${plotL - 12}" y="${f1(y)}" dominant-baseline="middle" text-anchor="end">${p + 1}</text>`;
     }
 
+    // 節帯（連続する同 matchday をまとめてラベル＋区切り線）
+    let mdBands = "";
+    const mdOf = (ci: number) => snaps[ci].event?.matchday ?? 0;
+    for (let bi = 0; bi < cols; ) {
+      const md = mdOf(bi);
+      let span = 0;
+      while (bi + span < cols && mdOf(bi + span) === md) span++;
+      const cx = (xAt(bi) + xAt(bi + span - 1)) / 2;
+      mdBands += `<text class="tl-md" x="${f1(cx)}" y="${f1(plotT - 22)}" text-anchor="middle">第${md}節</text>`;
+      if (bi > 0) {
+        const sep = (xAt(bi - 1) + xAt(bi)) / 2;
+        mdBands += `<line class="tl-mdsep" x1="${f1(sep)}" y1="${f1(plotT - 30)}" x2="${f1(sep)}" y2="${f1(plotB)}" />`;
+      }
+      bi += span;
+    }
+
+    // 各国の折れ線＋頂点＋右端ラベル（最終順位の位置に flag + code）
+    let lines = "";
+    for (const tid of finalOrder) {
+      const color = colorOf.get(tid)!;
+      const pts = posByCol.map((_, ci) => `${f1(xAt(ci))},${f1(yAt(idxByCol[ci].get(tid)!))}`).join(" ");
+      lines += `<polyline class="tl-line" data-team="${tid}" points="${pts}" style="stroke:${color}" />`;
+      for (let ci = 0; ci < cols; ci++) {
+        const e = snaps[ci].event;
+        const scorerId = e && e.scorerSide ? (e.scorerSide === "home" ? e.homeId : e.awayId) : undefined;
+        const scoring = scorerId === tid;
+        lines += `<circle class="tl-dot${scoring ? " is-scorer" : ""}" data-team="${tid}" cx="${f1(xAt(ci))}" cy="${f1(yAt(idxByCol[ci].get(tid)!))}" r="${scoring ? 5 : 3}" style="fill:${color}"><title>${tipText(tid, snaps[ci], scoring)}</title></circle>`;
+      }
+      const fy = yAt(idxByCol[cols - 1].get(tid)!);
+      lines += `<text class="tl-endlabel" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tc(tid)}</tspan></text>`;
+    }
+
+    const aria = `グループ${view.group}の順位推移。縦軸=順位（上が1位・上位${adv}が通過圏）、横軸=時系列。色付きの線が各国の順位の動き。`;
+    const svg = `<svg class="tl-chart" viewBox="0 0 ${VBW} ${VBH}" role="img" aria-label="${esc(aria)}" preserveAspectRatio="xMidYMid meet">${band}${lanes}${mdBands}${lines}</svg>`;
+
+    // 凡例（色→国旗→和名→最終順位）= チャートの色対応＆名前を補う
+    const legend = finalOrder
+      .map(
+        (tid, i) =>
+          `<span class="tl-leg-item"><span class="tl-leg-swatch" style="background:${colorOf.get(tid)}"></span>${team(tid).flag}<span class="tl-leg-name">${esc(team(tid).name)}</span><span class="tl-leg-rank">${i + 1}位</span></span>`,
+      )
+      .join("");
+
     return `
-      <div class="timeline-scroll">
-        <table class="tl-grid tnum">
-          <thead>${theadHTML}</thead>
-          <tbody>${bodyRows}</tbody>
-        </table>
-      </div>`;
+      <div class="timeline-scroll"><div class="tl-chart-wrap">${svg}</div></div>
+      <div class="tl-legend">${legend}</div>`;
   }
 
   // ---- 通過条件シナリオ（折りたたみ内） ----
@@ -548,6 +531,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     elOverview.hidden = !isOverview;
     elDetail.hidden = isOverview;
     (root.querySelector(".wrap") as HTMLElement).classList.toggle("is-overview", isOverview);
+    // ヒーロー内側幅を本文に合わせる（overview は本文 1200px に追従させ左端を揃える）。
+    root.classList.toggle("scope-overview", isOverview);
 
     if (isOverview) {
       elOverview.innerHTML = overviewHTML(view);

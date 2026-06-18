@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 概要
 
-ワールドカップ グループステージの **通過タイムライン** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。主役は**タイムライン＝順位バンプチャート（横1表）**（縦＝順位1〜4・列＝時間が右へ流れる・各セルにその順位の国旗が入り上下に動く・列ヘッダに得点選手）。2モード = 全試合の分刻みライブ（第1〜3節）／大会全体の試合単位。副機能として**通過条件（シナリオ）パネル**（グループの状態に適応：決着済みは「決め手＝タイブレーク解説」、最終節は各チームの「勝/分/敗で何が必要か」＋タイブレーク予告、序盤＝複数節残りは**非表示**＝シナリオがある時だけ出す）を折りたたみで残置。
+ワールドカップ グループステージの **通過タイムライン** 可視化サイト（Astro 5 + TypeScript + Tailwind v4 + GitHub Pages 静的サイト、`base: /wcup-tsuuka`）。主役は**タイムライン＝順位バンプチャート（SVG 折れ線）**（縦軸＝順位1〜4・横軸＝イベント時系列・チームごとに1本の色付き折れ線で順位推移を描く。全節が1画面に収まり横スクロール不要、右端に最終順位の国旗+略号、点＝得点で動いた瞬間でツールチップに得点者）。2モード = 全試合の分刻みライブ（第1〜3節）／大会全体の試合単位。副機能として**通過条件（シナリオ）パネル**（グループの状態に適応：決着済みは「決め手＝タイブレーク解説」、最終節は各チームの「勝/分/敗で何が必要か」＋タイブレーク予告、序盤＝複数節残りは**非表示**＝シナリオがある時だけ出す）を折りたたみで残置。
 
 **表示範囲（scope）= 2つ**（ヘッダ下「一覧／詳細」トグル＝`?scope=overview`、既定は **detail**＝上記の1グループ詳細＝タイムライン主役）:
 - **detail**（既定）= 1グループの順位表＋通過ステータス＋タイムライン＋シナリオ（従来の画面そのまま。`?group=` の共有URLを温存）。
@@ -47,7 +47,7 @@ team id は小文字 FIFA トリコード（表示用は大文字化）。`match
 
 ## タイムライン（`engine/timeline.ts`）
 
-`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=**全試合分刻み**（**消化済み試合**に goals 配列と kickoff が要る。1試合も消化が無い／消化分に goals が無ければ null→UI は stage にフォールバック）。**大会進行中（一部未消化）でも可**: 未消化試合は score 無し＝`kickoffMinutes(m)<=絶対時刻` 判定で常に未消化側に落ちるので順位に寄与しない（2022 は全消化のため出力不変）。全6試合の全ゴールを **絶対時刻 `kickoffMinutes(kickoff)+minute+plus` 昇順**に統合し（被る試合＝同一キックオフは分で並列、被らない試合は時系列で前後に）、各イベント時点で「`kickoffMinutes(m)<=絶対時刻`=running スコア / `>`=未消化」の `Match[]` で `computeStandings`（0-0進行中は現在引分扱い）。`kickoffMinutes` は Date 不使用の純整数（同年前提・順序保証）。キックオフ列は無し（先頭がゴール）。各スナップショットは `movements`（rank 変動 ▲▼）・`advancing`（上位 advancePerGroup）・`event`(matchday・scorer 等)。決定的。**描画（`render.ts`）は順位バンプチャート（横1表）**: スナップ配列を「列」、**行＝順位(位置 1〜4)**、各セル＝`standings.rows[pos]` のチーム国旗（位置ベースで上下＝▲▼）。live ヘッダは『第n節の帯』＋『日時帯（同一 kickoff の連続列を colspan、現地 `M/D HH:MM`）』＋『時刻行』＋『2レーン（試合①/②＝節ごとに (kickoff,matchId) 昇順の slotA/B）』。stage は1行ヘッダ。先頭の順位列・レーンラベル・節帯先頭は `position:sticky`。上位 advancePerGroup 行は緑。`?view=live|stage` で URL 同期。
+`computeStandings` を再利用し「その時点のスコアを入れた `Match[]`」を作って呼ぶだけ（engine は DOM/Date 非依存を維持）。`buildStageTimeline`=試合単位（全組可）、`buildLiveTimeline`=**全試合分刻み**（**消化済み試合**に goals 配列と kickoff が要る。1試合も消化が無い／消化分に goals が無ければ null→UI は stage にフォールバック）。**大会進行中（一部未消化）でも可**: 未消化試合は score 無し＝`kickoffMinutes(m)<=絶対時刻` 判定で常に未消化側に落ちるので順位に寄与しない（2022 は全消化のため出力不変）。全6試合の全ゴールを **絶対時刻 `kickoffMinutes(kickoff)+minute+plus` 昇順**に統合し（被る試合＝同一キックオフは分で並列、被らない試合は時系列で前後に）、各イベント時点で「`kickoffMinutes(m)<=絶対時刻`=running スコア / `>`=未消化」の `Match[]` で `computeStandings`（0-0進行中は現在引分扱い）。`kickoffMinutes` は Date 不使用の純整数（同年前提・順序保証）。キックオフ列は無し（先頭がゴール）。各スナップショットは `movements`（rank 変動 ▲▼）・`advancing`（上位 advancePerGroup）・`event`(matchday・scorer 等)。決定的。**描画（`render.ts` の `timelineHTML`）は順位バンプチャート（SVG 折れ線）**: スナップ配列を x 軸（イベント時系列・等間隔）、`standings.rows` の位置を y 軸（順位1〜4）にし、**チームごとに1本の `<polyline>`**（最終順位順に固定色 `TEAM_LINE_COLORS`）。各列に `<circle.tl-dot>`（得点した国は `is-scorer` で大きめ＋`<title>` に得点者）、右端に `<text.tl-endlabel>`（最終順位の位置に国旗+略号）、左に順位ラベル `.tl-poslabel`、上位 advancePerGroup は淡緑バンド `.tl-advband`、節境界は `.tl-md`（第n節ラベル）＋破線 `.tl-mdsep`。live/stage とも同じチャート（差は x の密度＝live は分刻みゴール毎／stage は試合毎）。`viewBox` 固定 + `width:100%` で全節が1画面に収まり、`.tl-chart-wrap{min-width}` 未満の幅でのみ横スクロール。チャート下に色対応の凡例 `.tl-legend`。`?view=live|stage` で URL 同期。エンジンは不変（`Snapshot[]` の位置情報をそのまま座標に使う）。
 
 ## 順位決定ロジック（`engine/standings.ts`）= 正しさの核
 
@@ -74,7 +74,7 @@ FIFA 2022 順:
 ## テスト
 
 - `scripts/smoketest.ts`: ①データ検証（壊した複製・goals本数!=scoreを弾く） ②2022 全8組の実順位再現 ③タイブレーク単体（総GD/総GF/h2h/3すくみ抽選/1-2位タイ） ④通過条件シナリオ（decided=組E/H の決め手 reason・final-round=合成最終節で勝→advance/分→depends/敗→out・early=条件出さず次戦・決定性） ⑤status ⑦タイムライン（全8組の最終スナップ==最終順位・**組E 70'でコスタリカが暫定通過圏入り→最終は日本/スペイン**・scoreAtClock境界・決定性） ⑧2026検証（48/12/72・組Iの部分ライブ・組A/Kはstage） ⑨best-thirds（合成12組の境界/同値跨ぎ/組未完・2026実データは全組contention・2022は空）。
-- `scripts/domtest.ts`: jsdom で boot→描画（タイムライン主役）→モード切替(view=)→グループ切替→共有URL(group/view)復元→**大会切替(`?cup=2026`で12タブ＋3位パネル＋早期はシナリオ非表示=`#scenario-details` hidden、2022は best-thirds 空・decided は決め手ノート2件)**→**一覧(scope=overview)切替**（2022=`#overview`表示/`#detail-view`非表示・`.mini-group` 8枚×4行=32・上位2緑16・ベスト3位表なし→カードクリックで detail E にドリルイン＝`scope` 消滅・タブE・タイムライン描画／2026=`scope=overview` 復元で12枚＋`.overview-bt .bt-table`）。既定は detail（`#overview` hidden で既存ブロック不変）。シナリオは `<details#scenario-details>` 内。**既定 cup は 2022**（既存 URL・既存 domtest を温存）。
+- `scripts/domtest.ts`: jsdom で boot→描画（タイムライン主役＝順位バンプチャート `svg.tl-chart`：線`.tl-line`×4・頂点`.tl-dot`・得点列`.tl-dot.is-scorer`・節ラベル`.tl-md`・右端`.tl-endlabel`・凡例`.tl-legend`。組A live=60頂点/3節・最終1位=オランダ・得点者ツールチップ「ガクポ」）→モード切替(view=、live↔stage は頂点数で判別＝組E stage は4×6=24)→グループ切替→共有URL(group/view)復元→**大会切替(`?cup=2026`で12タブ＋3位パネル＋早期はシナリオ非表示=`#scenario-details` hidden、2022は best-thirds 空・decided は決め手ノート2件)**→**一覧(scope=overview)切替**（2022=`#overview`表示/`#detail-view`非表示・`.mini-group` 8枚×4行=32・上位2緑16・ベスト3位表なし→カードクリックで detail E にドリルイン＝`scope` 消滅・タブE・タイムライン描画／2026=`scope=overview` 復元で12枚＋`.overview-bt .bt-table`＋暫定注記`.bt-note`）。3位比較は全行『暫定』バッジを廃し`.bt-note`に集約（行バッジは genuine な3位タイ＝🎲抽選のみ）。既定は detail（`#overview` hidden で既存ブロック不変）。シナリオは `<details#scenario-details>` 内。**既定 cup は 2022**（既存 URL・既存 domtest を温存）。
 - エンジン変更後は `npm run typecheck` も（tsx は型を見ない）。
 
 ## デプロイ

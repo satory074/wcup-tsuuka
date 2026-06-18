@@ -148,6 +148,10 @@ body {
   margin: 0 auto;
   padding: 1.6rem 1rem 1.5rem;
 }
+/* 一覧（overview）では本文が 1200px に広がるので、ヘッダ内側もそれに揃えて左端のズレを無くす。 */
+.scope-overview .hero-inner {
+  max-width: 1200px;
+}
 .site-header h1 {
   display: flex;
   align-items: center;
@@ -330,7 +334,8 @@ table.standings-table {
 }
 .col-team {
   text-align: left !important;
-  width: 99%;
+  /* 以前は width:99% で空き幅を全部この列に吸わせ、名前と数値の間に巨大な空洞ができていた。
+     固定幅をやめ、各列に均等配分させて数値を名前の近くに寄せる。 */
   font-family: var(--font-jp);
 }
 .team-cell {
@@ -423,6 +428,8 @@ table.standings-table {
   margin-top: 0.6rem;
   padding: 0.35rem 0.4rem;
   overflow-x: auto;
+  /* 内容量が少ない比較表は幅を抑え、名前のすぐ隣に数値が並ぶようにする（詳細・一覧の両方で効く）。 */
+  max-width: 600px;
 }
 table.bt-table {
   width: 100%;
@@ -489,15 +496,16 @@ table.bt-table {
 .chip .chip-flag {
   font-size: 1.1rem;
 }
+/* 突破確定/可能性ありは「一目で読める」よう実色ベタ＋白文字に（敗退だけ沈ませてコントラスト階層を作る）。 */
 .chip.is-advanced {
-  background: var(--advance-soft);
-  color: var(--advance-ink);
-  border-color: #a9ddbb;
+  background: var(--advance);
+  color: #fff;
+  border-color: var(--advance);
 }
 .chip.is-alive {
-  background: var(--alive-soft);
-  color: var(--alive-ink);
-  border-color: #eccf9b;
+  background: #b45309; /* 白文字で AA を満たす濃い橙 */
+  color: #fff;
+  border-color: #b45309;
 }
 .chip.is-eliminated {
   background: var(--eliminated-soft);
@@ -797,9 +805,10 @@ table.bt-table {
   background: var(--alive-soft);
   color: var(--alive-ink);
 }
+/* 進行中は「敗退グレー」だと死んで見えるので、live を感じる青系に。 */
 .phase-badge.is-early {
-  background: var(--eliminated-soft);
-  color: var(--ink-soft);
+  background: #e6eefb;
+  color: #1f4e9b;
 }
 .mini-table {
   width: 100%;
@@ -853,6 +862,10 @@ table.bt-table {
 }
 .overview-bt {
   margin-top: 1.5rem;
+  /* 一覧は本文 1200px。3位比較表をそのまま全幅にすると名前↔数値が約1000px離れて読めない。
+     比較表は内容量が少ないので幅を抑えて中央寄せ＝名前のすぐ隣に数値が並ぶ。 */
+  max-width: 760px;
+  margin-inline: auto;
 }
 .tl-legend-note {
   font-size: 0.84rem;
@@ -861,7 +874,7 @@ table.bt-table {
   margin: 0.6rem 0 0.3rem;
 }
 
-/* ---- タイムライン（横グリッド: 列=時間, 行=チーム, セル=順位） ---- */
+/* ---- タイムライン（順位バンプチャート: x=時系列, y=順位, 線=各国の推移） ---- */
 .timeline-scroll {
   position: relative;
   margin-top: 0.5rem;
@@ -871,196 +884,90 @@ table.bt-table {
   border-radius: var(--r-md);
   background: var(--surface);
   box-shadow: var(--shadow-card);
+  padding: 0.7rem 0.8rem 0.4rem;
 }
-table.tl-grid {
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.84rem;
+/* 狭い端末では最小幅を確保（それ以下のみ横スクロール）。820px 本文では全幅で1画面に収まる。 */
+.tl-chart-wrap {
+  min-width: 560px;
 }
-.tl-grid th,
-.tl-grid td {
-  border-bottom: 1px solid var(--border);
-  /* 縦罫線は薄くしてノイズ削減 */
-  border-right: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+.tl-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-display);
 }
-.tl-grid tbody tr:last-child th,
-.tl-grid tbody tr:last-child td {
-  border-bottom: none;
+.tl-advband {
+  fill: var(--advance-soft);
 }
-.tl-grid thead th {
-  background: var(--surface-2);
-  vertical-align: bottom;
+.tl-lane {
+  stroke: var(--border);
+  stroke-width: 1;
 }
-.tl-corner {
-  position: sticky;
-  left: 0;
-  z-index: 3;
-  background: var(--surface-2);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--ink-soft);
-  text-align: left;
-  padding: 0.35rem 0.55rem;
-  white-space: nowrap;
-  box-shadow: 3px 0 6px rgba(12, 26, 54, 0.06);
-}
-.tl-colhead {
-  min-width: 5.2rem;
-  padding: 0.4rem 0.45rem;
-  text-align: center;
-  line-height: 1.35;
-}
-.tl-colhead.tl-goal {
-  border-top: 3px solid var(--pitch);
-}
-.tl-colhead.tl-kickoff {
-  border-top: 3px solid var(--ink-faint);
-}
-.tl-colhead.tl-matchend {
-  border-top: 3px solid var(--navy-700);
-}
-.tl-ch-time {
+.tl-poslabel {
+  fill: var(--ink-soft);
+  font-size: 16px;
   font-weight: 800;
-  font-size: 0.88rem;
+}
+.tl-md {
+  fill: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.tl-mdsep {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.tl-line {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.tl-dot {
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+.tl-dot.is-scorer {
+  stroke-width: 2;
+}
+.tl-endlabel {
+  font-size: 16px;
+  font-weight: 800;
+}
+.tl-end-flag {
+  font-size: 18px;
+}
+.tl-end-code {
+  font-family: var(--font-num);
+}
+/* 凡例（色→国旗→和名→最終順位） */
+.tl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.9rem;
+  margin: 0.55rem 0.15rem 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.tl-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+}
+.tl-leg-swatch {
+  width: 0.9rem;
+  height: 0.28rem;
+  border-radius: 999px;
+}
+.tl-leg-name {
+  font-weight: 700;
   color: var(--ink);
 }
-.tl-ch-scorer {
-  font-family: var(--font-jp);
-  font-size: 0.86rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.tl-ch-score {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-  white-space: nowrap;
-}
-
-/* live ヘッダ: 節帯 + 日時帯 + 時刻行 + 試合ごとのレーン行 */
-.tl-band {
-  background: var(--navy-800);
-  color: #fff;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.88rem;
-  letter-spacing: 0.02em;
-  text-align: center;
-  padding: 0.35rem 0.3rem;
-  border-left: 2px solid rgba(255, 255, 255, 0.25);
-}
-.tl-band-corner {
-  background: var(--navy-800);
-  position: sticky;
-  left: 0;
-  z-index: 3;
-}
-.tl-dateband {
-  background: var(--surface);
-  font-weight: 700;
-  font-size: 0.8rem;
-  color: var(--ink-soft);
-  text-align: center;
-  padding: 0.3rem 0.3rem;
-  border-left: 2px solid var(--border);
-  white-space: nowrap;
-}
-.tl-th-time {
-  background: var(--surface-2);
-  font-weight: 800;
-  font-size: 0.88rem;
-  text-align: center;
-  padding: 0.36rem 0.4rem;
-  min-width: 5.2rem;
-  white-space: nowrap;
-}
-.tl-th-time.is-A {
-  border-top: 3px solid var(--cell-0);
-}
-.tl-th-time.is-B {
-  border-top: 3px solid var(--cell-1);
-}
-.tl-lane-label {
-  position: sticky;
-  left: 0;
-  z-index: 3;
-  text-align: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.95rem;
-  padding: 0.28rem 0.3rem;
-  white-space: nowrap;
-  box-shadow: 3px 0 6px rgba(12, 26, 54, 0.05);
-}
-.tl-lane-cell {
-  text-align: center;
-  padding: 0.34rem 0.45rem;
-  line-height: 1.35;
-}
-.tl-lane-label.is-A,
-.tl-lane-cell.is-A {
-  background: #e7effd;
-}
-.tl-lane-label.is-B,
-.tl-lane-cell.is-B {
-  background: #fce8e8;
-}
-.tl-lane-empty.is-A {
-  background: #f3f7ff;
-}
-.tl-lane-empty.is-B {
-  background: #fdf4f4;
-}
-.tl-poscol {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--surface);
-  text-align: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.05rem;
-  color: var(--ink-soft);
-  white-space: nowrap;
-  padding: 0.45rem 0.5rem;
-  min-width: 3rem;
-  box-shadow: 3px 0 6px rgba(12, 26, 54, 0.06);
-}
-.tl-poscol.is-adv {
-  background: var(--advance-soft);
-  color: var(--advance-ink);
-  box-shadow: inset 4px 0 0 var(--advance-edge), 3px 0 6px rgba(12, 26, 54, 0.06);
-}
-.tl-flagcell {
-  text-align: center;
-  padding: 0.5rem 0.45rem;
-  white-space: nowrap;
-}
-.tl-flagcell.is-adv {
-  background: var(--advance-soft);
-}
-.tl-flag {
-  font-size: 1.5rem;
-  vertical-align: middle;
-}
-.tl-code {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--ink-soft);
-  margin-left: 0.18rem;
-  vertical-align: middle;
-}
-.tl-mv {
-  font-size: 0.82rem;
-  font-weight: 800;
-  margin-left: 0.14rem;
-  vertical-align: middle;
-}
-.tl-mv.is-up {
-  color: var(--pitch);
-}
-.tl-mv.is-down {
-  color: var(--danger);
+.tl-leg-rank {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---- 通過条件シナリオ（折りたたみ） ---- */
@@ -1130,14 +1037,8 @@ table.tl-grid {
     font-size: 0.92rem;
     padding: 0.4rem 0.5rem;
   }
-  .tl-colhead {
-    min-width: 4.6rem;
-  }
-  .tl-th-time {
-    min-width: 4.6rem;
-  }
-  .tl-poscol {
-    min-width: 2.6rem;
+  .tl-chart-wrap {
+    min-width: 520px;
   }
   .section-title {
     font-size: 1.08rem;

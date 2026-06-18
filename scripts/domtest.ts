@@ -43,28 +43,26 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector(".standings .tiebreak-legend"), "1: タイブレーク優先順位の凡例がある");
   assert(root.querySelectorAll(".standings-table thead .th-pri").length === 3, "1: 列見出しに優先順位番号3つ(点/差/得)");
   assert(root.querySelectorAll(".status-chips .chip").length === 4, "1: ステータスチップ4");
-  // タイムライン（主役・既定 live・バンプチャート: 行=順位, セル=国旗。ヘッダ=節帯+時刻行+2レーン）。組Aは全試合15ゴール
-  assert(!!root.querySelector("table.tl-grid"), "1: タイムラインが横グリッドで描画される");
-  assert(root.querySelectorAll(".tl-grid tbody tr").length === 4, "1: 行=4順位");
-  assert(root.querySelectorAll(".tl-th-time").length === 15, `1: 組A 全15ゴール列（実際: ${root.querySelectorAll(".tl-th-time").length}）`);
-  assert(root.querySelectorAll(".tl-band").length === 3, "1: 節帯は3（第1〜3節）");
-  assert(root.querySelectorAll(".tl-dateband").length === 5, `1: 日時帯は5枠（第1節2＋第2節2＋第3節1）（実際: ${root.querySelectorAll(".tl-dateband").length}）`);
-  assert([...root.querySelectorAll(".tl-dateband")].some((e) => /\d+\/\d+ \d{2}:\d{2}/.test(e.textContent ?? "")), "1: 日時帯に M/D HH:MM");
-  assert(root.querySelectorAll(".tl-lane-label").length === 2, "1: 2レーン（試合①/②）");
-  assert(root.querySelectorAll(".tl-poscol").length === 4, "1: 先頭列に順位ラベル4");
-  assert(root.querySelectorAll(".tl-flagcell").length === 60, "1: 国旗セル=4順位×15列=60");
-  assert(root.querySelectorAll(".tl-grid .tl-mv").length > 0, "1: 順位変動（▲▼）マーカーがある");
-  // 最終列の1位セルがオランダ（組A優勝）
-  const firstRowCells = [...root.querySelectorAll(".tl-grid tbody tr:first-child .tl-flagcell")];
-  assert((firstRowCells[firstRowCells.length - 1].textContent ?? "").includes("NED"), "1: 最終列の1位はオランダ(NED)");
-  assert(root.querySelectorAll(".tl-lane-cell .tl-ch-scorer").length === 15, "1: 得点者がレーン内に15（全ゴール数）");
-  assert([...root.querySelectorAll(".tl-ch-scorer")].some((e) => (e.textContent ?? "").includes("ガクポ")), "1: 得点者名が表示される");
+  // タイムライン（主役・既定 live・順位バンプチャート: 線=各国, 点=各イベント列, 右端=最終順位）。組Aは全試合15ゴール
+  assert(!!root.querySelector("svg.tl-chart"), "1: タイムラインがバンプチャート(SVG)で描画される");
+  assert(root.querySelectorAll(".tl-chart .tl-line").length === 4, "1: 線=4チーム");
+  assert(root.querySelectorAll(".tl-chart .tl-dot").length === 60, `1: 頂点=4チーム×15ゴール列=60（実際: ${root.querySelectorAll(".tl-chart .tl-dot").length}）`);
+  assert(root.querySelectorAll(".tl-chart .tl-md").length === 3, "1: 節ラベルは3（第1〜3節）");
+  assert([...root.querySelectorAll(".tl-chart .tl-md")].some((e) => /第\d節/.test(e.textContent ?? "")), "1: 節ラベルに第n節");
+  assert(root.querySelectorAll(".tl-chart .tl-poslabel").length === 4, "1: 順位ラベル4（1〜4）");
+  assert(root.querySelectorAll(".tl-chart .tl-endlabel").length === 4, "1: 右端の最終順位ラベル4");
+  assert(root.querySelectorAll(".tl-chart .tl-dot.is-scorer").length === 15, "1: 得点で動いた頂点=全15ゴール");
+  assert((root.querySelector('.tl-chart .tl-endlabel[data-team="ned"]')?.textContent ?? "").includes("NED"), "1: 右端ラベルにオランダ(NED)");
+  // 最終順位1位（凡例先頭）がオランダ
+  const leg0 = root.querySelector(".tl-legend .tl-leg-item")?.textContent ?? "";
+  assert(leg0.includes("オランダ") && leg0.includes("1位"), `1: 凡例先頭=オランダ1位（実際: ${leg0}）`);
+  assert((root.querySelector(".tl-chart")?.innerHTML ?? "").includes("ガクポ"), "1: 得点者名がツールチップに表示される");
   // 通過条件シナリオは折りたたみ <details> 内に降格（2022 組Aは全消化=決め手解説）
   assert(!!root.querySelector("details#scenario-details"), "1: シナリオは details 内");
   assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "1: decided は決着の分かれ目を表示");
   assert(root.querySelectorAll("#scenario-details .boundary-note").length === 2, "1: 境界ノート2件（1↔2/2↔3）");
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "1: 既定はグループA");
-  console.log("[dom] 初期描画（タイムライン横グリッド）OK");
+  console.log("[dom] 初期描画（タイムライン＝順位バンプチャート）OK");
 }
 
 // ---- 1b) タイムライン表示モード切替（live → stage） ----
@@ -72,18 +70,20 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const dom = setupDom(`${BASE_URL}?group=E`);
   boot(app(dom));
   const root = app(dom);
-  // 既定 live: 節帯3 + 2レーン
-  assert(root.querySelectorAll(".tl-band").length === 3, "1b: live は節帯3（第1〜3節）");
-  assert(root.querySelectorAll(".tl-lane-label").length === 2, "1b: live は2レーン");
+  // 既定 live: 順位バンプチャート（節ラベル3・分刻みなので頂点多数）
+  assert(!!root.querySelector("svg.tl-chart"), "1b: live はバンプチャート");
+  assert(root.querySelectorAll(".tl-chart .tl-md").length === 3, "1b: live は節ラベル3（第1〜3節）");
+  const liveDots = root.querySelectorAll(".tl-chart .tl-dot").length;
+  assert(liveDots > 24, `1b: live(分刻み)は頂点が多い（実際: ${liveDots}）`);
   const stageBtn = root.querySelector<HTMLElement>('.view-toggle [data-view="stage"]')!;
   click(dom, stageBtn);
   assert(decodeQuery(dom.window.location.search).view === "stage", "1b: URL に view=stage");
-  // stage: 試合単位（節帯/日時帯/レーン無し・colhead 6列・第n節ラベル）
-  assert(root.querySelectorAll(".tl-band").length === 0, "1b: stage は節帯無し");
-  assert(root.querySelectorAll(".tl-dateband").length === 0, "1b: stage は日時帯無し");
-  assert(root.querySelectorAll(".tl-lane-label").length === 0, "1b: stage はレーン無し");
-  assert(root.querySelectorAll(".tl-grid thead .tl-colhead").length === 6, "1b: 組E stage は6列（6試合）");
-  assert([...root.querySelectorAll(".tl-colhead .tl-ch-time")].some((e) => (e.textContent ?? "").includes("第")), "1b: stage は第n節ラベル");
+  // stage: 試合単位（6試合 → 4チーム×6列=24頂点・節ラベル3）
+  assert(!!root.querySelector("svg.tl-chart"), "1b: stage もバンプチャート");
+  assert(root.querySelectorAll(".tl-chart .tl-dot").length === 24, `1b: 組E stage は4×6=24頂点（実際: ${root.querySelectorAll(".tl-chart .tl-dot").length}）`);
+  assert(root.querySelectorAll(".tl-chart .tl-line").length === 4, "1b: stage も線=4チーム");
+  assert(root.querySelectorAll(".tl-chart .tl-md").length === 3, "1b: stage も節ラベル3");
+  assert([...root.querySelectorAll(".tl-chart .tl-md")].some((e) => (e.textContent ?? "").includes("第")), "1b: stage は第n節ラベル");
   console.log("[dom] タイムライン表示モード切替 OK");
 }
 
@@ -121,7 +121,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelector('.view-toggle [data-view="stage"]')?.classList.contains("seg-on") === true, "6b: stage トグルが選択状態で復元");
-  assert(!root.querySelector(".tl-lane-label"), "6b: stage 表示（試合レーン無し）");
+  assert(!!root.querySelector("svg.tl-chart"), "6b: stage 表示（バンプチャート）");
+  assert(root.querySelectorAll(".tl-chart .tl-dot").length === 24, "6b: 組E stage は24頂点");
   console.log("[dom] view=stage 復元 OK");
 }
 
@@ -147,7 +148,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "8: 順位表4行（単一組）");
   assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
-  assert(root.querySelectorAll("#best-thirds .tie-badge").length >= 1, "8: 進行中は暫定/抽選バッジ");
+  assert(!!root.querySelector("#best-thirds .bt-note"), "8: 進行中は『全行が暫定』注記を1か所に集約");
   // 2026 組A は進行中（early）= シナリオが定まらないためパネル非表示
   assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === true, "8: 2026 早期はシナリオパネル非表示");
   assert((root.querySelector("#scenario")?.innerHTML ?? "") === "", "8: 早期は #scenario 空");
@@ -185,7 +186,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(decodeQuery(dom.window.location.search).scope === undefined, "9: ドリルで scope が消える（detail）");
   assert((root.querySelector("#detail-view") as HTMLElement).hidden === false, "9: ドリル後は詳細表示");
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "E", "9: ドリル先は E");
-  assert(!!root.querySelector("table.tl-grid"), "9: ドリル後にタイムライン描画");
+  assert(!!root.querySelector("svg.tl-chart"), "9: ドリル後にタイムライン(バンプチャート)描画");
   console.log("[dom] 一覧 2022（8カード・ドリルイン）OK");
 }
 
@@ -198,7 +199,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelector('.scope-toggle [data-scope="overview"]')?.classList.contains("seg-on") === true, "9b: 一覧トグルが選択状態で復元");
   assert(root.querySelectorAll(".overview-grid .mini-group").length === 12, `9b: 2026 はカード12（実際: ${root.querySelectorAll(".overview-grid .mini-group").length}）`);
   assert(!!root.querySelector(".overview-bt .bt-table"), "9b: 一覧にベスト3位表がある");
-  assert(root.querySelectorAll(".overview-bt .tie-badge").length >= 1, "9b: 進行中は暫定/抽選バッジ");
+  assert(!!root.querySelector(".overview-bt .bt-note"), "9b: 一覧の3位比較に暫定注記がある");
   console.log("[dom] 一覧 2026（12カード・ベスト3位表）OK");
 }
 
