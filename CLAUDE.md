@@ -37,7 +37,7 @@ npm run test       # tsx scripts/smoketest.ts && tsx scripts/domtest.ts
 
 大会ごとに JSON が単一の真実。`src/app/main.ts` が両方を import し `?cup` で選ぶ（`DATA: Record<Cup, unknown>`、既定 2022）。
 - `src/data/worldcup2022.json`（`meta` / `teams[32]` / `groups[8]` / `matches[48]`、`advancePerGroup:2`）。**全48試合に goals 投入済み**（0-0 は `[]`）。
-- `src/data/worldcup2026.json`（`teams[48]` / `groups[12]` / `matches[72]`、`advancePerGroup:2` ＋ **`advanceBestThirds:8`**）。組分け・日程は2025/12の本抽選ベース。**消化済み試合のみ score**（残りは score 省略＝未消化）、goals は得点者・分が判明した組のみ投入（C/G/H/I/J）。大会進行に応じて手動追記する運用（出典は Wikipedia 各組ページ）。
+- `src/data/worldcup2026.json`（`teams[48]` / `groups[12]` / `matches[72]`、`advancePerGroup:2` ＋ **`advanceBestThirds:8`**）。組分け・日程は2025/12の本抽選ベース。**消化済み試合のみ score**（残りは score 省略＝未消化）、goals（得点者・分）は消化済み全試合に投入済み（2026-06-20 時点で第1〜2節分）＝全組でライブ年表が有効。大会進行に応じて手動追記する運用（出典は Wikipedia 各組ページ）。
 
 team id は小文字 FIFA トリコード（表示用は大文字化）。`matches[].score` 省略/null = 未消化。`cards` は任意（無ければフェアプレーは未適用）。`matches[].kickoff`（必須）= ISO 現地時間 `"2022-11-23T16:00"`。タイムラインの絶対時刻並べ替え＆日時帯表示用（validate が形式強制）。`matches[].goals`（任意）= `{minute, plus?, side, player?}` の配列で**分刻みタイムライン**用。あれば**本数==score を validate が強制**（転記ミス検出）。`player` は得点選手（日本=漢字・他=カタカナ・OG は "名前(OG)"、PK は "名前(PK)"）。`meta.advanceBestThirds`（任意・省略時0）= 2026の「3位上位N通過」を駆動。`compileTournament()` が `validateTournament()` を通して `CompiledTournament`（Map 索引）にする。
 
@@ -73,7 +73,7 @@ FIFA 2022 順:
 
 ## テスト
 
-- `scripts/smoketest.ts`: ①データ検証（壊した複製・goals本数!=scoreを弾く） ②2022 全8組の実順位再現 ③タイブレーク単体（総GD/総GF/h2h/3すくみ抽選/1-2位タイ） ④通過条件シナリオ（decided=組E/H の決め手 reason・final-round=合成最終節で勝→advance/分→depends/敗→out・early=条件出さず次戦・決定性） ⑤status ⑦タイムライン（全8組の最終スナップ==最終順位・**組E 70'でコスタリカが暫定通過圏入り→最終は日本/スペイン**・scoreAtClock境界・決定性） ⑧2026検証（48/12/72・組Iの部分ライブ・組A/Kはstage） ⑨best-thirds（合成12組の境界/同値跨ぎ/組未完・2026実データは全組contention・2022は空）。
+- `scripts/smoketest.ts`: ①データ検証（壊した複製・goals本数!=scoreを弾く） ②2022 全8組の実順位再現 ③タイブレーク単体（総GD/総GF/h2h/3すくみ抽選/1-2位タイ） ④通過条件シナリオ（decided=組E/H の決め手 reason・final-round=合成最終節で勝→advance/分→depends/敗→out・early=条件出さず次戦・決定性） ⑤status ⑦タイムライン（全8組の最終スナップ==最終順位・**組E 70'でコスタリカが暫定通過圏入り→最終は日本/スペイン**・scoreAtClock境界・決定性） ⑧2026検証（48/12/72・消化済み全試合に goals→組I/A/K すべて部分ライブ生成＝消化分ゴール数と一致） ⑨best-thirds（合成12組の境界/同値跨ぎ/組未完・2026実データは全組contention・2022は空）。
 - `scripts/domtest.ts`: jsdom で boot→描画（タイムライン主役＝順位バンプチャート `svg.tl-chart`：線`.tl-line`×4・頂点`.tl-dot`・得点列`.tl-dot.is-scorer`・節ラベル`.tl-md`・右端`.tl-endlabel`・凡例`.tl-legend`。組A live=60頂点/3節・最終1位=オランダ・得点者ツールチップ「ガクポ」）→モード切替(view=、live↔stage は頂点数で判別＝組E stage は4×6=24)→グループ切替→共有URL(group/view)復元→**大会切替(`?cup=2026`で12タブ＋3位パネル＋早期はシナリオ非表示=`#scenario-details` hidden、2022は best-thirds 空・decided は決め手ノート2件)**→**一覧(scope=overview)切替**（2022=`#overview`表示/`#detail-view`非表示・`.mini-group` 8枚×4行=32・上位2緑16・ベスト3位表なし→カードクリックで detail E にドリルイン＝`scope` 消滅・タブE・タイムライン描画／2026=`scope=overview` 復元で12枚＋`.overview-bt .bt-table`＋暫定注記`.bt-note`）。3位比較は全行『暫定』バッジを廃し`.bt-note`に集約（行バッジは genuine な3位タイ＝🎲抽選のみ）。既定は detail（`#overview` hidden で既存ブロック不変）。シナリオは `<details#scenario-details>` 内。**既定 cup は 2022**（既存 URL・既存 domtest を温存）。
 - エンジン変更後は `npm run typecheck` も（tsx は型を見ない）。
 

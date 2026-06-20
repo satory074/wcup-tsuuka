@@ -436,14 +436,22 @@ function sortedAdv(a: string[]): string {
   }
   console.log("[data] worldcup2026.json OK（チーム48 / 組12 / 試合72）");
 
-  // 進行中の部分タイムライン: goals がある組（I）は live 生成・無い組（A）は null・未消化組（K）は null
+  // 進行中の部分タイムライン: 消化済み試合に goals があれば組ごとに live 生成（消化分の全ゴール数＝スナップ数）
   const liveI = buildLiveTimeline(ct26, "I");
   assert(liveI !== null, "2026: 組I は goals があり live 生成");
   const iGoals = ct26.matchesByGroup.get("I")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
   assert(liveI!.length === iGoals, `2026: 組I live は消化分の全ゴール数(${iGoals})`);
   assert(sortedAdv(liveI![liveI!.length - 1].advancing) === "fra,nor", "2026: 組I 第1節後の暫定通過は fra,nor");
-  assert(buildLiveTimeline(ct26, "A") === null, "2026: 組A は goals 無し → live 不可（stage へ）");
-  assert(buildLiveTimeline(ct26, "K") === null, "2026: 組K は未消化 → live 不可");
+  // 組A（第1〜2節消化・goals 投入済み）も live 生成。消化分の全ゴール数とスナップ数が一致。
+  const liveA = buildLiveTimeline(ct26, "A");
+  assert(liveA !== null, "2026: 組A も goals があり live 生成");
+  const aGoals = ct26.matchesByGroup.get("A")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
+  assert(liveA!.length === aGoals, `2026: 組A live は消化分の全ゴール数(${aGoals})`);
+  // 組K（第1節のみ消化・goals 投入済み）も live 生成。
+  const liveK = buildLiveTimeline(ct26, "K");
+  assert(liveK !== null, "2026: 組K も第1節消化＋goals で live 生成");
+  const kGoals = ct26.matchesByGroup.get("K")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
+  assert(liveK!.length === kGoals, `2026: 組K live は消化分の全ゴール数(${kGoals})`);
   assert(buildStageTimeline(ct26, "A").length === 6, "2026: 組A の試合単位は6スナップ");
 
   // 実データ best-thirds: グループステージ進行中＝全エントリ contention・undecided

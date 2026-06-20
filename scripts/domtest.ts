@@ -154,8 +154,12 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
   assert(!!root.querySelector("#best-thirds .bt-note"), "8: 進行中は『全行が暫定』注記を1か所に集約");
-  // 2026 組A は進行中（early）= シナリオが定まらないためパネル非表示
-  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === true, "8: 2026 早期はシナリオパネル非表示");
+  // 2026 組A は第1〜2節消化＝final-round（最終節のみ未消化）＝シナリオパネル表示（チーム条件カード）
+  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 final-round はシナリオパネル表示");
+  assert(!!root.querySelector("#scenario .scenario-teams"), "8: final-round は最終節チーム条件カード");
+  // まだ複数節残る組（I＝第1節のみ消化）は early＝シナリオが定まらずパネル非表示
+  click(dom, root.querySelector<HTMLElement>('.group-tab[data-group="I"]')!);
+  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === true, "8: 2026 早期(組I)はシナリオパネル非表示");
   assert((root.querySelector("#scenario")?.innerHTML ?? "") === "", "8: 早期は #scenario 空");
   console.log("[dom] 大会切替 ?cup=2026（12組・3位比較パネル）OK");
 }
