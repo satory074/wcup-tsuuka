@@ -5,7 +5,7 @@
     "advancePerGroup": 2,
     "advanceBestThirds": 8,
     "points": { "win": 3, "draw": 1, "loss": 0 },
-    "dataLastUpdated": "2026-06-20",
+    "dataLastUpdated": "2026-06-21",
     "source": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup",
     "disclaimer": "2026年北中米大会（48カ国・12組）の非公式可視化です。グループステージ進行中につき、消化済みの試合のみ実スコアを反映しています（残りは未消化）。各組上位2＋3位の上位8の通過判定は暫定です。"
   },
@@ -115,15 +115,15 @@
 
     { "id": "E-1", "group": "E", "matchday": 1, "kickoff": "2026-06-14T12:00", "home": "ger", "away": "cuw", "score": { "home": 7, "away": 1 }, "goals": [ { "minute": 6, "side": "home", "player": "ンメチャ" }, { "minute": 21, "side": "away", "player": "コメネンシア" }, { "minute": 38, "side": "home", "player": "シュロッターベック" }, { "minute": 45, "plus": 5, "side": "home", "player": "ハベルツ(PK)" }, { "minute": 47, "side": "home", "player": "ムシアラ" }, { "minute": 68, "side": "home", "player": "ブラウン" }, { "minute": 78, "side": "home", "player": "ウンダフ" }, { "minute": 88, "side": "home", "player": "ハベルツ" } ] },
     { "id": "E-2", "group": "E", "matchday": 1, "kickoff": "2026-06-14T19:00", "home": "civ", "away": "ecu", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 90, "side": "home", "player": "ディアロ" } ] },
-    { "id": "E-3", "group": "E", "matchday": 2, "kickoff": "2026-06-20T16:00", "home": "ger", "away": "civ" },
-    { "id": "E-4", "group": "E", "matchday": 2, "kickoff": "2026-06-20T19:00", "home": "ecu", "away": "cuw" },
+    { "id": "E-3", "group": "E", "matchday": 2, "kickoff": "2026-06-20T16:00", "home": "ger", "away": "civ", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 30, "side": "away", "player": "ケシエ" }, { "minute": 68, "side": "home", "player": "ウンダフ" }, { "minute": 90, "plus": 4, "side": "home", "player": "ウンダフ" } ] },
+    { "id": "E-4", "group": "E", "matchday": 2, "kickoff": "2026-06-20T19:00", "home": "ecu", "away": "cuw", "score": { "home": 0, "away": 0 }, "goals": [] },
     { "id": "E-5", "group": "E", "matchday": 3, "kickoff": "2026-06-25T16:00", "home": "cuw", "away": "civ" },
     { "id": "E-6", "group": "E", "matchday": 3, "kickoff": "2026-06-25T16:00", "home": "ecu", "away": "ger" },
 
     { "id": "F-1", "group": "F", "matchday": 1, "kickoff": "2026-06-14T15:00", "home": "ned", "away": "jpn", "score": { "home": 2, "away": 2 }, "goals": [ { "minute": 50, "side": "home", "player": "ファン・ダイク" }, { "minute": 57, "side": "away", "player": "中村敬斗" }, { "minute": 64, "side": "home", "player": "サマービル" }, { "minute": 88, "side": "away", "player": "鎌田大地" } ] },
     { "id": "F-2", "group": "F", "matchday": 1, "kickoff": "2026-06-14T20:00", "home": "swe", "away": "tun", "score": { "home": 5, "away": 1 }, "goals": [ { "minute": 7, "side": "home", "player": "アヤリ" }, { "minute": 30, "side": "home", "player": "イサク" }, { "minute": 43, "side": "away", "player": "レキク" }, { "minute": 59, "side": "home", "player": "ヨケレス" }, { "minute": 84, "side": "home", "player": "スバンベリ" }, { "minute": 90, "plus": 6, "side": "home", "player": "アヤリ" } ] },
-    { "id": "F-3", "group": "F", "matchday": 2, "kickoff": "2026-06-20T12:00", "home": "ned", "away": "swe" },
-    { "id": "F-4", "group": "F", "matchday": 2, "kickoff": "2026-06-20T22:00", "home": "tun", "away": "jpn" },
+    { "id": "F-3", "group": "F", "matchday": 2, "kickoff": "2026-06-20T12:00", "home": "ned", "away": "swe", "score": { "home": 5, "away": 1 }, "goals": [ { "minute": 5, "side": "home", "player": "ブロビー" }, { "minute": 17, "side": "home", "player": "ブロビー" }, { "minute": 47, "side": "home", "player": "ガクポ" }, { "minute": 54, "side": "home", "player": "ガクポ" }, { "minute": 59, "side": "away", "player": "エランガ" }, { "minute": 89, "side": "home", "player": "サマービル" } ] },
+    { "id": "F-4", "group": "F", "matchday": 2, "kickoff": "2026-06-20T22:00", "home": "tun", "away": "jpn", "score": { "home": 0, "away": 4 }, "goals": [ { "minute": 4, "side": "away", "player": "鎌田大地" }, { "minute": 31, "side": "away", "player": "上田綺世" }, { "minute": 69, "side": "away", "player": "伊東純也" }, { "minute": 83, "side": "away", "player": "上田綺世" } ] },
     { "id": "F-5", "group": "F", "matchday": 3, "kickoff": "2026-06-25T18:00", "home": "jpn", "away": "swe" },
     { "id": "F-6", "group": "F", "matchday": 3, "kickoff": "2026-06-25T18:00", "home": "tun", "away": "ned" },
 
