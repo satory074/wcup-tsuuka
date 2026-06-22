@@ -5,7 +5,7 @@
     "advancePerGroup": 2,
     "advanceBestThirds": 8,
     "points": { "win": 3, "draw": 1, "loss": 0 },
-    "dataLastUpdated": "2026-06-21",
+    "dataLastUpdated": "2026-06-22",
     "source": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup",
     "disclaimer": "2026年北中米大会（48カ国・12組）の非公式可視化です。グループステージ進行中につき、消化済みの試合のみ実スコアを反映しています（残りは未消化）。各組上位2＋3位の上位8の通過判定は暫定です。"
   },
@@ -129,15 +129,15 @@
 
     { "id": "G-1", "group": "G", "matchday": 1, "kickoff": "2026-06-15T12:00", "home": "bel", "away": "egy", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 19, "side": "away", "player": "アシュール" }, { "minute": 66, "side": "home", "player": "ハニー(OG)" } ] },
     { "id": "G-2", "group": "G", "matchday": 1, "kickoff": "2026-06-15T18:00", "home": "irn", "away": "nzl", "score": { "home": 2, "away": 2 }, "goals": [ { "minute": 7, "side": "away", "player": "ジャスト" }, { "minute": 32, "side": "home", "player": "レザイアン" }, { "minute": 54, "side": "away", "player": "ジャスト" }, { "minute": 64, "side": "home", "player": "モヘビ" } ] },
-    { "id": "G-3", "group": "G", "matchday": 2, "kickoff": "2026-06-21T12:00", "home": "bel", "away": "irn" },
-    { "id": "G-4", "group": "G", "matchday": 2, "kickoff": "2026-06-21T18:00", "home": "nzl", "away": "egy" },
+    { "id": "G-3", "group": "G", "matchday": 2, "kickoff": "2026-06-21T12:00", "home": "bel", "away": "irn", "score": { "home": 0, "away": 0 }, "goals": [] },
+    { "id": "G-4", "group": "G", "matchday": 2, "kickoff": "2026-06-21T18:00", "home": "nzl", "away": "egy", "score": { "home": 1, "away": 3 }, "goals": [ { "minute": 15, "side": "home", "player": "サーマン" }, { "minute": 58, "side": "away", "player": "ジコ" }, { "minute": 67, "side": "away", "player": "サラー" }, { "minute": 82, "side": "away", "player": "トレゼゲ" } ] },
     { "id": "G-5", "group": "G", "matchday": 3, "kickoff": "2026-06-26T20:00", "home": "egy", "away": "irn" },
     { "id": "G-6", "group": "G", "matchday": 3, "kickoff": "2026-06-26T20:00", "home": "nzl", "away": "bel" },
 
     { "id": "H-1", "group": "H", "matchday": 1, "kickoff": "2026-06-15T12:00", "home": "esp", "away": "cpv", "score": { "home": 0, "away": 0 }, "goals": [] },
     { "id": "H-2", "group": "H", "matchday": 1, "kickoff": "2026-06-15T18:00", "home": "ksa", "away": "uru", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 41, "side": "home", "player": "アル＝アムリ" }, { "minute": 80, "side": "away", "player": "アラウホ" } ] },
-    { "id": "H-3", "group": "H", "matchday": 2, "kickoff": "2026-06-21T12:00", "home": "esp", "away": "ksa" },
-    { "id": "H-4", "group": "H", "matchday": 2, "kickoff": "2026-06-21T18:00", "home": "uru", "away": "cpv" },
+    { "id": "H-3", "group": "H", "matchday": 2, "kickoff": "2026-06-21T12:00", "home": "esp", "away": "ksa", "score": { "home": 4, "away": 0 }, "goals": [ { "minute": 10, "side": "home", "player": "ヤマル" }, { "minute": 21, "side": "home", "player": "オヤルサバル" }, { "minute": 24, "side": "home", "player": "オヤルサバル" }, { "minute": 49, "side": "home", "player": "アル＝タンバクティ(OG)" } ] },
+    { "id": "H-4", "group": "H", "matchday": 2, "kickoff": "2026-06-21T18:00", "home": "uru", "away": "cpv", "score": { "home": 2, "away": 2 }, "goals": [ { "minute": 21, "side": "away", "player": "ピナ" }, { "minute": 44, "side": "home", "player": "アラウホ" }, { "minute": 45, "plus": 6, "side": "home", "player": "カノビオ" }, { "minute": 61, "side": "away", "player": "バレラ" } ] },
     { "id": "H-5", "group": "H", "matchday": 3, "kickoff": "2026-06-26T19:00", "home": "cpv", "away": "ksa" },
     { "id": "H-6", "group": "H", "matchday": 3, "kickoff": "2026-06-26T18:00", "home": "uru", "away": "esp" },
 
