@@ -67,13 +67,32 @@
   --shadow-card: 0 1px 3px rgba(12, 26, 54, 0.06), 0 6px 18px rgba(12, 26, 54, 0.06);
   --shadow-hero: 0 8px 28px rgba(7, 26, 49, 0.32);
   --ring: 0 0 0 3px rgba(22, 163, 74, 0.45); /* focus-visible リング */
+
+  /* ---- スペーシング・スケール（4px グリッド・余白の刻みを統一） ---- */
+  --sp-1: 0.25rem; /* 4 */
+  --sp-2: 0.5rem; /* 8 */
+  --sp-3: 0.75rem; /* 12 */
+  --sp-4: 1rem; /* 16 */
+  --sp-5: 1.25rem; /* 20 */
+  --sp-6: 1.5rem; /* 24 */
+  --sp-8: 2rem; /* 32 */
+  --sp-10: 2.5rem; /* 40 */
+
+  /* ---- タイプスケール（テキスト用・乱立していた ~14 段階を6段に集約） ----
+     絵文字・国旗のグリフサイズ（1.1〜1.3rem）と SVG px は別系統で管理。 */
+  --ts-2xs: 0.72rem; /* 補助バッジ・FIFA・PK */
+  --ts-xs: 0.8rem; /* 表ヘッダ・小キャプション */
+  --ts-sm: 0.86rem; /* 本文小・ログ・条件 */
+  --ts-base: 0.92rem; /* 表本文・本文 */
+  --ts-md: 1rem; /* 既定・強調数値 */
+  --ts-lg: 1.2rem; /* セクション見出し */
 }
 
 html {
   background: var(--bg);
   color: var(--ink);
-  /* ライトテーマ固定（Chrome の自動ダークモードによる配色反転を防ぐ） */
-  color-scheme: only light;
+  /* 既定はライト。OS がダークなら下の @media で自前の暗色トークンに切替＝ブラウザ強制反転の濁りを避ける。 */
+  color-scheme: light dark;
 }
 
 body {
@@ -215,7 +234,7 @@ body {
 }
 .site-header .site-sub {
   color: rgba(236, 242, 251, 0.95);
-  font-size: 0.95rem;
+  font-size: var(--ts-base);
   margin: 0.6rem 0 0;
   max-width: 60ch;
   line-height: 1.55;
@@ -234,7 +253,7 @@ body {
 .cup-tab {
   padding: 0.4rem 1.2rem;
   font-family: var(--font-display);
-  font-size: 0.92rem;
+  font-size: var(--ts-base);
   font-weight: 700;
   letter-spacing: 0.01em;
   border: none;
@@ -257,7 +276,7 @@ body {
 /* =========================== 共通 =========================== */
 .site-sub {
   color: var(--ink-soft);
-  font-size: 0.9rem;
+  font-size: var(--ts-base);
   line-height: 1.55;
   margin-top: 0.35rem;
 }
@@ -271,7 +290,7 @@ body {
 
 .section-title {
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: var(--ts-lg);
   font-weight: 800;
   letter-spacing: 0.01em;
   margin: 1.9rem 0 0.6rem;
@@ -284,7 +303,7 @@ body {
 .section-title .hint {
   font-family: var(--font-jp);
   font-weight: 500;
-  font-size: 0.84rem;
+  font-size: var(--ts-sm);
   color: var(--ink-soft);
 }
 
@@ -304,7 +323,7 @@ body {
   color: var(--ink-soft);
   padding: 0.45rem 0.7rem;
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--ts-md);
   font-weight: 700;
   cursor: pointer;
   text-align: center;
@@ -334,7 +353,7 @@ body {
 table.standings-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: var(--ts-base);
 }
 .standings-table th,
 .standings-table td {
@@ -343,7 +362,7 @@ table.standings-table {
   white-space: nowrap;
 }
 .standings-table thead th {
-  font-size: 0.8rem;
+  font-size: var(--ts-xs);
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -388,7 +407,7 @@ table.standings-table {
 }
 .col-pts {
   font-weight: 800;
-  font-size: 1rem;
+  font-size: var(--ts-md);
   color: var(--ink);
 }
 .row-advance {
@@ -415,13 +434,13 @@ table.standings-table {
   color: var(--ink-soft);
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.86rem;
+  font-size: var(--ts-sm);
 }
 .advance-line {
   border-bottom: 2px dashed var(--advance) !important;
 }
 .tie-badge {
-  font-size: 0.72rem;
+  font-size: var(--ts-2xs);
   font-weight: 700;
   color: #fff;
   background: var(--cell-tie);
@@ -431,7 +450,7 @@ table.standings-table {
   vertical-align: middle;
 }
 .th-pri {
-  font-size: 0.72rem;
+  font-size: var(--ts-2xs);
   color: var(--pitch-deep);
   font-weight: 800;
   margin-left: 0.05rem;
@@ -444,7 +463,7 @@ table.standings-table {
   margin: 0.5rem 0.35rem 0.2rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--border);
-  font-size: 0.82rem;
+  font-size: var(--ts-xs);
   line-height: 1.55;
   color: var(--ink-soft);
 }
@@ -471,7 +490,7 @@ table.standings-table {
 table.bt-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: var(--ts-base);
 }
 .bt-table th,
 .bt-table td {
@@ -485,7 +504,7 @@ table.bt-table {
   font-variant-numeric: tabular-nums;
 }
 .bt-table thead th {
-  font-size: 0.8rem;
+  font-size: var(--ts-xs);
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -526,7 +545,7 @@ table.bt-table {
   gap: 0.35rem;
   border-radius: 999px;
   padding: 0.32rem 0.8rem;
-  font-size: 0.88rem;
+  font-size: var(--ts-sm);
   font-weight: 700;
   border: 1px solid transparent;
 }
@@ -552,7 +571,7 @@ table.bt-table {
 
 /* ---- 通過条件シナリオ ---- */
 .scenario-intro {
-  font-size: 0.9rem;
+  font-size: var(--ts-base);
   line-height: 1.6;
   color: var(--ink-soft);
   margin: 0.25rem 0 0.85rem;
@@ -561,7 +580,7 @@ table.bt-table {
   color: var(--ink);
 }
 .scenario-note {
-  font-size: 0.84rem;
+  font-size: var(--ts-sm);
   line-height: 1.55;
   color: var(--alive-ink);
   background: var(--alive-soft);
@@ -570,7 +589,7 @@ table.bt-table {
   margin: 0 0 0.85rem;
 }
 .scenario-block-title {
-  font-size: 0.86rem;
+  font-size: var(--ts-sm);
   font-weight: 800;
   color: var(--ink);
   margin-bottom: 0.6rem;
@@ -597,7 +616,7 @@ table.bt-table {
 }
 .boundary-rank {
   font-weight: 800;
-  font-size: 0.95rem;
+  font-size: var(--ts-base);
   color: var(--ink);
 }
 .boundary-sep {
@@ -606,7 +625,7 @@ table.bt-table {
   margin: 0 0.15rem;
 }
 .boundary-prose {
-  font-size: 0.86rem;
+  font-size: var(--ts-sm);
   color: var(--ink-soft);
 }
 .scenario-teams {
@@ -628,7 +647,7 @@ table.bt-table {
 }
 .cond-rank {
   font-weight: 800;
-  font-size: 1rem;
+  font-size: var(--ts-md);
 }
 .cond-flag {
   font-size: 1.15rem;
@@ -637,12 +656,12 @@ table.bt-table {
   font-weight: 700;
 }
 .cond-stat {
-  font-size: 0.8rem;
+  font-size: var(--ts-xs);
   color: var(--ink-soft);
 }
 .cond-status {
   margin-left: auto;
-  font-size: 0.72rem;
+  font-size: var(--ts-2xs);
   font-weight: 700;
   border-radius: 999px;
   padding: 0.12rem 0.5rem;
@@ -671,7 +690,7 @@ table.bt-table {
   display: flex;
   align-items: baseline;
   gap: 0.4rem;
-  font-size: 0.88rem;
+  font-size: var(--ts-sm);
   line-height: 1.5;
 }
 .cond-icon {
@@ -688,7 +707,7 @@ table.bt-table {
 }
 .cond-note,
 .cond-next {
-  font-size: 0.88rem;
+  font-size: var(--ts-sm);
   color: var(--ink-soft);
 }
 .cond-next b {
@@ -704,7 +723,7 @@ table.bt-table {
   background: var(--surface);
   border: 1px dashed var(--border-strong);
   border-radius: var(--r-md);
-  font-size: 0.92rem;
+  font-size: var(--ts-base);
 }
 .error-panel {
   margin: 2rem auto;
@@ -715,13 +734,13 @@ table.bt-table {
   color: #991b1b;
   border-radius: var(--r-md);
   padding: 1rem;
-  font-size: 0.85rem;
+  font-size: var(--ts-sm);
 }
 .site-footer {
   margin-top: 2.75rem;
   border-top: 1px solid var(--border);
   padding-top: 1.1rem;
-  font-size: 0.84rem;
+  font-size: var(--ts-sm);
   line-height: 1.6;
   color: var(--ink-soft);
   display: flex;
@@ -750,7 +769,7 @@ table.bt-table {
 .scope-toggle .seg-btn {
   padding: 0.42rem 1.05rem;
   font-family: var(--font-display);
-  font-size: 0.86rem;
+  font-size: var(--ts-sm);
   font-weight: 700;
   border: none;
   border-radius: 999px;
@@ -818,12 +837,12 @@ table.bt-table {
 .mini-letter {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.05rem;
+  font-size: var(--ts-md);
   color: var(--ink);
 }
 .phase-badge {
   margin-left: auto;
-  font-size: 0.7rem;
+  font-size: var(--ts-2xs);
   font-weight: 700;
   border-radius: 999px;
   padding: 0.08rem 0.55rem;
@@ -845,7 +864,7 @@ table.bt-table {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--font-num);
-  font-size: 0.84rem;
+  font-size: var(--ts-sm);
 }
 .mini-table td {
   padding: 0.2rem 0.3rem;
@@ -908,7 +927,7 @@ table.bt-table {
   margin-inline: auto;
 }
 .tl-legend-note {
-  font-size: 0.84rem;
+  font-size: var(--ts-sm);
   line-height: 1.55;
   color: var(--ink-soft);
   margin: 0.6rem 0 0.3rem;
@@ -945,7 +964,7 @@ table.bt-table {
   gap: 0.3rem;
   margin-bottom: 0.28rem;
   font-family: var(--font-num);
-  font-size: 0.72rem;
+  font-size: var(--ts-2xs);
   color: var(--ink-soft);
   white-space: nowrap;
 }
@@ -972,7 +991,7 @@ table.bt-table {
   display: flex;
   align-items: center;
   gap: 0.32rem;
-  font-size: 0.82rem;
+  font-size: var(--ts-xs);
   line-height: 1.55;
 }
 .sched-card-row .sched-flag {
@@ -1046,10 +1065,12 @@ table.bt-table {
   stroke-width: 3.5;
   stroke-linejoin: round;
   stroke-linecap: round;
+  transition: opacity 0.12s ease, stroke-width 0.12s ease;
 }
 .tl-dot {
   stroke: var(--surface);
   stroke-width: 1.5;
+  transition: opacity 0.12s ease;
 }
 .tl-dot.is-scorer {
   stroke-width: 2;
@@ -1058,7 +1079,38 @@ table.bt-table {
 .tl-dot.is-roundend {
   stroke-width: 2.5;
 }
-/* 節末リングの右隣に置く試合結果スコア。線の上でも読めるよう白ハロー。 */
+/* F-3: 最終的に圏外の国は淡く＝通過する2本（主役）に注目を集める（selective highlighting）。 */
+.tl-line.is-out {
+  stroke-width: 3;
+  opacity: 0.66;
+}
+.tl-dot.is-out {
+  opacity: 0.66;
+}
+.tl-endlabel.is-out {
+  opacity: 0.72;
+}
+/* F-6: ホバー連動。1国を選ぶと他を強く減光し、その線を太く＝軌跡を追いやすく。 */
+.tl-chart.is-hovering .tl-line,
+.tl-chart.is-hovering .tl-dot,
+.tl-chart.is-hovering .tl-endlabel {
+  opacity: 0.16;
+}
+.tl-chart.is-hovering .tl-line.is-hl {
+  opacity: 1;
+  stroke-width: 5;
+}
+.tl-chart.is-hovering .tl-dot.is-hl,
+.tl-chart.is-hovering .tl-endlabel.is-hl {
+  opacity: 1;
+}
+/* 節末リングの右隣に置く試合結果スコア。不透明チップ（下）＋細い白ハロー（下）で折れ線と重なっても読める。 */
+.tl-round-chip {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
+  opacity: 0.92;
+}
 .tl-round-score {
   fill: var(--ink);
   font-family: var(--font-num);
@@ -1067,7 +1119,7 @@ table.bt-table {
   font-weight: 700;
   paint-order: stroke;
   stroke: var(--surface);
-  stroke-width: 3px;
+  stroke-width: 1px;
   stroke-linejoin: round;
 }
 .tl-endlabel {
@@ -1086,7 +1138,7 @@ table.bt-table {
   flex-wrap: wrap;
   gap: 0.3rem 0.9rem;
   margin: 0.55rem 0.15rem 0;
-  font-size: 0.82rem;
+  font-size: var(--ts-xs);
   color: var(--ink-soft);
 }
 .tl-leg-item {
@@ -1106,6 +1158,26 @@ table.bt-table {
 .tl-leg-rank {
   font-variant-numeric: tabular-nums;
 }
+/* F-6: 凡例・順位表行はホバー対象。チャートの線と同期して下線で示す（チャート外なので減光はしない）。 */
+.tl-leg-item {
+  cursor: default;
+  border-radius: 999px;
+  transition: background 0.12s ease;
+}
+.tl-leg-item.is-hl {
+  background: var(--surface-2);
+}
+.tl-leg-item.is-hl .tl-leg-name {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.standings-table tbody tr.is-hl {
+  background: var(--surface-2);
+}
+.standings-table tbody tr.is-hl .team-name {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 /* 節ラベルに併記する日付（M/D）= 小さく沈める */
 .tl-md-date {
   font-size: 12px;
@@ -1113,14 +1185,40 @@ table.bt-table {
   fill: var(--ink-soft);
 }
 /* 得点ログ（live=ゴール時系列／stage=試合結果）= チャートで失われた誰が・何分にを復活 */
+/* 既定は折りたたみ（主役のチャートを埋もれさせない）。開くと全ゴールの時系列が出る。 */
 .tl-log {
-  margin: 0.6rem 0.1rem 0;
+  margin: var(--sp-3) 0.1rem 0;
+  border-top: 1px solid var(--border);
+  padding-top: var(--sp-2);
 }
 .tl-log-head {
-  font-size: 0.8rem;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-display);
+  font-size: var(--ts-sm);
   font-weight: 800;
+  letter-spacing: 0.01em;
   color: var(--ink-soft);
-  margin: 0 0 0.4rem;
+}
+.tl-log-head::-webkit-details-marker {
+  display: none;
+}
+.tl-log-head::before {
+  content: "▸ ";
+  color: var(--pitch-deep);
+}
+.tl-log[open] .tl-log-head::before {
+  content: "▾ ";
+}
+.tl-log-count {
+  margin-left: 0.4rem;
+  font-family: var(--font-num);
+  font-weight: 600;
+  font-size: var(--ts-2xs);
+  color: var(--ink-faint);
+}
+.tl-log[open] .tl-timeline {
+  margin-top: var(--sp-2);
 }
 /* 得点タイムライン（縦型）= 節見出し → ゴール → 第n節 結果 を時系列で。 */
 .tl-timeline {
@@ -1135,7 +1233,7 @@ table.bt-table {
   margin-top: 0.45rem;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.84rem;
+  font-size: var(--ts-sm);
   color: var(--ink);
   letter-spacing: 0.02em;
 }
@@ -1150,7 +1248,7 @@ table.bt-table {
   background: var(--surface-2);
   border-left: 3px solid var(--border-strong); /* 得点国の線色でインライン上書き */
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
-  font-size: 0.84rem;
+  font-size: var(--ts-sm);
   line-height: 1.5;
 }
 .tlog-time {
@@ -1182,7 +1280,7 @@ table.bt-table {
   background: var(--advance-soft);
   border: 1px dashed var(--advance);
   border-radius: var(--r-sm);
-  font-size: 0.84rem;
+  font-size: var(--ts-sm);
 }
 .tlog-round-head {
   font-family: var(--font-display);
@@ -1200,7 +1298,7 @@ table.bt-table {
   margin-left: 0.4rem;
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
-  font-size: 0.72rem;
+  font-size: var(--ts-2xs);
   font-weight: 700;
   color: var(--ink-soft);
   white-space: nowrap;
@@ -1218,7 +1316,7 @@ table.bt-table {
   text-align: left;
 }
 .ts-table thead th {
-  font-size: 0.78rem;
+  font-size: var(--ts-xs);
   font-weight: 800;
   color: var(--ink-soft);
 }
@@ -1232,7 +1330,7 @@ table.bt-table {
 .ts-team {
   margin-left: 0.4rem;
   font-family: var(--font-num);
-  font-size: 0.74rem;
+  font-size: var(--ts-2xs);
   font-weight: 700;
   color: var(--ink-soft);
 }
@@ -1245,7 +1343,7 @@ table.bt-table {
 }
 .ts-pk {
   margin-left: 0.35rem;
-  font-size: 0.7rem;
+  font-size: var(--ts-2xs);
   font-weight: 700;
   color: var(--ink-soft);
 }
@@ -1264,7 +1362,7 @@ table.bt-table {
   padding: 0.95rem 1.1rem;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1rem;
+  font-size: var(--ts-md);
   letter-spacing: 0.01em;
   list-style: none;
   transition: background 0.15s ease;
@@ -1284,6 +1382,60 @@ table.bt-table {
 }
 .scenario-details-body {
   padding: 0 1.1rem 1.1rem;
+}
+
+/* ---- F-9: 横スクロールできることを示すスクロールバーの視認性（チャート・カルーセル） ---- */
+.timeline-scroll,
+.sched-carousel {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.timeline-scroll::-webkit-scrollbar,
+.sched-carousel::-webkit-scrollbar {
+  height: 8px;
+}
+.timeline-scroll::-webkit-scrollbar-thumb,
+.sched-carousel::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+
+/* ---- F-7: ダークモード（OS 設定がダークのとき自前の暗色トークンに切替） ----
+   ブラウザの自動反転だと緑の通過表現が濁るため、意図した暗色を持つ。色は CSS 変数だけで切替。 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1422;
+    --surface: #122036;
+    --surface-2: #182a44;
+    --border: #2a3a54;
+    --border-strong: #3a4d6b;
+    --ink: #eaf1fb;
+    --ink-soft: #aab8cc;
+    --ink-faint: #8294ad;
+    --link: #7bb0ee;
+
+    --advance: #15803d; /* バッジ/枠の白文字を保つため濃いまま */
+    --advance-soft: #15321f; /* 暗い緑面（通過行・バンド） */
+    --advance-edge: #22c55e; /* 明るい緑の差し色ストライプ */
+    --advance-ink: #86e0a6;
+    --alive-soft: #3a2912;
+    --alive-ink: #f0b878;
+    --eliminated-soft: #1d2a3e;
+
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.36);
+    --shadow-hero: 0 8px 28px rgba(0, 0, 0, 0.5);
+  }
+  /* ハードコード色の最小限の手当て（暗面で読めるように）。 */
+  .disclaimer {
+    color: #e8a368;
+  }
+  .row-advance:hover {
+    background: #1c3d27;
+  }
+  .phase-badge.is-early {
+    background: #1b2c4d;
+    color: #9cc0f2;
+  }
 }
 
 /* ---- モーション抑制 ---- */
@@ -1314,7 +1466,7 @@ table.bt-table {
   .group-tab {
     flex: 0 0 auto;
     min-width: 2.5rem;
-    font-size: 0.92rem;
+    font-size: var(--ts-base);
     padding: 0.4rem 0.5rem;
   }
   .tl-chart-wrap {

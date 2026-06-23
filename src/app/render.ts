@@ -78,7 +78,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     <header class="site-header">
       <div class="hero-inner">
         <h1><span class="hero-mark">⚽</span><span class="hero-title">WCUP <span class="hero-em">通過タイムライン</span></span></h1>
-        <p class="site-sub">${esc(ct.meta.title)} ／ いつ誰が得点して、その時点で通過国がどう入れ替わったかを時系列で可視化します。</p>
+        <p class="site-sub">いつ誰が得点して、その時点で通過国がどう入れ替わったかを時系列で可視化します。</p>
         <nav class="cup-tabs seg" id="cup-tabs" aria-label="大会選択">${cupTabs}</nav>
       </div>
     </header>
@@ -153,6 +153,27 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     }
   });
 
+  // ---- ホバー連動ハイライト（凡例・順位表行・チャートの線/点を data-team で同期） ----
+  // 1本に注目を集める selective highlighting。再描画で innerHTML が差し替わっても委譲リスナーは生存。
+  let hoverTeam: string | null = null;
+  function highlight(tid: string | null): void {
+    if (tid === hoverTeam) return;
+    hoverTeam = tid;
+    for (const el of elDetail.querySelectorAll(".is-hl")) el.classList.remove("is-hl");
+    const svg = elTimeline.querySelector(".tl-chart");
+    if (!tid) {
+      svg?.classList.remove("is-hovering");
+      return;
+    }
+    for (const el of elDetail.querySelectorAll(`[data-team="${tid}"]`)) el.classList.add("is-hl");
+    svg?.classList.add("is-hovering");
+  }
+  elDetail.addEventListener("pointerover", (ev) => {
+    const el = (ev.target as HTMLElement).closest("[data-team]") as HTMLElement | null;
+    highlight(el ? el.dataset.team ?? null : null);
+  });
+  elDetail.addEventListener("pointerleave", () => highlight(null));
+
   function gdLabel(gd: number): string {
     return gd > 0 ? `+${gd}` : String(gd);
   }
@@ -197,7 +218,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         const cls = [r.advances ? "row-advance" : "", i + 1 === adv ? "advance-line" : ""].filter(Boolean).join(" ");
         const tie = r.tiedGroupKey ? `<span class="tie-badge">抽選</span>` : "";
         return `
-          <tr class="${cls}">
+          <tr class="${cls}" data-team="${r.teamId}">
             <td class="col-rank"><span class="rank-badge">${r.rank}</span></td>
             <td class="col-team"><span class="team-cell"><span class="team-flag">${team(r.teamId).flag}</span><span class="team-name">${esc(team(r.teamId).name)}</span>${fifaInline(r.teamId)}${tie}</span></td>
             <td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td>
@@ -335,7 +356,9 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   // ---- タイムライン（主役・順位バンプチャート: x=イベント時系列, y=順位, 線=各国の推移） ----
   // 線にすることで全節が1画面に収まり、各国の軌跡を一目で追える（旧: 横スクロールする国旗の格子）。
   // engine の Snapshot[]（各列の standings 並び＝位置）をそのまま座標列に使う＝engine は不変。
-  const TEAM_LINE_COLORS = ["#2563eb", "#ea7317", "#7c3aed", "#0d9488", "#db2777", "#475569"];
+  // Okabe-Ito 由来のカラーブラインド対応パレット（2型・3型色覚でも判別可・グレースケールでも明度差あり）。
+  // 4チーム組では先頭4色＝青/朱/緑/赤紫＝最も判別しやすい組合せのみ使用。黄(#F0E442)は白地で淡いため除外。
+  const TEAM_LINE_COLORS = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9"];
   const rawTc = (id: string) => tricode(team(id));
 
   // 節末スナップの試合結果を1行に: "MEX 2-0 RSA ／ KOR 2-1 CZE"。
@@ -374,6 +397,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const colorOf = new Map<string, string>(
       finalOrder.map((id, i) => [id, TEAM_LINE_COLORS[i % TEAM_LINE_COLORS.length]]),
     );
+    // 最終的に通過圏（上位 adv）に入る国＝主役として強調、圏外＝淡く（selective highlighting）。
+    const advancingSet = new Set(finalOrder.slice(0, adv));
 
     // ジオメトリ（SVG ユーザー単位・幅1000固定で width:100% スケール）
     const VBW = 1000;
@@ -389,7 +414,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const VBH = plotB + mB;
     // x座標: 列ごとに1単位進み、節末列の直後にガター(GUT)を足す＝そのガターに節結果スコアを置く。
     // 最終列が節末ならその右にもガターを残し、右端ラベルとの間にスコアを収める。
-    const GUT = 2.6;
+    // ガターはスコアチップ（不透明）が線と重ならず収まる幅を確保する。
+    const GUT = 3.4;
     const us: number[] = [];
     {
       let u = 0;
@@ -450,34 +476,41 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     let lines = "";
     for (const tid of finalOrder) {
       const color = colorOf.get(tid)!;
+      const out = !advancingSet.has(tid); // 圏外＝淡く（主役を際立たせる）
+      const oc = out ? " is-out" : "";
       const pts = posByCol.map((_, ci) => `${f1(xAt(ci))},${f1(yAt(idxByCol[ci].get(tid)!))}`).join(" ");
-      lines += `<polyline class="tl-line" data-team="${tid}" points="${pts}" style="stroke:${color}" />`;
+      lines += `<polyline class="tl-line${oc}" data-team="${tid}" points="${pts}" style="stroke:${color}" />`;
       for (let ci = 0; ci < cols; ci++) {
         const snap = snaps[ci];
         const e = snap.event;
         const scorerId = e && e.scorerSide ? (e.scorerSide === "home" ? e.homeId : e.awayId) : undefined;
         const scoring = scorerId === tid;
         const isRE = snap.kind === "roundEnd";
-        const cls = `tl-dot${scoring ? " is-scorer" : ""}${isRE ? " is-roundend" : ""}`;
+        const cls = `tl-dot${scoring ? " is-scorer" : ""}${isRE ? " is-roundend" : ""}${oc}`;
         const r = scoring ? 5 : isRE ? 4 : 3;
         // 節末は色付きの中空リング（チェックポイント）、ゴールは塗りつぶし。
         const dotStyle = isRE ? `fill:var(--surface);stroke:${color}` : `fill:${color}`;
         lines += `<circle class="${cls}" data-team="${tid}" cx="${f1(xAt(ci))}" cy="${f1(yAt(idxByCol[ci].get(tid)!))}" r="${r}" style="${dotStyle}"><title>${tipText(tid, snap, scoring)}</title></circle>`;
       }
       const fy = yAt(idxByCol[cols - 1].get(tid)!);
-      lines += `<text class="tl-endlabel" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tc(tid)}</tspan></text>`;
+      lines += `<text class="tl-endlabel${oc}" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tc(tid)}</tspan></text>`;
     }
 
-    // 節結果スコア（節末リングの右隣・lane1/lane2 の高さ）。白ハローで線の上でも読める。
+    // 節結果スコア（節末リングの右隣・lane1/lane2 の高さ）。不透明チップを敷いて折れ線と重なっても確実に読む。
+    // 等幅フォント(13px)なので字送りからチップ幅を概算でき、決定的に配置できる。
     let roundScores = "";
+    const CHAR_W = 7.4;
     for (let ci = 0; ci < cols; ci++) {
       const snap = snaps[ci];
       if (snap.kind !== "roundEnd" || !snap.roundResults) continue;
-      const x = xAt(ci) + 10;
+      const x = xAt(ci) + 8;
       snap.roundResults.forEach((rr, ri) => {
         if (ri >= teamCount) return;
         const txt = `${rawTc(rr.homeId)} ${rr.homeScore}-${rr.awayScore} ${rawTc(rr.awayId)}`;
-        roundScores += `<text class="tl-round-score" x="${f1(x)}" y="${f1(yAt(ri))}" dominant-baseline="middle" text-anchor="start">${esc(txt)}</text>`;
+        const w = txt.length * CHAR_W + 12;
+        const cy = yAt(ri);
+        roundScores += `<rect class="tl-round-chip" x="${f1(x - 5)}" y="${f1(cy - 9)}" width="${f1(w)}" height="18" rx="4" />`;
+        roundScores += `<text class="tl-round-score" x="${f1(x)}" y="${f1(cy)}" dominant-baseline="middle" text-anchor="start">${esc(txt)}</text>`;
       });
     }
 
@@ -488,7 +521,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const legend = finalOrder
       .map(
         (tid, i) =>
-          `<span class="tl-leg-item"><span class="tl-leg-swatch" style="background:${colorOf.get(tid)}"></span>${team(tid).flag}<span class="tl-leg-name">${esc(team(tid).name)}</span><span class="tl-leg-rank">${i + 1}位</span></span>`,
+          `<span class="tl-leg-item" data-team="${tid}"><span class="tl-leg-swatch" style="background:${colorOf.get(tid)}"></span>${team(tid).flag}<span class="tl-leg-name">${esc(team(tid).name)}</span><span class="tl-leg-rank">${i + 1}位</span></span>`,
       )
       .join("");
 
@@ -520,7 +553,10 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         );
       }
     }
-    const log = `<div class="tl-log"><p class="tl-log-head">得点タイムライン</p><ol class="tl-timeline">${items.join("")}</ol></div>`;
+    // 既定は折りたたみ＝主役（バンプチャート）を埋もれさせない。全ゴールの一覧は1クリックで開ける。
+    // ※スコア／節結果はチャート上にも出ているので、ここは「誰が・何分に」を補完する任意の詳細。
+    const goalCount = snaps.filter((s) => s.kind !== "roundEnd" && s.event).length;
+    const log = `<details class="tl-log"><summary class="tl-log-head">得点タイムライン<span class="tl-log-count">全${goalCount}ゴール</span></summary><ol class="tl-timeline">${items.join("")}</ol></details>`;
 
     return `
       <div class="timeline-scroll"><div class="tl-chart-wrap">${svg}</div></div>
