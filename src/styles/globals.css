@@ -914,6 +914,91 @@ table.bt-table {
   margin: 0.6rem 0 0.3rem;
 }
 
+/* ---- 日程・結果（グループ全6試合・日時つき） ---- */
+.sched-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem 0.2rem;
+}
+.sched-md {
+  margin: 0.5rem 0.6rem 0.15rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.84rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+.sched-list > .sched-md:first-child {
+  margin-top: 0.2rem;
+}
+.sched-match {
+  display: grid;
+  grid-template-columns: 5.2rem 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.34rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.sched-list > .sched-match:last-child {
+  border-bottom: none;
+}
+.sched-when {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  color: var(--ink-soft);
+  font-family: var(--font-num);
+}
+.sched-date {
+  font-weight: 700;
+  color: var(--ink);
+}
+.sched-time {
+  font-size: 0.78rem;
+}
+.sched-home,
+.sched-away {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.sched-home {
+  justify-self: end;
+  text-align: right;
+}
+.sched-away {
+  justify-self: start;
+  text-align: left;
+}
+.sched-name {
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sched-flag {
+  flex: 0 0 auto;
+}
+.sched-score {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--ink);
+  padding: 0 0.1rem;
+}
+.sched-vs {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.sched-match.is-upcoming {
+  /* 未消化はやや沈めて「予定」と分かるように。 */
+  background: var(--surface-2);
+}
+
 /* ---- タイムライン（順位バンプチャート: x=時系列, y=順位, 線=各国の推移） ---- */
 .timeline-scroll {
   position: relative;

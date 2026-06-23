@@ -57,6 +57,11 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const r = team(id).fifaRank;
     return r ? `<span class="team-fifa" title="FIFA世界ランキング">FIFA ${r}位</span>` : "";
   };
+  /** kickoff "YYYY-MM-DDThh:mm" → 表示用の M/D と HH:MM（Date 不使用・slice）。 */
+  const fmtKickoff = (iso: string): { date: string; time: string } =>
+    iso.length >= 16
+      ? { date: `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`, time: iso.slice(11, 16) }
+      : { date: "", time: "" };
 
   const cupTabs = CUPS
     .map((c) => `<button type="button" class="cup-tab seg-btn${c.id === cup ? " seg-on" : ""}" data-action="set-cup" data-cup="${c.id}">${esc(c.label)}</button>`)
@@ -89,6 +94,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
       <div id="detail-view">
         <div id="detail-main">
+          <div id="schedule"></div>
+
           <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
           <div id="standings"></div>
           <div id="status"></div>
@@ -122,6 +129,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const $ = <T extends HTMLElement>(sel: string): T => root.querySelector(sel) as T;
   const elOverview = $("#overview");
   const elDetail = $("#detail-view");
+  const elSchedule = $("#schedule");
   const elStandings = $("#standings");
   const elStatus = $("#status");
   const elBestThirds = $("#best-thirds");
@@ -147,6 +155,36 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
   function gdLabel(gd: number): string {
     return gd > 0 ? `+${gd}` : String(gd);
+  }
+
+  // ---- 日程・結果（そのグループの全6試合・日時つき。消化=スコア／未消化=vs） ----
+  function scheduleHTML(group: GroupId): string {
+    const ms = ct.matchesByGroup.get(group) ?? []; // (matchday, id) 昇順
+    if (ms.length === 0) return "";
+    let prevMd = 0;
+    const items: string[] = [];
+    for (const m of ms) {
+      if (m.matchday !== prevMd) {
+        items.push(`<li class="sched-md">第${m.matchday}節</li>`);
+        prevMd = m.matchday;
+      }
+      const { date, time } = fmtKickoff(m.kickoff ?? "");
+      const played = m.score !== undefined && m.score !== null;
+      const mid = played
+        ? `<span class="sched-score">${m.score!.home}-${m.score!.away}</span>`
+        : `<span class="sched-vs">vs</span>`;
+      items.push(
+        `<li class="sched-match${played ? "" : " is-upcoming"}">` +
+          `<span class="sched-when"><span class="sched-date">${esc(date)}</span><span class="sched-time">${esc(time)}</span></span>` +
+          `<span class="sched-home"><span class="sched-name">${esc(team(m.home).name)}</span><span class="sched-flag">${team(m.home).flag}</span></span>` +
+          mid +
+          `<span class="sched-away"><span class="sched-flag">${team(m.away).flag}</span><span class="sched-name">${esc(team(m.away).name)}</span></span>` +
+          `</li>`,
+      );
+    }
+    return `
+      <h2 class="section-title">日程・結果 <span class="hint">グループ${group}の全6試合（${esc(ct.meta.edition)}）</span></h2>
+      <ol class="card sched-list tnum">${items.join("")}</ol>`;
   }
 
   // ---- 最終順位表 ----
@@ -664,6 +702,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     // ---- detail（1グループ）。main.ts が detail のとき必ず渡す。 ----
     const qualification = view.qualification!;
     elCaption.textContent = `グループ ${view.group}`;
+    elSchedule.innerHTML = scheduleHTML(view.group);
     elStandings.innerHTML = standingsHTML(view.standings!);
     elStatus.innerHTML = statusHTML(view.status!);
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";

@@ -39,6 +39,19 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".group-tab").length === 8, "1: グループタブ8");
   assert((root.querySelector("#overview") as HTMLElement).hidden === true, "1: 既定は詳細（一覧は非表示）");
   assert((root.querySelector("#detail-view") as HTMLElement).hidden === false, "1: 既定は詳細表示");
+  // 日程・結果（本文トップ・グループ全6試合・3節見出し）。2022 組Aは全消化＝全試合スコア。
+  assert(!!root.querySelector("#schedule .sched-list"), "1: 日程・結果セクションがある");
+  assert(root.querySelectorAll("#schedule .sched-match").length === 6, `1: 日程は6試合（実際: ${root.querySelectorAll("#schedule .sched-match").length}）`);
+  assert(root.querySelectorAll("#schedule .sched-md").length === 3, "1: 日程の節見出し3");
+  assert([...root.querySelectorAll("#schedule .sched-date")].some((e) => /\d+\/\d+/.test(e.textContent ?? "")), "1: 日程に日付");
+  assert(root.querySelectorAll("#schedule .sched-match.is-upcoming").length === 0, "1: 2022は全消化＝未消化(vs)なし");
+  // 日程は本文トップ（最終順位の h2 より上）
+  {
+    const kids = [...root.querySelector("#detail-main")!.children];
+    const schedIdx = kids.findIndex((c) => c.id === "schedule");
+    const finalH2Idx = kids.findIndex((c) => (c.textContent ?? "").includes("最終順位"));
+    assert(schedIdx === 0 && finalH2Idx > schedIdx, "1: 日程は本文トップ（最終順位より上）");
+  }
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "1: 順位表4行");
   assert(!!root.querySelector(".standings .tiebreak-legend"), "1: タイブレーク優先順位の凡例がある");
   assert(root.querySelectorAll(".standings-table thead .th-pri").length === 3, "1: 列見出しに優先順位番号3つ(点/差/得)");
@@ -165,6 +178,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".group-tab").length === 12, `8: 2026 はグループタブ12（実際: ${root.querySelectorAll(".group-tab").length}）`);
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "8: 既定はグループA");
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "8: 順位表4行（単一組）");
+  // 日程: 進行中の組Aは未消化試合に is-upcoming（vs）が出る（第3節2試合）
+  assert(root.querySelectorAll("#schedule .sched-match").length === 6, "8: 2026 組A も日程6試合");
+  assert(root.querySelectorAll("#schedule .sched-match.is-upcoming").length >= 1, "8: 進行中は未消化(vs)の試合がある");
+  assert((root.querySelector("#schedule .sched-match.is-upcoming .sched-vs")?.textContent ?? "") === "vs", "8: 未消化は『vs』表記");
   assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
   assert(!!root.querySelector("#best-thirds .bt-note"), "8: 進行中は『全行が暫定』注記を1か所に集約");
