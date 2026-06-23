@@ -45,12 +45,17 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#schedule .sched-card.is-current").length === 6, `1: 該当グループAの6試合を強調（実際: ${root.querySelectorAll("#schedule .sched-card.is-current").length}）`);
   assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "1: 2022は全消化＝未消化なし");
   assert([...root.querySelectorAll("#schedule .sched-date")].some((e) => /\d+\/\d+/.test(e.textContent ?? "")), "1: カードに日付");
-  // 日程は本文トップ（最終順位の h2 より上）
+  // レイアウト順序（レビュー反映）: チャート(全幅)が先頭 → 本文(順位表→…→日程) → サイドバー。
+  // 日程カルーセルは「主役の下＝secondary」位置へ降格、順位表が本文先頭。
   {
+    const order = [...root.querySelector("#detail-view")!.children].map((c) => c.id);
+    const tlIdx = order.indexOf("detail-timeline");
+    const mainIdx = order.indexOf("detail-main");
+    assert(tlIdx === 0 && mainIdx > tlIdx, "1: タイムライン(全幅)が本文より先頭");
     const kids = [...root.querySelector("#detail-main")!.children];
-    const schedIdx = kids.findIndex((c) => c.id === "schedule");
     const finalH2Idx = kids.findIndex((c) => (c.textContent ?? "").includes("最終順位"));
-    assert(schedIdx === 0 && finalH2Idx > schedIdx, "1: 日程は本文トップ（最終順位より上）");
+    const schedIdx = kids.findIndex((c) => c.id === "schedule");
+    assert(finalH2Idx === 0 && schedIdx > finalH2Idx, "1: 本文は順位表が先・日程はその下へ降格");
   }
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "1: 順位表4行");
   assert(!!root.querySelector(".standings .tiebreak-legend"), "1: タイブレーク優先順位の凡例がある");

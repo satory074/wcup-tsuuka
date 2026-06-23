@@ -93,17 +93,19 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       <div id="overview" hidden></div>
 
       <div id="detail-view">
-        <div id="detail-main">
-          <div id="schedule"></div>
+        <section id="detail-timeline">
+          <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位（節末に試合結果）</span></h2>
+          <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・点＝得点で動いた瞬間・◇＝節末に各試合結果）</p>
+          <div id="timeline"></div>
+        </section>
 
+        <div id="detail-main">
           <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
           <div id="standings"></div>
           <div id="status"></div>
           <div id="best-thirds"></div>
 
-          <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位（節末に試合結果）</span></h2>
-          <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・点＝得点で動いた瞬間・◇＝節末に各試合結果）</p>
-          <div id="timeline"></div>
+          <div id="schedule"></div>
 
           <details class="scenario-details" id="scenario-details">
             <summary>通過条件（シナリオ）を見る</summary>
@@ -406,7 +408,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const mR = 132;
     const mT = 36;
     const mB = 16;
-    const rowGap = 64;
+    const rowGap = 72; // レーン分離を確保（全幅化と相乗で交差が読みやすい）
     const plotL = mL;
     const plotR = VBW - mR;
     const plotT = mT;

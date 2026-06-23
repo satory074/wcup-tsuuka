@@ -126,18 +126,32 @@ body {
 
 /* detail（1グループ）= 本文 + 右サイドバー（得点ランキング）の2カラム。
    :not([hidden]) で overview 時の非表示（[hidden]）を壊さない。 */
+/* detail = 3領域グリッド: 主役チャートを全幅で先頭に出し、本文(順位表/日程/シナリオ)＋sticky得点ランキングを下の2カラムに。
+   sticky サイドバーは背の高い隣(本文)と並ぶので隙間が出ない。 */
 #detail-view:not([hidden]) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 1.75rem;
+  gap: var(--sp-6);
   align-items: start;
 }
+#detail-timeline {
+  grid-column: 1 / -1; /* 全幅の主役チャート（fold 上） */
+}
+#detail-main {
+  grid-column: 1;
+}
 #detail-side {
+  grid-column: 2;
   position: sticky;
-  top: 1rem;
+  top: var(--sp-4);
   align-self: start;
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
+}
+/* 各領域の先頭見出しは grid の row-gap と二重に空かないよう上マージンを消す。 */
+#detail-timeline > .section-title:first-child,
+#detail-main > .section-title:first-child {
+  margin-top: 0;
 }
 /* 狭いサイドバーで見出しが語中改行しないよう、ヒントは別行に。 */
 #detail-side .section-title {
@@ -148,14 +162,17 @@ body {
   margin: 0.15rem 0 0;
 }
 @media (max-width: 980px) {
-  /* 狭い画面では縦積み（サイドは本文の下）。 */
+  /* 狭い画面では縦積み（順序＝チャート→本文→得点ランキング）。 */
   #detail-view:not([hidden]) {
     display: block;
+  }
+  #detail-timeline {
+    margin-bottom: var(--sp-6);
   }
   #detail-side {
     position: static;
     max-height: none;
-    margin-top: 1.5rem;
+    margin-top: var(--sp-6);
   }
 }
 
@@ -293,8 +310,8 @@ body {
   font-size: var(--ts-lg);
   font-weight: 800;
   letter-spacing: 0.01em;
-  margin: 1.9rem 0 0.6rem;
-  padding-left: 0.6rem;
+  margin: var(--sp-8) 0 var(--sp-2);
+  padding-left: var(--sp-2);
   border-left: 4px solid var(--pitch);
   display: flex;
   align-items: baseline;
@@ -311,8 +328,8 @@ body {
 .group-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 1.25rem;
+  gap: var(--sp-1);
+  margin-top: var(--sp-5);
 }
 .group-tab {
   flex: 1 1 auto;
@@ -346,9 +363,11 @@ body {
 
 /* ---- 順位表 ---- */
 .standings {
-  margin-top: 0.6rem;
+  margin-top: var(--sp-2);
   padding: 0.35rem 0.4rem;
   overflow-x: auto;
+  /* 少列×4行を全幅に伸ばすと名前↔数値が遠く間延びする。bt-card と同思想で幅を締める。 */
+  max-width: 660px;
 }
 table.standings-table {
   width: 100%;
@@ -481,7 +500,7 @@ table.standings-table {
 
 /* ---- ベスト3位（2026: 各組3位の横断ランキング → 上位8通過） ---- */
 .bt-card {
-  margin-top: 0.6rem;
+  margin-top: var(--sp-2);
   padding: 0.35rem 0.4rem;
   overflow-x: auto;
   /* 内容量が少ない比較表は幅を抑え、名前のすぐ隣に数値が並ぶようにする（詳細・一覧の両方で効く）。 */
@@ -536,8 +555,8 @@ table.bt-table {
 .status-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
 }
 .chip {
   display: inline-flex;
@@ -737,9 +756,9 @@ table.bt-table {
   font-size: var(--ts-sm);
 }
 .site-footer {
-  margin-top: 2.75rem;
+  margin-top: var(--sp-10);
   border-top: 1px solid var(--border);
-  padding-top: 1.1rem;
+  padding-top: var(--sp-4);
   font-size: var(--ts-sm);
   line-height: 1.6;
   color: var(--ink-soft);
@@ -758,9 +777,9 @@ table.bt-table {
 /* ---- 表示範囲トグル（一覧／詳細） ---- */
 .scope-toggle {
   display: inline-flex;
-  margin-top: 0.5rem;
+  margin-top: var(--sp-2);
   /* グループタブと一覧/詳細の間に置くので下にも余白。 */
-  margin-bottom: 1rem;
+  margin-bottom: var(--sp-4);
   padding: 0.2rem;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
@@ -920,7 +939,7 @@ table.bt-table {
   border-bottom: 2px dashed var(--advance) !important;
 }
 .overview-bt {
-  margin-top: 1.5rem;
+  margin-top: var(--sp-6);
   /* 一覧は本文 1200px。3位比較表をそのまま全幅にすると名前↔数値が約1000px離れて読めない。
      比較表は内容量が少ないので幅を抑えて中央寄せ＝名前のすぐ隣に数値が並ぶ。 */
   max-width: 760px;
@@ -930,7 +949,7 @@ table.bt-table {
   font-size: var(--ts-sm);
   line-height: 1.55;
   color: var(--ink-soft);
-  margin: 0.6rem 0 0.3rem;
+  margin: var(--sp-2) 0 var(--sp-1);
 }
 
 /* ---- 日程・結果（全試合・横並びカルーセル。時系列・該当グループを強調） ---- */
@@ -1350,7 +1369,7 @@ table.bt-table {
 
 /* ---- 通過条件シナリオ（折りたたみ） ---- */
 .scenario-details {
-  margin-top: 1.75rem;
+  margin-top: var(--sp-6);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface);
