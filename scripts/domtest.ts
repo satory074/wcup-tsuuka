@@ -60,6 +60,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const leg0 = root.querySelector(".tl-legend .tl-leg-item")?.textContent ?? "";
   assert(leg0.includes("オランダ") && leg0.includes("1位"), `1: 凡例先頭=オランダ1位（実際: ${leg0}）`);
   assert((root.querySelector(".tl-chart")?.innerHTML ?? "").includes("ガクポ"), "1: 得点者名がツールチップに表示される");
+  // チャート上に節結果スコア（節末リングの脇）= 3節×2試合=6（組A 全消化）
+  assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 6, `1: チャートに節結果スコア6（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
+  assert([...root.querySelectorAll(".tl-chart .tl-round-score")].some((e) => /\d-\d/.test(e.textContent ?? "")), "1: 節結果スコアにスコア表記");
   // 得点タイムライン（縦型・チャート下）: 節見出し3・ゴール15・「第n節 結果」3
   assert(root.querySelectorAll(".tl-log .tl-timeline .tlog-goal").length === 15, `1: 得点行=全15ゴール（実際: ${root.querySelectorAll(".tl-log .tlog-goal").length}）`);
   assert(root.querySelectorAll(".tl-log .tlog-md-head").length === 3, "1: 節見出し3（第1〜3節）");
@@ -67,15 +70,12 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert((root.querySelector(".tl-log .tlog-round")?.textContent ?? "").includes("結果"), "1: 節末ブロックに『結果』");
   assert((root.querySelector(".tl-log")?.textContent ?? "").includes("ガクポ"), "1: 得点タイムラインに得点者名が見える");
   assert([...root.querySelectorAll(".tl-md-date")].some((e) => /\d+\/\d+/.test(e.textContent ?? "")), "1: 節ラベルに日付 M/D");
-  // 順位表に FIFA順位を併記（組A=ned8/sen18/ecu44/qat50）
+  // 順位表に FIFA順位を併記（組A=ned8/sen18/ecu44/qat50）。専用パネルは廃止。
   assert(root.querySelectorAll(".standings-table .team-fifa").length === 4, "1: 順位表に FIFA順位を4チーム併記");
   assert((root.querySelector(".standings-table .team-fifa")?.textContent ?? "").includes("FIFA"), "1: 併記は『FIFA ◯位』");
-  // FIFAランキング専用パネル（4カ国を FIFA 順・先頭=オランダ8位）
-  assert(root.querySelectorAll("#fifa-ranking .fifa-item").length === 4, "1: FIFAランキングパネル4カ国");
-  const fifa0 = root.querySelector("#fifa-ranking .fifa-item")?.textContent ?? "";
-  assert(fifa0.includes("8位") && fifa0.includes("オランダ"), `1: FIFAパネル先頭=オランダ8位（実際: ${fifa0}）`);
-  // 得点ランキング（大会全体）: 2022 得点王はエクアドルのバレンシア（3点）
-  assert(!!root.querySelector("#top-scorers .ts-table"), "1: 得点ランキングパネルがある");
+  assert(!root.querySelector("#fifa-ranking .fifa-item"), "1: FIFAランキング専用パネルは廃止");
+  // 得点ランキング（大会全体）は右サイドバー(#detail-side)内。2022 得点王=エクアドルのバレンシア。
+  assert(!!root.querySelector("#detail-side #top-scorers .ts-table"), "1: 得点ランキングは右サイドバー内");
   assert(root.querySelectorAll("#top-scorers .ts-table tbody tr").length >= 1, "1: 得点ランキングに行がある");
   assert((root.querySelector("#top-scorers")?.textContent ?? "").includes("バレンシア"), "1: 得点王バレンシアが載る");
   // 通過条件シナリオは折りたたみ <details> 内に降格（2022 組Aは全消化=決め手解説）
@@ -97,6 +97,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const dots = root.querySelectorAll(".tl-chart .tl-dot").length;
   assert(dots > 24, `1b: 分刻みは頂点が多い（実際: ${dots}）`);
   assert(root.querySelectorAll(".tl-chart .tl-dot.is-roundend").length === 12, "1b: 節末リング=4×3=12");
+  assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 6, `1b: チャートに節結果スコア6（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
   assert(root.querySelectorAll(".tl-log .tlog-round").length === 3, `1b: 縦型ログに『第n節 結果』3（実際: ${root.querySelectorAll(".tl-log .tlog-round").length}）`);
   assert(root.querySelectorAll(".tl-log .tlog-md-head").length === 3, "1b: 縦型ログに節見出し3");
   // 節末リングの <title> に試合結果が入る（ツールチップ）

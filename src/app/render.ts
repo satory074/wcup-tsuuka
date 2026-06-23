@@ -88,24 +88,27 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       <div id="overview" hidden></div>
 
       <div id="detail-view">
-        <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
-        <div id="standings"></div>
-        <div id="status"></div>
-        <div id="fifa-ranking"></div>
-        <div id="best-thirds"></div>
+        <div id="detail-main">
+          <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
+          <div id="standings"></div>
+          <div id="status"></div>
+          <div id="best-thirds"></div>
 
-        <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位（節末に試合結果）</span></h2>
-        <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・点＝得点で動いた瞬間・◇＝節末）</p>
-        <div id="timeline"></div>
+          <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位（節末に試合結果）</span></h2>
+          <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・点＝得点で動いた瞬間・◇＝節末に各試合結果）</p>
+          <div id="timeline"></div>
 
-        <div id="top-scorers"></div>
+          <details class="scenario-details" id="scenario-details">
+            <summary>通過条件（シナリオ）を見る</summary>
+            <div class="scenario-details-body">
+              <div id="scenario"></div>
+            </div>
+          </details>
+        </div>
 
-        <details class="scenario-details" id="scenario-details">
-          <summary>通過条件（シナリオ）を見る</summary>
-          <div class="scenario-details-body">
-            <div id="scenario"></div>
-          </div>
-        </details>
+        <aside id="detail-side">
+          <div id="top-scorers"></div>
+        </aside>
       </div>
 
       <footer class="site-footer">
@@ -121,7 +124,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elDetail = $("#detail-view");
   const elStandings = $("#standings");
   const elStatus = $("#status");
-  const elFifa = $("#fifa-ranking");
   const elBestThirds = $("#best-thirds");
   const elTimeline = $("#timeline");
   const elTopScorers = $("#top-scorers");
@@ -345,7 +347,19 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const plotT = mT;
     const plotB = plotT + rowGap * (teamCount - 1);
     const VBH = plotB + mB;
-    const xAt = (ci: number) => (cols === 1 ? (plotL + plotR) / 2 : plotL + ((plotR - plotL) * ci) / (cols - 1));
+    // x座標: 列ごとに1単位進み、節末列の直後にガター(GUT)を足す＝そのガターに節結果スコアを置く。
+    // 最終列が節末ならその右にもガターを残し、右端ラベルとの間にスコアを収める。
+    const GUT = 2.6;
+    const us: number[] = [];
+    {
+      let u = 0;
+      for (let ci = 0; ci < cols; ci++) {
+        us.push(u);
+        u += 1 + (snaps[ci].kind === "roundEnd" ? GUT : 0);
+      }
+    }
+    const span = Math.max(1e-6, us[cols - 1] + (snaps[cols - 1].kind === "roundEnd" ? GUT : 0));
+    const xAt = (ci: number) => (cols === 1 ? (plotL + plotR) / 2 : plotL + ((plotR - plotL) * us[ci]) / span);
     const yAt = (pos: number) => plotT + rowGap * pos;
     const f1 = (n: number) => n.toFixed(1);
 
@@ -385,7 +399,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       const dateTsp = date ? ` <tspan class="tl-md-date">${date}</tspan>` : "";
       mdBands += `<text class="tl-md" x="${f1(cx)}" y="${f1(plotT - 22)}" text-anchor="middle">第${md}節${dateTsp}</text>`;
       if (bi > 0) {
-        const sep = (xAt(bi - 1) + xAt(bi)) / 2;
+        // 区切り線はガター内の節結果スコアを跨がないよう、次バンド寄りに置く。
+        const sep = xAt(bi) - (xAt(bi) - xAt(bi - 1)) * 0.18;
         mdBands += `<line class="tl-mdsep" x1="${f1(sep)}" y1="${f1(plotT - 30)}" x2="${f1(sep)}" y2="${f1(plotB)}" />`;
       }
       bi += span;
@@ -413,8 +428,21 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       lines += `<text class="tl-endlabel" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tc(tid)}</tspan></text>`;
     }
 
-    const aria = `グループ${view.group}の順位推移。縦軸=順位（上が1位・上位${adv}が通過圏）、横軸=時系列。色付きの線が各国の順位の動き。`;
-    const svg = `<svg class="tl-chart" viewBox="0 0 ${VBW} ${VBH}" role="img" aria-label="${esc(aria)}" preserveAspectRatio="xMidYMid meet">${band}${lanes}${mdBands}${lines}</svg>`;
+    // 節結果スコア（節末リングの右隣・lane1/lane2 の高さ）。白ハローで線の上でも読める。
+    let roundScores = "";
+    for (let ci = 0; ci < cols; ci++) {
+      const snap = snaps[ci];
+      if (snap.kind !== "roundEnd" || !snap.roundResults) continue;
+      const x = xAt(ci) + 10;
+      snap.roundResults.forEach((rr, ri) => {
+        if (ri >= teamCount) return;
+        const txt = `${rawTc(rr.homeId)} ${rr.homeScore}-${rr.awayScore} ${rawTc(rr.awayId)}`;
+        roundScores += `<text class="tl-round-score" x="${f1(x)}" y="${f1(yAt(ri))}" dominant-baseline="middle" text-anchor="start">${esc(txt)}</text>`;
+      });
+    }
+
+    const aria = `グループ${view.group}の順位推移。縦軸=順位（上が1位・上位${adv}が通過圏）、横軸=時系列。色付きの線が各国の順位の動き。節末に各試合の結果。`;
+    const svg = `<svg class="tl-chart" viewBox="0 0 ${VBW} ${VBH}" role="img" aria-label="${esc(aria)}" preserveAspectRatio="xMidYMid meet">${band}${lanes}${mdBands}${lines}${roundScores}</svg>`;
 
     // 凡例（色→国旗→和名→最終順位）= チャートの色対応＆名前を補う
     const legend = finalOrder
@@ -458,22 +486,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       <div class="timeline-scroll"><div class="tl-chart-wrap">${svg}</div></div>
       <div class="tl-legend">${legend}</div>
       ${log}`;
-  }
-
-  // ---- FIFA世界ランキング（グループ4カ国を FIFA 順に） ----
-  function fifaRankingHTML(group: GroupId): string {
-    const teams = (ct.teamsByGroup.get(group) ?? []).filter((t) => typeof t.fifaRank === "number");
-    if (teams.length === 0) return "";
-    const sorted = [...teams].sort((a, b) => (a.fifaRank! - b.fifaRank!));
-    const items = sorted
-      .map(
-        (t) =>
-          `<li class="fifa-item"><span class="fifa-rank tnum">${t.fifaRank}位</span><span class="fifa-flag">${t.flag}</span><span class="fifa-name">${esc(t.name)}</span><span class="fifa-code">${esc(tricode(t))}</span></li>`,
-      )
-      .join("");
-    return `
-      <h2 class="section-title">FIFAランキング <span class="hint">${esc(ct.meta.edition)}時点の世界ランキング順</span></h2>
-      <ol class="card fifa-list">${items}</ol>`;
   }
 
   // ---- 得点ランキング（大会全体・全グループ横断） ----
@@ -654,7 +666,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     elCaption.textContent = `グループ ${view.group}`;
     elStandings.innerHTML = standingsHTML(view.standings!);
     elStatus.innerHTML = statusHTML(view.status!);
-    elFifa.innerHTML = fifaRankingHTML(view.group);
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
     elTopScorers.innerHTML = topScorersHTML(view.scorers ?? []);
