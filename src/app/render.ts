@@ -157,34 +157,36 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     return gd > 0 ? `+${gd}` : String(gd);
   }
 
-  // ---- 日程・結果（そのグループの全6試合・日時つき。消化=スコア／未消化=vs） ----
+  // ---- 日程・結果（全試合・横並びカルーセル。時系列・該当グループを強調） ----
   function scheduleHTML(group: GroupId): string {
-    const ms = ct.matchesByGroup.get(group) ?? []; // (matchday, id) 昇順
-    if (ms.length === 0) return "";
-    let prevMd = 0;
-    const items: string[] = [];
-    for (const m of ms) {
-      if (m.matchday !== prevMd) {
-        items.push(`<li class="sched-md">第${m.matchday}節</li>`);
-        prevMd = m.matchday;
-      }
-      const { date, time } = fmtKickoff(m.kickoff ?? "");
-      const played = m.score !== undefined && m.score !== null;
-      const mid = played
-        ? `<span class="sched-score">${m.score!.home}-${m.score!.away}</span>`
-        : `<span class="sched-vs">vs</span>`;
-      items.push(
-        `<li class="sched-match${played ? "" : " is-upcoming"}">` +
-          `<span class="sched-when"><span class="sched-date">${esc(date)}</span><span class="sched-time">${esc(time)}</span></span>` +
-          `<span class="sched-home"><span class="sched-name">${esc(team(m.home).name)}</span><span class="sched-flag">${team(m.home).flag}</span></span>` +
-          mid +
-          `<span class="sched-away"><span class="sched-flag">${team(m.away).flag}</span><span class="sched-name">${esc(team(m.away).name)}</span></span>` +
-          `</li>`,
-      );
-    }
+    // 全グループの全試合を集約 → キックオフ（ISO は辞書順＝時系列）昇順・同時刻は id。
+    const all = ct.groups.flatMap((g) => ct.matchesByGroup.get(g) ?? []);
+    if (all.length === 0) return "";
+    const ordered = [...all].sort((a, b) => {
+      const ka = a.kickoff ?? "";
+      const kb = b.kickoff ?? "";
+      return ka < kb ? -1 : ka > kb ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    });
+    const teamRow = (id: string, pts: string) =>
+      `<div class="sched-card-row"><span class="sched-flag">${team(id).flag}</span><span class="sched-code">${tc(id)}</span><span class="sched-pts">${pts}</span></div>`;
+    const cards = ordered
+      .map((m) => {
+        const { date, time } = fmtKickoff(m.kickoff ?? "");
+        const played = m.score !== undefined && m.score !== null;
+        const cur = m.group === group;
+        const cls = `sched-card${cur ? " is-current" : ""}${played ? "" : " is-upcoming"}`;
+        return (
+          `<div class="${cls}"${cur ? ' data-current="1"' : ""}>` +
+          `<div class="sched-card-head"><span class="sched-date">${esc(date)}</span><span class="sched-time">${esc(time)}</span><span class="sched-grp">${m.group}</span></div>` +
+          teamRow(m.home, played ? String(m.score!.home) : "–") +
+          teamRow(m.away, played ? String(m.score!.away) : "–") +
+          `</div>`
+        );
+      })
+      .join("");
     return `
-      <h2 class="section-title">日程・結果 <span class="hint">グループ${group}の全6試合（${esc(ct.meta.edition)}）</span></h2>
-      <ol class="card sched-list tnum">${items.join("")}</ol>`;
+      <h2 class="section-title">日程・結果 <span class="hint">全試合（該当＝グループ${group}を強調・横スクロール）</span></h2>
+      <div class="card sched-carousel-wrap tnum"><div class="sched-carousel">${cards}</div></div>`;
   }
 
   // ---- 最終順位表 ----
@@ -703,6 +705,15 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const qualification = view.qualification!;
     elCaption.textContent = `グループ ${view.group}`;
     elSchedule.innerHTML = scheduleHTML(view.group);
+    // 日程カルーセルを該当グループの最初の試合まで横スクロール（rect 差分＝ページ縦には影響しない）。
+    // レイアウト確定後に測るため rAF 経由（jsdom では no-op＝テストに影響なし）。
+    const car = elSchedule.querySelector<HTMLElement>(".sched-carousel");
+    const curCard = elSchedule.querySelector<HTMLElement>(".sched-card[data-current]");
+    if (car && curCard) {
+      requestAnimationFrame(() => {
+        car.scrollLeft += curCard.getBoundingClientRect().left - car.getBoundingClientRect().left - 16;
+      });
+    }
     elStandings.innerHTML = standingsHTML(view.standings!);
     elStatus.innerHTML = statusHTML(view.status!);
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
