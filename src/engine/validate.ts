@@ -71,6 +71,8 @@ export function validateTournament(raw: unknown): ValidateResult {
       if (typeof t.name !== "string" || !t.name) err(`${at}.name が無い`);
       if (typeof t.nameEn !== "string" || !t.nameEn) err(`${at}.nameEn が無い`);
       if (typeof t.flag !== "string" || !t.flag) err(`${at}.flag が無い`);
+      if (t.fifaRank !== undefined && (!Number.isInteger(t.fifaRank) || (t.fifaRank as number) < 1))
+        err(`${at}.fifaRank が不正（1以上の整数）`);
       if (!GROUP_IDS.includes(t.group as never)) err(`${at}.group が不正: ${String(t.group)}`);
       else if (typeof t.id === "string") teamGroup.set(t.id, t.group as GroupId);
     }

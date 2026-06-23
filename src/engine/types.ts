@@ -36,6 +36,8 @@ export interface Team {
   group: GroupId;
   /** 国旗絵文字 */
   flag: string;
+  /** FIFA世界ランキング順位（任意・正の整数）。大会ごとの時点（2022=大会直前 / 2026=最新）。 */
+  fifaRank?: number;
 }
 
 export interface GroupDef {

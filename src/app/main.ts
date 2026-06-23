@@ -7,9 +7,10 @@ import { computeStandings } from "../engine/standings";
 import { computeBestThirds } from "../engine/thirds";
 import { groupStatus } from "../engine/status";
 import { analyzeGroup } from "../engine/scenario/qualify";
-import { buildLiveTimeline, buildStageTimeline } from "../engine/timeline";
+import { buildTimeline } from "../engine/timeline";
+import { computeScorers } from "../engine/scorers";
 import type { CompiledTournament, GroupId, Standings } from "../engine/types";
-import { createRenderer, type ViewMode, type OverviewPhase } from "./render";
+import { createRenderer, type OverviewPhase } from "./render";
 import { decodeQuery, encodeQuery, type Cup, type Scope } from "./url";
 
 // 一覧カードのフェーズを消化試合数から安価に導出（列挙ベースの analyzeGroup は使わない）。
@@ -41,7 +42,6 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
   }
 
   let group: GroupId = ct.groups[0];
-  let view: ViewMode = "live";
   let scope: Scope = "detail";
 
   const renderer = createRenderer(root, ct, cup, (cmd) => {
@@ -49,11 +49,6 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
       case "set-group":
         if (!ct.groups.includes(cmd.group)) return;
         group = cmd.group;
-        rerender();
-        syncUrl();
-        break;
-      case "set-view":
-        view = cmd.view;
         rerender();
         syncUrl();
         break;
@@ -81,44 +76,41 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
       phaseByGroup.set(gid, derivePhase(st));
     }
     const bestThirds = computeBestThirds(ct, standingsByGroup);
+    // 得点ランキングは大会全体（全グループ横断）で安価に算出。両スコープで渡す。
+    const scorers = computeScorers(ct);
 
     // 一覧（overview）は順位の投影のみ。列挙コストのある詳細計算は detail のときだけ行う。
     if (scope !== "detail") {
-      renderer.render({ scope, group, view, standingsByGroup, phaseByGroup, bestThirds });
+      renderer.render({ scope, group, standingsByGroup, phaseByGroup, bestThirds, scorers });
       return;
     }
 
     const standings = standingsByGroup.get(group)!;
     const status = groupStatus(ct, group);
-    const liveTimeline = buildLiveTimeline(ct, group);
-    const stageTimeline = buildStageTimeline(ct, group);
-    // live データが無い組では stage にフォールバック
-    if (view === "live" && liveTimeline === null) view = "stage";
+    const timeline = buildTimeline(ct, group);
     const qualification = analyzeGroup(ct, group);
     renderer.render({
       scope,
       group,
-      view,
       standingsByGroup,
       phaseByGroup,
       bestThirds,
+      scorers,
       standings,
       status,
-      liveTimeline,
-      stageTimeline,
+      timeline,
       qualification,
     });
   }
 
   function syncUrl(): void {
-    const qs = encodeQuery({ cup, group, view, scope });
+    const qs = encodeQuery({ cup, group, scope });
     history.replaceState(null, "", `${location.pathname}${qs}`);
   }
 
   // ---- URL クエリから復元（共有URL対応） ----
   const q = decodeQuery(location.search);
   if (q.group && ct.groups.includes(q.group)) group = q.group;
-  if (q.view) view = q.view;
   if (q.scope) scope = q.scope;
 
   rerender();

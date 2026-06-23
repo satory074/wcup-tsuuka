@@ -6,10 +6,10 @@ import { rankMark, tricode } from "../engine/format";
 import type { TeamStatus } from "../engine/status";
 import type { GroupQualification, TeamQualification, BoundaryNote, TeamCondition } from "../engine/scenario/qualify";
 import type { Snapshot } from "../engine/timeline";
+import type { ScorerEntry } from "../engine/scorers";
 import type { BestThirdsResult, ThirdEntry } from "../engine/thirds";
 import type { Cup, Scope } from "./url";
 
-export type ViewMode = "live" | "stage";
 /** 一覧カードの安価な進行フェーズ（消化試合数から導出。列挙ベースの analyzeGroup とは別物）。 */
 export type OverviewPhase = "early" | "final-round" | "decided";
 
@@ -20,7 +20,6 @@ const CUPS: { id: Cup; label: string }[] = [
 
 export type Command =
   | { type: "set-group"; group: GroupId }
-  | { type: "set-view"; view: ViewMode }
   | { type: "set-cup"; cup: Cup }
   | { type: "set-scope"; scope: Scope };
 export type Dispatch = (cmd: Command) => void;
@@ -29,18 +28,19 @@ export interface RenderView {
   /** 表示範囲（overview=全組一覧 / detail=1組詳細） */
   scope: Scope;
   group: GroupId;
-  view: ViewMode;
   /** 一覧用: 全組の順位（detail でも算出済みなので常に渡す） */
   standingsByGroup: Map<GroupId, Standings>;
   /** 一覧用: 各組の安価な進行フェーズ（バッジ表示） */
   phaseByGroup: Map<GroupId, OverviewPhase>;
   /** 2026方式のベスト3位（advanceBestThirds>0 のときのみ中身が出る） */
   bestThirds?: BestThirdsResult;
+  /** 得点ランキング（大会全体・全グループ横断）。常に渡る。 */
+  scorers?: ScorerEntry[];
   // ---- 以下は detail のときだけ渡る（overview では未使用） ----
   standings?: Standings;
   status?: TeamStatus[];
-  liveTimeline?: Snapshot[] | null;
-  stageTimeline?: Snapshot[];
+  /** タイムライン（分刻みゴール＋節末）。データが無ければ null。 */
+  timeline?: Snapshot[] | null;
   /** 通過条件（シナリオ）パネル用 */
   qualification?: GroupQualification;
 }
@@ -52,6 +52,11 @@ function esc(s: string): string {
 export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: Cup, dispatch: Dispatch) {
   const team = (id: string) => ct.teamsById.get(id)!;
   const tc = (id: string) => esc(tricode(team(id)));
+  /** 順位表に併記する FIFA世界ランキング（無ければ空）。 */
+  const fifaInline = (id: string) => {
+    const r = team(id).fifaRank;
+    return r ? `<span class="team-fifa" title="FIFA世界ランキング">FIFA ${r}位</span>` : "";
+  };
 
   const cupTabs = CUPS
     .map((c) => `<button type="button" class="cup-tab seg-btn${c.id === cup ? " seg-on" : ""}" data-action="set-cup" data-cup="${c.id}">${esc(c.label)}</button>`)
@@ -86,15 +91,14 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
         <div id="standings"></div>
         <div id="status"></div>
+        <div id="fifa-ranking"></div>
         <div id="best-thirds"></div>
 
-        <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位</span></h2>
-        <div class="view-toggle seg" role="group" aria-label="タイムライン表示モード">
-          <button type="button" class="seg-btn" data-action="set-view" data-view="live">全試合（分刻み）</button>
-          <button type="button" class="seg-btn" data-action="set-view" data-view="stage">大会全体（試合単位）</button>
-        </div>
-        <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・点＝得点で動いた瞬間）</p>
+        <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位（節末に試合結果）</span></h2>
+        <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・点＝得点で動いた瞬間・◇＝節末）</p>
         <div id="timeline"></div>
+
+        <div id="top-scorers"></div>
 
         <details class="scenario-details" id="scenario-details">
           <summary>通過条件（シナリオ）を見る</summary>
@@ -117,8 +121,10 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elDetail = $("#detail-view");
   const elStandings = $("#standings");
   const elStatus = $("#status");
+  const elFifa = $("#fifa-ranking");
   const elBestThirds = $("#best-thirds");
   const elTimeline = $("#timeline");
+  const elTopScorers = $("#top-scorers");
   const elScenario = $("#scenario");
   const elScenarioDetails = $("#scenario-details");
   const elCaption = $("#group-caption");
@@ -128,7 +134,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const t = (ev.target as HTMLElement).closest("[data-action]") as HTMLElement | null;
     if (!t) return;
     if (t.dataset.action === "set-group") dispatch({ type: "set-group", group: t.dataset.group as GroupId });
-    else if (t.dataset.action === "set-view") dispatch({ type: "set-view", view: t.dataset.view as ViewMode });
     else if (t.dataset.action === "set-cup") dispatch({ type: "set-cup", cup: t.dataset.cup as Cup });
     else if (t.dataset.action === "set-scope") dispatch({ type: "set-scope", scope: t.dataset.scope as Scope });
     else if (t.dataset.action === "drill-group") {
@@ -152,7 +157,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         return `
           <tr class="${cls}">
             <td class="col-rank"><span class="rank-badge">${r.rank}</span></td>
-            <td class="col-team"><span class="team-cell"><span class="team-flag">${team(r.teamId).flag}</span><span class="team-name">${esc(team(r.teamId).name)}</span>${tie}</span></td>
+            <td class="col-team"><span class="team-cell"><span class="team-flag">${team(r.teamId).flag}</span><span class="team-name">${esc(team(r.teamId).name)}</span>${fifaInline(r.teamId)}${tie}</span></td>
             <td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td>
             <td>${r.gf}</td><td>${r.ga}</td><td>${gdLabel(r.gd)}</td>
             <td class="col-pts">${r.points}</td>
@@ -257,7 +262,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         return `
           <tr class="${cls}">
             <td class="mini-rank">${r.rank}</td>
-            <td class="mini-team"><span class="mini-flag">${team(r.teamId).flag}</span><span class="mini-code">${tc(r.teamId)}</span>${tie}</td>
+            <td class="mini-team"><span class="mini-flag">${team(r.teamId).flag}</span><span class="mini-code">${tc(r.teamId)}</span>${team(r.teamId).fifaRank ? `<span class="mini-fifa" title="FIFA世界ランキング">FIFA${team(r.teamId).fifaRank}</span>` : ""}${tie}</td>
             <td class="mini-gd">${gd}</td>
             <td class="mini-pts">${pts}</td>
           </tr>`;
@@ -291,12 +296,20 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const TEAM_LINE_COLORS = ["#2563eb", "#ea7317", "#7c3aed", "#0d9488", "#db2777", "#475569"];
   const rawTc = (id: string) => tricode(team(id));
 
-  // 頂点ツールチップ: 「国名・順位｜クロック スコア（得点者）」。
+  // 節末スナップの試合結果を1行に: "MEX 2-0 RSA ／ KOR 2-1 CZE"。
+  const roundResultText = (snap: Snapshot): string =>
+    (snap.roundResults ?? [])
+      .map((r) => `${rawTc(r.homeId)} ${r.homeScore}-${r.awayScore} ${rawTc(r.awayId)}`)
+      .join(" ／ ");
+
+  // 頂点ツールチップ: 「国名・順位｜（ゴール）クロック スコア（得点者）／（節末）第n節 終了 試合結果」。
   function tipText(tid: string, snap: Snapshot, scoring: boolean): string {
     const pos = snap.standings.rows.findIndex((r) => r.teamId === tid) + 1;
     let s = `${team(tid).name}・${pos}位`;
-    const e = snap.event;
-    if (e) {
+    if (snap.kind === "roundEnd") {
+      s += `｜${snap.clockLabel}　${roundResultText(snap)}`;
+    } else if (snap.event) {
+      const e = snap.event;
       s += `｜${snap.clockLabel} ${rawTc(e.homeId)} ${e.homeScore}-${e.awayScore} ${rawTc(e.awayId)}`;
       if (scoring && e.scorer) s += ` ⚽${e.scorer}`;
     }
@@ -304,7 +317,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   }
 
   function timelineHTML(view: RenderView): string {
-    const snaps = view.view === "live" ? view.liveTimeline : view.stageTimeline;
+    const snaps = view.timeline;
     if (!snaps || snaps.length === 0) {
       return `<p class="empty-msg">このグループにはタイムラインデータがありません。</p>`;
     }
@@ -362,7 +375,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       return iso && iso.length >= 10 ? `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}` : "";
     };
     let mdBands = "";
-    const mdOf = (ci: number) => snaps[ci].event?.matchday ?? 0;
+    const mdOf = (ci: number) => snaps[ci].matchday;
     for (let bi = 0; bi < cols; ) {
       const md = mdOf(bi);
       let span = 0;
@@ -385,10 +398,16 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       const pts = posByCol.map((_, ci) => `${f1(xAt(ci))},${f1(yAt(idxByCol[ci].get(tid)!))}`).join(" ");
       lines += `<polyline class="tl-line" data-team="${tid}" points="${pts}" style="stroke:${color}" />`;
       for (let ci = 0; ci < cols; ci++) {
-        const e = snaps[ci].event;
+        const snap = snaps[ci];
+        const e = snap.event;
         const scorerId = e && e.scorerSide ? (e.scorerSide === "home" ? e.homeId : e.awayId) : undefined;
         const scoring = scorerId === tid;
-        lines += `<circle class="tl-dot${scoring ? " is-scorer" : ""}" data-team="${tid}" cx="${f1(xAt(ci))}" cy="${f1(yAt(idxByCol[ci].get(tid)!))}" r="${scoring ? 5 : 3}" style="fill:${color}"><title>${tipText(tid, snaps[ci], scoring)}</title></circle>`;
+        const isRE = snap.kind === "roundEnd";
+        const cls = `tl-dot${scoring ? " is-scorer" : ""}${isRE ? " is-roundend" : ""}`;
+        const r = scoring ? 5 : isRE ? 4 : 3;
+        // 節末は色付きの中空リング（チェックポイント）、ゴールは塗りつぶし。
+        const dotStyle = isRE ? `fill:var(--surface);stroke:${color}` : `fill:${color}`;
+        lines += `<circle class="${cls}" data-team="${tid}" cx="${f1(xAt(ci))}" cy="${f1(yAt(idxByCol[ci].get(tid)!))}" r="${r}" style="${dotStyle}"><title>${tipText(tid, snap, scoring)}</title></circle>`;
       }
       const fy = yAt(idxByCol[cols - 1].get(tid)!);
       lines += `<text class="tl-endlabel" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tc(tid)}</tspan></text>`;
@@ -405,29 +424,87 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       )
       .join("");
 
-    // 得点ログ（live=ゴール時系列／stage=試合結果）。チャートで失われた「誰が・何分に」を可視化。
-    // チップ左ボーダー＝得点国の線色でチャートの折れ線と対応づける。<title> ツールチップは補足として残す。
-    const isLive = view.view === "live";
-    const evChips = snaps
-      .map((s) => {
+    // 得点タイムライン（縦型）。各節の見出し → ゴール（時刻・得点者・スコア）→「第n節 結果」を時系列で並べる。
+    // ゴール行の左ボーダー＝得点国の線色でチャートの折れ線と対応づける。
+    let prevMd = 0;
+    const items: string[] = [];
+    for (const s of snaps) {
+      if (s.matchday !== prevMd) {
+        items.push(`<li class="tlog-md-head">第${s.matchday}節</li>`);
+        prevMd = s.matchday;
+      }
+      if (s.kind === "roundEnd") {
+        const res = (s.roundResults ?? [])
+          .map(
+            (r) =>
+              `<span class="tlog-round-res">${team(r.homeId).flag}${tc(r.homeId)} <b>${r.homeScore}-${r.awayScore}</b> ${tc(r.awayId)}${team(r.awayId).flag}</span>`,
+          )
+          .join("");
+        items.push(`<li class="tlog-round"><span class="tlog-round-head">第${s.matchday}節 結果</span>${res}</li>`);
+      } else if (s.event) {
         const e = s.event;
-        if (!e) return "";
+        const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
+        const color = colorOf.get(scorerId) ?? "var(--border-strong)";
+        const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
         const score = `${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}`;
-        if (isLive) {
-          const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
-          const color = colorOf.get(scorerId) ?? "var(--border-strong)";
-          const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
-          return `<span class="tl-ev" style="border-left-color:${color}"><span class="tl-ev-time">${esc(s.clockLabel)}</span><span class="tl-ev-scorer">⚽${who}</span><span class="tl-ev-score">${score}</span></span>`;
-        }
-        return `<span class="tl-ev"><span class="tl-ev-time">${esc(s.clockLabel)}</span><span class="tl-ev-score">${team(e.homeId).flag}${score}${team(e.awayId).flag}</span></span>`;
-      })
-      .join("");
-    const log = `<div class="tl-log"><p class="tl-log-head">${isLive ? "得点ログ" : "試合結果"}</p><div class="tl-events">${evChips}</div></div>`;
+        items.push(
+          `<li class="tlog-goal" style="border-left-color:${color}"><span class="tlog-time">${esc(s.clockLabel)}</span><span class="tlog-scorer">⚽${who}</span><span class="tlog-score">${score}</span></li>`,
+        );
+      }
+    }
+    const log = `<div class="tl-log"><p class="tl-log-head">得点タイムライン</p><ol class="tl-timeline">${items.join("")}</ol></div>`;
 
     return `
       <div class="timeline-scroll"><div class="tl-chart-wrap">${svg}</div></div>
       <div class="tl-legend">${legend}</div>
       ${log}`;
+  }
+
+  // ---- FIFA世界ランキング（グループ4カ国を FIFA 順に） ----
+  function fifaRankingHTML(group: GroupId): string {
+    const teams = (ct.teamsByGroup.get(group) ?? []).filter((t) => typeof t.fifaRank === "number");
+    if (teams.length === 0) return "";
+    const sorted = [...teams].sort((a, b) => (a.fifaRank! - b.fifaRank!));
+    const items = sorted
+      .map(
+        (t) =>
+          `<li class="fifa-item"><span class="fifa-rank tnum">${t.fifaRank}位</span><span class="fifa-flag">${t.flag}</span><span class="fifa-name">${esc(t.name)}</span><span class="fifa-code">${esc(tricode(t))}</span></li>`,
+      )
+      .join("");
+    return `
+      <h2 class="section-title">FIFAランキング <span class="hint">${esc(ct.meta.edition)}時点の世界ランキング順</span></h2>
+      <ol class="card fifa-list">${items}</ol>`;
+  }
+
+  // ---- 得点ランキング（大会全体・全グループ横断） ----
+  function topScorersHTML(scorers: ScorerEntry[], top = 12): string {
+    if (!scorers || scorers.length === 0) return "";
+    // 上位 top 件を出すが、最後の順位に同点が続くなら同点ぶんは全部出す（途中で切らない）。
+    let cut = Math.min(top, scorers.length);
+    while (cut < scorers.length && scorers[cut].goals === scorers[cut - 1].goals) cut++;
+    const shown = scorers.slice(0, cut);
+    const partial = (ct.meta.advanceBestThirds ?? 0) > 0; // 2026 は進行中＝暫定
+    const rows = shown
+      .map(
+        (e) =>
+          `<tr><td class="col-rank"><span class="rank-badge">${e.rank}</span></td>
+            <td class="col-team"><span class="team-cell"><span class="team-flag">${team(e.teamId).flag}</span><span class="team-name">${esc(e.player)}</span><span class="ts-team">${tc(e.teamId)}</span></span></td>
+            <td class="ts-goals tnum">${e.goals}${e.pk ? `<span class="ts-pk">PK${e.pk}</span>` : ""}</td>
+          </tr>`,
+      )
+      .join("");
+    const note = partial
+      ? `<p class="site-sub bt-note">⚠️ グループステージ進行中のため<b>暫定</b>（消化済み試合のみ）。</p>`
+      : "";
+    return `
+      <h2 class="section-title">得点ランキング <span class="hint">大会全体（グループステージ）の得点者</span></h2>
+      ${note}
+      <div class="card ts-card tnum">
+        <table class="ts-table">
+          <thead><tr><th class="col-rank">順</th><th class="col-team">選手</th><th class="ts-goals">得点</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
   }
 
   // ---- 通過条件シナリオ（折りたたみ内） ----
@@ -574,17 +651,13 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
     // ---- detail（1グループ）。main.ts が detail のとき必ず渡す。 ----
     const qualification = view.qualification!;
-    // 表示モードトグル（live が無い組では live を隠す）
-    for (const btn of root.querySelectorAll<HTMLElement>(".view-toggle .seg-btn")) {
-      const mode = btn.dataset.view as ViewMode;
-      btn.classList.toggle("seg-on", mode === view.view);
-      btn.hidden = mode === "live" && (view.liveTimeline ?? null) === null;
-    }
     elCaption.textContent = `グループ ${view.group}`;
     elStandings.innerHTML = standingsHTML(view.standings!);
     elStatus.innerHTML = statusHTML(view.status!);
+    elFifa.innerHTML = fifaRankingHTML(view.group);
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
+    elTopScorers.innerHTML = topScorersHTML(view.scorers ?? []);
     // シナリオが定まらない early フェーズはパネルごと隠す（意味がある時だけ出す）。
     if (qualification.phase === "early") {
       elScenarioDetails.hidden = true;

@@ -699,21 +699,17 @@ table.bt-table {
   text-decoration: underline;
 }
 
-/* ---- タイムライン表示モード切替 ---- */
-.view-toggle,
+/* ---- 表示範囲トグル（一覧／詳細） ---- */
 .scope-toggle {
   display: inline-flex;
   margin-top: 0.5rem;
+  /* グループタブと一覧/詳細の間に置くので下にも余白。 */
+  margin-bottom: 1rem;
   padding: 0.2rem;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--surface);
 }
-/* 表示範囲トグルはグループタブと一覧/詳細の間に置くので下にも余白。 */
-.scope-toggle {
-  margin-bottom: 1rem;
-}
-.view-toggle .seg-btn,
 .scope-toggle .seg-btn {
   padding: 0.42rem 1.05rem;
   font-family: var(--font-display);
@@ -726,11 +722,9 @@ table.bt-table {
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.view-toggle .seg-btn:hover,
 .scope-toggle .seg-btn:hover {
   color: var(--pitch-deep);
 }
-.view-toggle .seg-btn.seg-on,
 .scope-toggle .seg-btn.seg-on {
   background: linear-gradient(180deg, var(--pitch) 0%, var(--pitch-deep) 100%);
   color: #fff;
@@ -840,6 +834,15 @@ table.bt-table {
   font-weight: 700;
   color: var(--ink);
 }
+/* 一覧カードの FIFA順位（小さく沈める併記） */
+.mini-fifa {
+  margin-left: 0.3rem;
+  font-family: var(--font-num);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  letter-spacing: -0.02em;
+}
 .mini-table .mini-gd {
   text-align: right;
   color: var(--ink-soft);
@@ -933,6 +936,10 @@ table.bt-table {
 .tl-dot.is-scorer {
   stroke-width: 2;
 }
+/* 節末チェックポイント＝色付きの中空リング（fill/stroke はインラインで指定）。 */
+.tl-dot.is-roundend {
+  stroke-width: 2.5;
+}
 .tl-endlabel {
   font-size: 16px;
   font-weight: 800;
@@ -985,37 +992,167 @@ table.bt-table {
   color: var(--ink-soft);
   margin: 0 0 0.4rem;
 }
-.tl-events {
+/* 得点タイムライン（縦型）= 節見出し → ゴール → 第n節 結果 を時系列で。 */
+.tl-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.32rem 0.4rem;
+  flex-direction: column;
+  gap: 0.28rem;
 }
-.tl-ev {
-  display: inline-flex;
+.tlog-md-head {
+  margin-top: 0.45rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.84rem;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.tl-timeline > .tlog-md-head:first-child {
+  margin-top: 0;
+}
+.tlog-goal {
+  display: flex;
   align-items: baseline;
-  gap: 0.32rem;
-  padding: 0.16rem 0.5rem 0.16rem 0.45rem;
+  gap: 0.5rem;
+  padding: 0.22rem 0.55rem;
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border-strong); /* 既定。live は得点国の線色で上書き */
+  border-left: 3px solid var(--border-strong); /* 得点国の線色でインライン上書き */
   border-radius: 0 var(--r-sm) var(--r-sm) 0;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   line-height: 1.5;
-  white-space: nowrap;
 }
-.tl-ev-time {
+.tlog-time {
+  flex: 0 0 3.1rem;
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   color: var(--ink);
 }
-.tl-ev-scorer {
+.tlog-scorer {
+  flex: 1 1 auto;
   font-weight: 700;
   color: var(--ink);
 }
-.tl-ev-score {
+.tlog-score {
+  flex: 0 0 auto;
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+/* 「第n節 結果」= その節の試合スコアをまとめた区切りブロック。 */
+.tlog-round {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.7rem;
+  margin: 0.1rem 0 0.2rem;
+  padding: 0.34rem 0.6rem;
+  background: var(--advance-soft);
+  border: 1px dashed var(--advance);
+  border-radius: var(--r-sm);
+  font-size: 0.84rem;
+}
+.tlog-round-head {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--advance-ink);
+}
+.tlog-round-res {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* ---- 順位表に併記する FIFA順位 ---- */
+.team-fifa {
+  margin-left: 0.4rem;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* ---- FIFAランキング パネル（グループ4カ国を FIFA 順に） ---- */
+.fifa-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.4rem 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.fifa-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.34rem 0.7rem;
+}
+.fifa-item + .fifa-item {
+  border-top: 1px solid var(--border);
+}
+.fifa-rank {
+  flex: 0 0 2.8rem;
+  font-weight: 800;
+  color: var(--pitch-deep);
+}
+.fifa-flag {
+  font-size: 1.1rem;
+}
+.fifa-name {
+  flex: 1 1 auto;
+  font-weight: 700;
+  color: var(--ink);
+}
+.fifa-code {
+  font-family: var(--font-num);
+  color: var(--ink-soft);
+}
+
+/* ---- 得点ランキング（大会全体） ---- */
+.ts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ts-table th,
+.ts-table td {
+  padding: 0.4rem 0.55rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.ts-table thead th {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.ts-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.ts-table .col-rank {
+  width: 2.4rem;
+  text-align: center;
+}
+.ts-team {
+  margin-left: 0.4rem;
+  font-family: var(--font-num);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.ts-goals {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ts-pk {
+  margin-left: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--ink-soft);
 }
 
