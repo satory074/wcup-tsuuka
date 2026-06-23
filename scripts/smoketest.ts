@@ -441,7 +441,7 @@ function sortedAdv(a: string[]): string {
   assert(liveI !== null, "2026: 組I は goals があり live 生成");
   const iGoals = ct26.matchesByGroup.get("I")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
   assert(liveI!.length === iGoals, `2026: 組I live は消化分の全ゴール数(${iGoals})`);
-  assert(sortedAdv(liveI![liveI!.length - 1].advancing) === "fra,nor", "2026: 組I 第1節後の暫定通過は fra,nor");
+  assert(sortedAdv(liveI![liveI!.length - 1].advancing) === "fra,nor", "2026: 組I 第2節後の暫定通過は fra,nor");
   // 組A（第1〜2節消化・goals 投入済み）も live 生成。消化分の全ゴール数とスナップ数が一致。
   const liveA = buildLiveTimeline(ct26, "A");
   assert(liveA !== null, "2026: 組A も goals があり live 生成");
