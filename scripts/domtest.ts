@@ -186,7 +186,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const dom = setupDom(`${BASE_URL}?cup=2026`);
   boot(app(dom));
   const root = app(dom);
-  assert(root.querySelectorAll(".cup-tab").length === 2, "8: 大会タブ2");
+  assert(root.querySelectorAll(".cup-tab").length === 3, "8: 大会タブ3");
   assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2026", "8: 2026 が選択状態");
   assert(root.querySelectorAll(".group-tab").length === 12, `8: 2026 はグループタブ12（実際: ${root.querySelectorAll(".group-tab").length}）`);
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "8: 既定はグループA");
@@ -213,10 +213,32 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const dom = setupDom(BASE_URL);
   boot(app(dom));
   const root = app(dom);
-  assert(root.querySelectorAll(".cup-tab").length === 2, "8b: 大会タブ2");
+  assert(root.querySelectorAll(".cup-tab").length === 3, "8b: 大会タブ3");
   assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2022", "8b: 既定は2022");
   assert((root.querySelector("#best-thirds")?.innerHTML ?? "").trim() === "", "8b: 2022 は best-thirds 空");
   console.log("[dom] 2022 は best-thirds 非表示 OK");
+}
+
+// ---- 8c) 大会切替（?cup=2018: 8組・全消化・組H フェアプレーで日本2位） ----
+{
+  const dom = setupDom(`${BASE_URL}?cup=2018`);
+  boot(app(dom));
+  const root = app(dom);
+  assert(root.querySelectorAll(".cup-tab").length === 3, "8c: 大会タブ3");
+  assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2018", "8c: 2018 が選択状態");
+  assert(root.querySelectorAll(".group-tab").length === 8, `8c: 2018 はグループタブ8（実際: ${root.querySelectorAll(".group-tab").length}）`);
+  // 全48試合・全消化（is-upcoming なし）
+  assert(root.querySelectorAll("#schedule .sched-card").length === 48, `8c: 2018 は全48カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
+  assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "8c: 2018 は全消化（未消化カードなし）");
+  // 2018 は advanceBestThirds 無し＝best-thirds 空（2022 と同じ DOM 不変契約）
+  assert((root.querySelector("#best-thirds")?.innerHTML ?? "").trim() === "", "8c: 2018 は best-thirds 空");
+  // 組H へ切替＝日本が2位（フェアプレー確定・抽選🎲ではない）。順位表2行目が日本。
+  click(dom, root.querySelector<HTMLElement>('.group-tab[data-group="H"]')!);
+  const rowsH = root.querySelectorAll(".standings-table tbody tr");
+  assert(rowsH.length === 4, "8c: 組H 順位表4行");
+  assert(rowsH[1].getAttribute("data-team") === "jpn", "8c: 組H 2位は日本（フェアプレー通過）");
+  assert(root.querySelectorAll(".standings-table .tie-badge").length === 0, "8c: 組H に抽選バッジなし（フェアプレーで確定）");
+  console.log("[dom] 大会切替 ?cup=2018（8組・全消化・組H 日本2位フェアプレー）OK");
 }
 
 // ---- 9) 一覧（overview）2022: 8カード + ドリルイン ----

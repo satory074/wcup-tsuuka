@@ -1,5 +1,6 @@
 // アプリの配線: compileTournament → standings / thirds / status / qualify → render → URL クエリ同期。
 // エンジン（純TS）と render（DOM）をつなぐ唯一の場所。大会（2022/2026）は ?cup で選ぶ。
+import worldcup2018 from "../data/worldcup2018.json";
 import worldcup2022 from "../data/worldcup2022.json";
 import worldcup2026 from "../data/worldcup2026.json";
 import { compileTournament } from "../engine/compile";
@@ -20,7 +21,7 @@ function derivePhase(st: Standings): OverviewPhase {
   return played >= 6 ? "decided" : played >= 4 ? "final-round" : "early";
 }
 
-const DATA: Record<Cup, unknown> = { "2022": worldcup2022, "2026": worldcup2026 };
+const DATA: Record<Cup, unknown> = { "2018": worldcup2018, "2022": worldcup2022, "2026": worldcup2026 };
 // 既定大会は 2022（既存の共有URL＝?cup無し＝2022 を温存）。2026 は切替UIで前面に出す。
 const DEFAULT_CUP: Cup = "2022";
 

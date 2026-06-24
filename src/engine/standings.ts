@@ -96,10 +96,58 @@ export function fairPlayPoints(cards: Cards): number {
   return cards.y * 1 + cards.r * 4;
 }
 
+/** 各チームのフェアプレーポイント合計（基準g用）。値が確定するのは「消化した試合すべてにカードがある」チームのみ。
+    1試合でもカード欠落 or 反実仮想（override）の試合があれば undefined＝そのチームは基準g を適用せず抽選にフォールバック。
+    2022/2026 は cards 皆無なので全チーム undefined＝従来どおり抽選（＝この関数を入れても挙動不変）。 */
+function teamFairPlay(
+  teamIds: string[],
+  matches: Match[],
+  overrides?: ResultOverride[],
+): Map<string, number | undefined> {
+  const ovIds = new Set((overrides ?? []).map((o) => o.matchId));
+  const teamSet = new Set(teamIds);
+  const total = new Map<string, number>(teamIds.map((id) => [id, 0]));
+  const complete = new Map<string, boolean>(teamIds.map((id) => [id, true]));
+  for (const m of matches) {
+    // 消化済み = score あり or override で結果が与えられている。未消化はカード集計対象外。
+    const played = ovIds.has(m.id) || (m.score !== undefined && m.score !== null);
+    if (!played) continue;
+    for (const side of ["home", "away"] as const) {
+      const tid = side === "home" ? m.home : m.away;
+      if (!teamSet.has(tid)) continue;
+      const c = m.cards?.[side];
+      if (c) total.set(tid, total.get(tid)! + fairPlayPoints(c));
+      else complete.set(tid, false); // 消化済みなのにカードが無い → このチームは基準g 不適用
+    }
+  }
+  const out = new Map<string, number | undefined>();
+  for (const id of teamIds) out.set(id, complete.get(id) ? total.get(id) : undefined);
+  return out;
+}
+
+/** クラスタをフェアプレーポイント（少ない順）で連続グループに分割する（基準g）。
+    全員が確定値を持ち、かつ2グループ以上に分かれるときのみ返す。さもなくば null（＝抽選へ）。 */
+function splitByFairPlay(cluster: string[], fp: Map<string, number | undefined>): string[][] | null {
+  if (cluster.some((id) => fp.get(id) === undefined)) return null;
+  const ordered = [...cluster].sort((x, y) => fp.get(x)! - fp.get(y)!);
+  const groups: string[][] = [];
+  for (const id of ordered) {
+    const last = groups[groups.length - 1];
+    if (last && fp.get(last[0]) === fp.get(id)) last.push(id);
+    else groups.push([id]);
+  }
+  return groups.length > 1 ? groups : null;
+}
+
 /** クラスタ内の最終並びを「同順位グループの配列」で返す。
     各要素 = 同じ最終順位を共有するチーム群（通常サイズ1、抽選待ちなら2以上）。
     h2h で分割できれば再帰、分割できなければ（カード無し前提で）抽選＝1グループにまとめる。 */
-function resolveCluster(cluster: string[], resolved: Resolved[], meta: Meta): string[][] {
+function resolveCluster(
+  cluster: string[],
+  resolved: Resolved[],
+  meta: Meta,
+  fp: Map<string, number | undefined>,
+): string[][] {
   if (cluster.length === 1) return [[cluster[0]]];
 
   const h2h = headToHead(cluster, resolved, meta);
@@ -120,15 +168,25 @@ function resolveCluster(cluster: string[], resolved: Resolved[], meta: Meta): st
     sub.push([id]);
   }
 
-  // 分割が起きなかった（全員 h2h でも同値）→ 抽選（決定的表示のため id 昇順で固める）
+  // h2h で分割できなかった（全員 h2h でも同値）→ 基準g フェアプレーを抽選の前に試す。
+  // カードが揃っていれば確定（例: 2018 組H 日本 vs セネガル）。揃わなければ従来どおり抽選。
   if (sub.length === 1) {
+    const fpSplit = splitByFairPlay(cluster, fp);
+    if (fpSplit) {
+      const result: string[][] = [];
+      for (const s of fpSplit) {
+        for (const g of resolveCluster(s, resolved, meta, fp)) result.push(g);
+      }
+      return result;
+    }
+    // 抽選（決定的表示のため id 昇順で固める）
     return [[...cluster].sort()];
   }
 
   // 分割できた → 各サブクラスタを再帰（サイズ2以上は当該面子のみの対戦で再適用）
   const result: string[][] = [];
   for (const s of sub) {
-    for (const g of resolveCluster(s, resolved, meta)) result.push(g);
+    for (const g of resolveCluster(s, resolved, meta, fp)) result.push(g);
   }
   return result;
 }
@@ -142,6 +200,7 @@ export function computeStandings(
 ): Standings {
   const resolved = resolveMatches(matches, overrides);
   const overall = accumulate(teamIds, resolved, meta);
+  const fp = teamFairPlay(teamIds, matches, overrides);
 
   // 総合基準 a-c で整列し、同値を連続クラスタに分割
   const byOverall = [...teamIds].sort((x, y) => compareOverall(overall.get(x)!, overall.get(y)!));
@@ -162,7 +221,7 @@ export function computeStandings(
   // クラスタごとに h2h 以降で並びを確定（→ 同順位グループの列）
   const rankGroups: string[][] = [];
   for (const c of clusters) {
-    for (const g of resolveCluster(c, resolved, meta)) rankGroups.push(g);
+    for (const g of resolveCluster(c, resolved, meta, fp)) rankGroups.push(g);
   }
 
   // 同順位グループに rank を割り当てて StandingRow を生成

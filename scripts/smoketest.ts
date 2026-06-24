@@ -3,6 +3,7 @@
 //             （P3 以降で 4) マトリックス 5) status 6) URL を追加）
 import worldcupJson from "../src/data/worldcup2022.json";
 import worldcup2026Json from "../src/data/worldcup2026.json";
+import worldcup2018Json from "../src/data/worldcup2018.json";
 import { validateTournament, validateFlagColors } from "../src/engine/validate";
 import { compileTournament } from "../src/engine/compile";
 import flagColorsJson from "../src/data/flag-colors.json";
@@ -615,12 +616,15 @@ function mkCt12(slots: number): CompiledTournament {
   const palette = flagColorsJson as FlagPalette;
   const HEX = /^#[0-9a-f]{6}$/;
   const ct26 = compileTournament(worldcup2026Json);
+  const ct18 = compileTournament(worldcup2018Json);
 
-  // カバレッジ/形式: 両大会の全 team id に有効な HEX 配列がある
+  // カバレッジ/形式: 全大会の全 team id に有効な HEX 配列がある
   const ids2022 = [...CT.teamsById.keys()];
   const ids2026 = [...ct26.teamsById.keys()];
+  const ids2018 = [...ct18.teamsById.keys()];
   assert(validateFlagColors(flagColorsJson, ids2022).length === 0, "12: 2022 全idの旗色カバレッジ");
   assert(validateFlagColors(flagColorsJson, ids2026).length === 0, "12: 2026 全idの旗色カバレッジ");
+  assert(validateFlagColors(flagColorsJson, ids2018).length === 0, "12: 2018 全idの旗色カバレッジ");
   for (const [id, arr] of Object.entries(palette)) {
     for (const hex of arr) assert(HEX.test(hex), `12: ${id} の色 ${hex} が #rrggbb`);
   }
@@ -637,6 +641,11 @@ function mkCt12(slots: number): CompiledTournament {
     const ms = ct26.matchesByGroup.get(gid)!;
     const tids = ct26.teamsByGroup.get(gid)!.map((t) => t.id);
     groupOrders.push({ gid: `2026-${gid}`, order: computeStandings(gid, ms, tids, ct26.meta).rows.map((r) => r.teamId) });
+  }
+  for (const gid of ct18.groups) {
+    const ms = ct18.matchesByGroup.get(gid)!;
+    const tids = ct18.teamsByGroup.get(gid)!.map((t) => t.id);
+    groupOrders.push({ gid: `2018-${gid}`, order: computeStandings(gid, ms, tids, ct18.meta).rows.map((r) => r.teamId) });
   }
 
   for (const { gid, order } of groupOrders) {
@@ -666,7 +675,83 @@ function mkCt12(slots: number): CompiledTournament {
   assert(deltaE(rgbToLab(hexToRgb("#000000")), rgbToLab(hexToRgb("#000000"))) === 0, "12: 同色 ΔE=0");
   assert(deltaE(rgbToLab(hexToRgb("#000000")), rgbToLab(hexToRgb("#ffffff"))) > 90, "12: 黒白 ΔE 大");
 
-  console.log("[colors] 旗色由来の線色 OK（全20組 ΔE分離・コントラストガード・カバレッジ・決定性）");
+  console.log("[colors] 旗色由来の線色 OK（全28組 ΔE分離・コントラストガード・カバレッジ・決定性）");
 }
 
-console.log("✅ smoketest（P1-P5 + 2026/thirds + scorers/fifa + colors）通過");
+// ---- 13) 2018 データ検証 + 実順位再現 + 組H フェアプレー通過（基準g） ----
+{
+  const v = validateTournament(worldcup2018Json);
+  if (!v.ok) {
+    console.error("❌ worldcup2018.json が不正:");
+    for (const e of v.errors) console.error(`  - ${e}`);
+    process.exit(1);
+  }
+  assert(v.tournament.teams.length === 32, "2018: 32チーム");
+  assert(v.tournament.groups.length === 8, "2018: 8組");
+  assert(v.tournament.matches.length === 48, "2018: 48試合");
+
+  const ct18 = compileTournament(worldcup2018Json);
+  assert(ct18.groups.length === 8, "2018: compile 8組");
+  // 全48試合に goals 配列がある（消化済み大会）
+  for (const gid of ct18.groups) {
+    for (const m of ct18.matchesByGroup.get(gid)!) {
+      assert(Array.isArray(m.goals) && !!m.kickoff, `2018: ${m.id} に goals/kickoff`);
+    }
+  }
+  console.log("[data] worldcup2018.json OK（チーム32 / 組8 / 試合48・全試合 goals）");
+
+  const st18 = (gid: GroupId): Standings => {
+    const ms = ct18.matchesByGroup.get(gid)!;
+    const tids = ct18.teamsByGroup.get(gid)!.map((t) => t.id);
+    return computeStandings(gid, ms, tids, ct18.meta);
+  };
+  // 実順位の再現（通過2チームの確定・抽選無し）。代表的な4組を担保。
+  const expect18 = (gid: GroupId, order: [string, number][]) => {
+    const st = st18(gid);
+    assert(!st.undecided, `2018 組${gid}: 抽選無し`);
+    order.forEach(([id, pts], i) => {
+      assert(st.rows[i].teamId === id, `2018 組${gid}: ${i + 1}位は ${id}（実際: ${st.rows[i].teamId}）`);
+      assert(st.rows[i].points === pts, `2018 組${gid}: ${id} 勝点${pts}`);
+      assert(st.rows[i].advances === i < 2, `2018 組${gid}: ${id} 通過判定`);
+    });
+  };
+  expect18("A", [["uru", 9], ["rus", 6], ["ksa", 3], ["egy", 0]]);
+  expect18("B", [["esp", 5], ["por", 5], ["irn", 4], ["mar", 1]]); // 1↔2 は総得点 6>5 で決着
+  expect18("F", [["swe", 6], ["mex", 6], ["kor", 3], ["ger", 3]]); // ドイツ最下位敗退
+  expect18("G", [["bel", 9], ["eng", 6], ["tun", 3], ["pan", 0]]);
+
+  // ★ 組H: 日本とセネガルが勝点4・総得失点差0・総得点4・直接対決2-2で完全同値
+  //   → フェアプレーポイント（黄: 日本4 < セネガル6）で日本が2位通過（抽選にしない）。
+  const h = st18("H");
+  assert(h.rows.map((r) => r.teamId).join(",") === "col,jpn,sen,pol", "2018 組H: 順位 col,jpn,sen,pol");
+  assert(!h.undecided, "2018 組H: 抽選ではなくフェアプレーで確定（undecided=false）");
+  const jpn = h.rows.find((r) => r.teamId === "jpn")!;
+  const sen = h.rows.find((r) => r.teamId === "sen")!;
+  assert(jpn.rank === 2 && jpn.advances, "2018 組H: 日本2位・通過");
+  assert(sen.rank === 3 && !sen.advances, "2018 組H: セネガル3位・敗退");
+  assert(jpn.points === sen.points && jpn.gd === sen.gd && jpn.gf === sen.gf, "2018 組H: 日本/セネガルは勝点・GD・GF 同値（決め手はフェアプレー）");
+  // qualify が「決め手＝フェアプレー」と特定できる（基準g の end-to-end）
+  const qH = analyzeGroup(ct18, "H");
+  assert(qH.phase === "decided", "2018 組H: decided");
+  const b = qH.boundaries.find((x) => x.higher === "jpn" && x.lower === "sen");
+  assert(!!b && b.reason === "fairplay", "2018 組H: 2↔3 の決め手は fairplay");
+  console.log("[standings] 2018 実順位 OK（組H フェアプレー＝日本2位通過・基準g end-to-end）");
+
+  // 旗色なしの 2022/2026 はフェアプレー不適用＝従来どおり（カード皆無 → 抽選フォールバック不変）
+  // ＝ section 8/12 が 2022/2026 の不変性を担保済み。
+
+  // タイムライン: 組A は 17ゴール＋3節末＝20スナップ、最終1位は uru
+  const tlA = buildTimeline(ct18, "A");
+  const aGoals = ct18.matchesByGroup.get("A")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
+  assert(tlA !== null && tlA.length === aGoals + 3, `2018: 組A タイムライン 全ゴール(${aGoals})＋節末3`);
+  assert(tlA![tlA!.length - 1].standings.rows[0].teamId === "uru", "2018: 組A 最終1位は uru");
+  assert(playedRounds(ct18, "A") === 3, "2018: 組A 全3節消化");
+
+  // 得点ランキング: グループステージ得点王はケイン5点（PK2）。OG除外・PK計上。
+  const top = computeScorers(ct18)[0];
+  assert(top.player === "ケイン" && top.goals === 5, "2018: 得点王はケイン5点");
+  assert(JSON.stringify(computeScorers(ct18)) === JSON.stringify(computeScorers(ct18)), "2018: 得点ランキング決定的");
+  console.log("[2018] タイムライン＋得点ランキング OK（組A=20スナップ・得点王ケイン5）");
+}
+
+console.log("✅ smoketest（P1-P5 + 2026/thirds + scorers/fifa + colors + 2018/fairplay）通過");

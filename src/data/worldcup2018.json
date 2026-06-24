@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "title": "WCUP 通過タイムライン",
+    "edition": "2018 ロシア",
+    "advancePerGroup": 2,
+    "points": { "win": 3, "draw": 1, "loss": 0 },
+    "dataLastUpdated": "2026-06-24",
+    "source": "https://en.wikipedia.org/wiki/2018_FIFA_World_Cup",
+    "disclaimer": "2018年ロシア大会の実データに基づく非公式の可視化です。順位・通過判定は参考用です。キックオフ時刻はモスクワ時間(MSK)に正規化しています。"
+  },
+  "teams": [
+    { "id": "rus", "name": "ロシア", "nameEn": "Russia", "group": "A", "flag": "🇷🇺", "fifaRank": 70 },
+    { "id": "ksa", "name": "サウジアラビア", "nameEn": "Saudi Arabia", "group": "A", "flag": "🇸🇦", "fifaRank": 67 },
+    { "id": "egy", "name": "エジプト", "nameEn": "Egypt", "group": "A", "flag": "🇪🇬", "fifaRank": 45 },
+    { "id": "uru", "name": "ウルグアイ", "nameEn": "Uruguay", "group": "A", "flag": "🇺🇾", "fifaRank": 14 },
+
+    { "id": "por", "name": "ポルトガル", "nameEn": "Portugal", "group": "B", "flag": "🇵🇹", "fifaRank": 4 },
+    { "id": "esp", "name": "スペイン", "nameEn": "Spain", "group": "B", "flag": "🇪🇸", "fifaRank": 10 },
+    { "id": "mar", "name": "モロッコ", "nameEn": "Morocco", "group": "B", "flag": "🇲🇦", "fifaRank": 41 },
+    { "id": "irn", "name": "イラン", "nameEn": "Iran", "group": "B", "flag": "🇮🇷", "fifaRank": 37 },
+
+    { "id": "fra", "name": "フランス", "nameEn": "France", "group": "C", "flag": "🇫🇷", "fifaRank": 7 },
+    { "id": "aus", "name": "オーストラリア", "nameEn": "Australia", "group": "C", "flag": "🇦🇺", "fifaRank": 36 },
+    { "id": "per", "name": "ペルー", "nameEn": "Peru", "group": "C", "flag": "🇵🇪", "fifaRank": 11 },
+    { "id": "den", "name": "デンマーク", "nameEn": "Denmark", "group": "C", "flag": "🇩🇰", "fifaRank": 12 },
+
+    { "id": "arg", "name": "アルゼンチン", "nameEn": "Argentina", "group": "D", "flag": "🇦🇷", "fifaRank": 5 },
+    { "id": "isl", "name": "アイスランド", "nameEn": "Iceland", "group": "D", "flag": "🇮🇸", "fifaRank": 22 },
+    { "id": "cro", "name": "クロアチア", "nameEn": "Croatia", "group": "D", "flag": "🇭🇷", "fifaRank": 20 },
+    { "id": "nga", "name": "ナイジェリア", "nameEn": "Nigeria", "group": "D", "flag": "🇳🇬", "fifaRank": 48 },
+
+    { "id": "bra", "name": "ブラジル", "nameEn": "Brazil", "group": "E", "flag": "🇧🇷", "fifaRank": 2 },
+    { "id": "sui", "name": "スイス", "nameEn": "Switzerland", "group": "E", "flag": "🇨🇭", "fifaRank": 6 },
+    { "id": "crc", "name": "コスタリカ", "nameEn": "Costa Rica", "group": "E", "flag": "🇨🇷", "fifaRank": 23 },
+    { "id": "srb", "name": "セルビア", "nameEn": "Serbia", "group": "E", "flag": "🇷🇸", "fifaRank": 34 },
+
+    { "id": "ger", "name": "ドイツ", "nameEn": "Germany", "group": "F", "flag": "🇩🇪", "fifaRank": 1 },
+    { "id": "mex", "name": "メキシコ", "nameEn": "Mexico", "group": "F", "flag": "🇲🇽", "fifaRank": 15 },
+    { "id": "swe", "name": "スウェーデン", "nameEn": "Sweden", "group": "F", "flag": "🇸🇪", "fifaRank": 24 },
+    { "id": "kor", "name": "韓国", "nameEn": "South Korea", "group": "F", "flag": "🇰🇷", "fifaRank": 57 },
+
+    { "id": "bel", "name": "ベルギー", "nameEn": "Belgium", "group": "G", "flag": "🇧🇪", "fifaRank": 3 },
+    { "id": "pan", "name": "パナマ", "nameEn": "Panama", "group": "G", "flag": "🇵🇦", "fifaRank": 55 },
+    { "id": "tun", "name": "チュニジア", "nameEn": "Tunisia", "group": "G", "flag": "🇹🇳", "fifaRank": 21 },
+    { "id": "eng", "name": "イングランド", "nameEn": "England", "group": "G", "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "fifaRank": 13 },
+
+    { "id": "pol", "name": "ポーランド", "nameEn": "Poland", "group": "H", "flag": "🇵🇱", "fifaRank": 8 },
+    { "id": "sen", "name": "セネガル", "nameEn": "Senegal", "group": "H", "flag": "🇸🇳", "fifaRank": 27 },
+    { "id": "col", "name": "コロンビア", "nameEn": "Colombia", "group": "H", "flag": "🇨🇴", "fifaRank": 16 },
+    { "id": "jpn", "name": "日本", "nameEn": "Japan", "group": "H", "flag": "🇯🇵", "fifaRank": 61 }
+  ],
+  "groups": [
+    { "id": "A", "teamIds": ["rus", "ksa", "egy", "uru"] },
+    { "id": "B", "teamIds": ["por", "esp", "mar", "irn"] },
+    { "id": "C", "teamIds": ["fra", "aus", "per", "den"] },
+    { "id": "D", "teamIds": ["arg", "isl", "cro", "nga"] },
+    { "id": "E", "teamIds": ["bra", "sui", "crc", "srb"] },
+    { "id": "F", "teamIds": ["ger", "mex", "swe", "kor"] },
+    { "id": "G", "teamIds": ["bel", "pan", "tun", "eng"] },
+    { "id": "H", "teamIds": ["pol", "sen", "col", "jpn"] }
+  ],
+  "matches": [
+    { "id": "A-1", "group": "A", "matchday": 1, "kickoff": "2018-06-14T18:00", "home": "rus", "away": "ksa", "score": { "home": 5, "away": 0 }, "goals": [ { "minute": 12, "side": "home", "player": "ガジンスキー" }, { "minute": 43, "side": "home", "player": "チェリシェフ" }, { "minute": 71, "side": "home", "player": "ジューバ" }, { "minute": 90, "plus": 1, "side": "home", "player": "チェリシェフ" }, { "minute": 90, "plus": 4, "side": "home", "player": "ゴロビン" } ] },
+    { "id": "A-2", "group": "A", "matchday": 1, "kickoff": "2018-06-15T15:00", "home": "egy", "away": "uru", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 89, "side": "away", "player": "ヒメネス" } ] },
+    { "id": "A-3", "group": "A", "matchday": 2, "kickoff": "2018-06-19T21:00", "home": "rus", "away": "egy", "score": { "home": 3, "away": 1 }, "goals": [ { "minute": 47, "side": "home", "player": "ファティ(OG)" }, { "minute": 59, "side": "home", "player": "チェリシェフ" }, { "minute": 62, "side": "home", "player": "ジューバ" }, { "minute": 73, "side": "away", "player": "サラー(PK)" } ] },
+    { "id": "A-4", "group": "A", "matchday": 2, "kickoff": "2018-06-20T18:00", "home": "uru", "away": "ksa", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 23, "side": "home", "player": "スアレス" } ] },
+    { "id": "A-5", "group": "A", "matchday": 3, "kickoff": "2018-06-25T17:00", "home": "uru", "away": "rus", "score": { "home": 3, "away": 0 }, "goals": [ { "minute": 10, "side": "home", "player": "スアレス" }, { "minute": 23, "side": "home", "player": "チェリシェフ(OG)" }, { "minute": 90, "side": "home", "player": "カバーニ" } ] },
+    { "id": "A-6", "group": "A", "matchday": 3, "kickoff": "2018-06-25T17:00", "home": "ksa", "away": "egy", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 22, "side": "away", "player": "サラー" }, { "minute": 45, "plus": 6, "side": "home", "player": "アル＝ファラジュ(PK)" }, { "minute": 90, "plus": 5, "side": "home", "player": "アッ＝ドーサリー" } ] },
+
+    { "id": "B-1", "group": "B", "matchday": 1, "kickoff": "2018-06-15T18:00", "home": "mar", "away": "irn", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 90, "plus": 5, "side": "away", "player": "ブハドゥズ(OG)" } ] },
+    { "id": "B-2", "group": "B", "matchday": 1, "kickoff": "2018-06-15T21:00", "home": "por", "away": "esp", "score": { "home": 3, "away": 3 }, "goals": [ { "minute": 4, "side": "home", "player": "ロナウド(PK)" }, { "minute": 24, "side": "away", "player": "コスタ" }, { "minute": 44, "side": "home", "player": "ロナウド" }, { "minute": 55, "side": "away", "player": "コスタ" }, { "minute": 58, "side": "away", "player": "ナチョ" }, { "minute": 88, "side": "home", "player": "ロナウド" } ] },
+    { "id": "B-3", "group": "B", "matchday": 2, "kickoff": "2018-06-20T15:00", "home": "por", "away": "mar", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 4, "side": "home", "player": "ロナウド" } ] },
+    { "id": "B-4", "group": "B", "matchday": 2, "kickoff": "2018-06-20T21:00", "home": "irn", "away": "esp", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 54, "side": "away", "player": "コスタ" } ] },
+    { "id": "B-5", "group": "B", "matchday": 3, "kickoff": "2018-06-25T21:00", "home": "irn", "away": "por", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 45, "side": "away", "player": "クアレスマ" }, { "minute": 90, "plus": 3, "side": "home", "player": "アンサリファルド(PK)" } ] },
+    { "id": "B-6", "group": "B", "matchday": 3, "kickoff": "2018-06-25T21:00", "home": "esp", "away": "mar", "score": { "home": 2, "away": 2 }, "goals": [ { "minute": 14, "side": "away", "player": "ブタイブ" }, { "minute": 19, "side": "home", "player": "イスコ" }, { "minute": 81, "side": "away", "player": "エン＝ネシリ" }, { "minute": 90, "plus": 1, "side": "home", "player": "アスパス" } ] },
+
+    { "id": "C-1", "group": "C", "matchday": 1, "kickoff": "2018-06-16T13:00", "home": "fra", "away": "aus", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 58, "side": "home", "player": "グリーズマン(PK)" }, { "minute": 62, "side": "away", "player": "ジェディナク(PK)" }, { "minute": 81, "side": "home", "player": "ベヒッチ(OG)" } ] },
+    { "id": "C-2", "group": "C", "matchday": 1, "kickoff": "2018-06-16T19:00", "home": "per", "away": "den", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 59, "side": "away", "player": "ポウルセン" } ] },
+    { "id": "C-3", "group": "C", "matchday": 2, "kickoff": "2018-06-21T15:00", "home": "den", "away": "aus", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 7, "side": "home", "player": "エリクセン" }, { "minute": 38, "side": "away", "player": "ジェディナク(PK)" } ] },
+    { "id": "C-4", "group": "C", "matchday": 2, "kickoff": "2018-06-21T18:00", "home": "fra", "away": "per", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 34, "side": "home", "player": "エムバペ" } ] },
+    { "id": "C-5", "group": "C", "matchday": 3, "kickoff": "2018-06-26T17:00", "home": "den", "away": "fra", "score": { "home": 0, "away": 0 }, "goals": [] },
+    { "id": "C-6", "group": "C", "matchday": 3, "kickoff": "2018-06-26T17:00", "home": "aus", "away": "per", "score": { "home": 0, "away": 2 }, "goals": [ { "minute": 18, "side": "away", "player": "カリージョ" }, { "minute": 50, "side": "away", "player": "ゲレーロ" } ] },
+
+    { "id": "D-1", "group": "D", "matchday": 1, "kickoff": "2018-06-16T16:00", "home": "arg", "away": "isl", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 19, "side": "home", "player": "アグエロ" }, { "minute": 23, "side": "away", "player": "フィンボガソン" } ] },
+    { "id": "D-2", "group": "D", "matchday": 1, "kickoff": "2018-06-16T22:00", "home": "cro", "away": "nga", "score": { "home": 2, "away": 0 }, "goals": [ { "minute": 32, "side": "home", "player": "エテボ(OG)" }, { "minute": 71, "side": "home", "player": "モドリッチ(PK)" } ] },
+    { "id": "D-3", "group": "D", "matchday": 2, "kickoff": "2018-06-21T21:00", "home": "arg", "away": "cro", "score": { "home": 0, "away": 3 }, "goals": [ { "minute": 53, "side": "away", "player": "レビッチ" }, { "minute": 80, "side": "away", "player": "モドリッチ" }, { "minute": 90, "plus": 1, "side": "away", "player": "ラキティッチ" } ] },
+    { "id": "D-4", "group": "D", "matchday": 2, "kickoff": "2018-06-22T18:00", "home": "nga", "away": "isl", "score": { "home": 2, "away": 0 }, "goals": [ { "minute": 49, "side": "home", "player": "ムサ" }, { "minute": 75, "side": "home", "player": "ムサ" } ] },
+    { "id": "D-5", "group": "D", "matchday": 3, "kickoff": "2018-06-26T21:00", "home": "nga", "away": "arg", "score": { "home": 1, "away": 2 }, "goals": [ { "minute": 14, "side": "away", "player": "メッシ" }, { "minute": 51, "side": "home", "player": "モーゼス(PK)" }, { "minute": 86, "side": "away", "player": "ロホ" } ] },
+    { "id": "D-6", "group": "D", "matchday": 3, "kickoff": "2018-06-26T21:00", "home": "isl", "away": "cro", "score": { "home": 1, "away": 2 }, "goals": [ { "minute": 53, "side": "away", "player": "バデリ" }, { "minute": 76, "side": "home", "player": "シグルズソン(PK)" }, { "minute": 90, "side": "away", "player": "ペリシッチ" } ] },
+
+    { "id": "E-1", "group": "E", "matchday": 1, "kickoff": "2018-06-17T15:00", "home": "crc", "away": "srb", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 56, "side": "away", "player": "コラロフ" } ] },
+    { "id": "E-2", "group": "E", "matchday": 1, "kickoff": "2018-06-17T21:00", "home": "bra", "away": "sui", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 20, "side": "home", "player": "コウチーニョ" }, { "minute": 50, "side": "away", "player": "ツバー" } ] },
+    { "id": "E-3", "group": "E", "matchday": 2, "kickoff": "2018-06-22T15:00", "home": "bra", "away": "crc", "score": { "home": 2, "away": 0 }, "goals": [ { "minute": 90, "plus": 1, "side": "home", "player": "コウチーニョ" }, { "minute": 90, "plus": 7, "side": "home", "player": "ネイマール" } ] },
+    { "id": "E-4", "group": "E", "matchday": 2, "kickoff": "2018-06-22T21:00", "home": "srb", "away": "sui", "score": { "home": 1, "away": 2 }, "goals": [ { "minute": 5, "side": "home", "player": "ミトロビッチ" }, { "minute": 52, "side": "away", "player": "ジャカ" }, { "minute": 90, "side": "away", "player": "シャチリ" } ] },
+    { "id": "E-5", "group": "E", "matchday": 3, "kickoff": "2018-06-27T21:00", "home": "srb", "away": "bra", "score": { "home": 0, "away": 2 }, "goals": [ { "minute": 36, "side": "away", "player": "パウリーニョ" }, { "minute": 68, "side": "away", "player": "チアゴ・シウバ" } ] },
+    { "id": "E-6", "group": "E", "matchday": 3, "kickoff": "2018-06-27T21:00", "home": "sui", "away": "crc", "score": { "home": 2, "away": 2 }, "goals": [ { "minute": 31, "side": "home", "player": "ジェマイリ" }, { "minute": 56, "side": "away", "player": "ワストン" }, { "minute": 88, "side": "home", "player": "ドルミッチ" }, { "minute": 90, "plus": 3, "side": "away", "player": "ヤン・ゾマー(OG)" } ] },
+
+    { "id": "F-1", "group": "F", "matchday": 1, "kickoff": "2018-06-17T18:00", "home": "ger", "away": "mex", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 35, "side": "away", "player": "ロサノ" } ] },
+    { "id": "F-2", "group": "F", "matchday": 1, "kickoff": "2018-06-18T15:00", "home": "swe", "away": "kor", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 65, "side": "home", "player": "グランクビスト(PK)" } ] },
+    { "id": "F-3", "group": "F", "matchday": 2, "kickoff": "2018-06-23T18:00", "home": "kor", "away": "mex", "score": { "home": 1, "away": 2 }, "goals": [ { "minute": 26, "side": "away", "player": "ベラ(PK)" }, { "minute": 66, "side": "away", "player": "エルナンデス" }, { "minute": 90, "plus": 3, "side": "home", "player": "ソン・フンミン" } ] },
+    { "id": "F-4", "group": "F", "matchday": 2, "kickoff": "2018-06-23T21:00", "home": "ger", "away": "swe", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 32, "side": "away", "player": "トイボネン" }, { "minute": 48, "side": "home", "player": "ロイス" }, { "minute": 90, "plus": 5, "side": "home", "player": "クロース" } ] },
+    { "id": "F-5", "group": "F", "matchday": 3, "kickoff": "2018-06-27T17:00", "home": "kor", "away": "ger", "score": { "home": 2, "away": 0 }, "goals": [ { "minute": 90, "plus": 3, "side": "home", "player": "キム・ヨングォン" }, { "minute": 90, "plus": 6, "side": "home", "player": "ソン・フンミン" } ] },
+    { "id": "F-6", "group": "F", "matchday": 3, "kickoff": "2018-06-27T17:00", "home": "mex", "away": "swe", "score": { "home": 0, "away": 3 }, "goals": [ { "minute": 50, "side": "away", "player": "アウグスティンソン" }, { "minute": 62, "side": "away", "player": "グランクビスト(PK)" }, { "minute": 74, "side": "away", "player": "アルバレス(OG)" } ] },
+
+    { "id": "G-1", "group": "G", "matchday": 1, "kickoff": "2018-06-18T18:00", "home": "bel", "away": "pan", "score": { "home": 3, "away": 0 }, "goals": [ { "minute": 47, "side": "home", "player": "メルテンス" }, { "minute": 69, "side": "home", "player": "ルカク" }, { "minute": 75, "side": "home", "player": "ルカク" } ] },
+    { "id": "G-2", "group": "G", "matchday": 1, "kickoff": "2018-06-18T21:00", "home": "tun", "away": "eng", "score": { "home": 1, "away": 2 }, "goals": [ { "minute": 11, "side": "away", "player": "ケイン" }, { "minute": 35, "side": "home", "player": "サシ(PK)" }, { "minute": 90, "plus": 1, "side": "away", "player": "ケイン" } ] },
+    { "id": "G-3", "group": "G", "matchday": 2, "kickoff": "2018-06-23T15:00", "home": "bel", "away": "tun", "score": { "home": 5, "away": 2 }, "goals": [ { "minute": 6, "side": "home", "player": "アザール(PK)" }, { "minute": 16, "side": "home", "player": "ルカク" }, { "minute": 18, "side": "away", "player": "ブロン" }, { "minute": 45, "plus": 3, "side": "home", "player": "ルカク" }, { "minute": 51, "side": "home", "player": "アザール" }, { "minute": 90, "side": "home", "player": "バチュアイ" }, { "minute": 90, "plus": 3, "side": "away", "player": "ハズリ" } ] },
+    { "id": "G-4", "group": "G", "matchday": 2, "kickoff": "2018-06-24T15:00", "home": "eng", "away": "pan", "score": { "home": 6, "away": 1 }, "goals": [ { "minute": 8, "side": "home", "player": "ストーンズ" }, { "minute": 22, "side": "home", "player": "ケイン(PK)" }, { "minute": 36, "side": "home", "player": "リンガード" }, { "minute": 40, "side": "home", "player": "ストーンズ" }, { "minute": 45, "plus": 1, "side": "home", "player": "ケイン(PK)" }, { "minute": 62, "side": "home", "player": "ケイン" }, { "minute": 78, "side": "away", "player": "バロイ" } ] },
+    { "id": "G-5", "group": "G", "matchday": 3, "kickoff": "2018-06-28T21:00", "home": "eng", "away": "bel", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 51, "side": "away", "player": "ヤヌザイ" } ] },
+    { "id": "G-6", "group": "G", "matchday": 3, "kickoff": "2018-06-28T21:00", "home": "pan", "away": "tun", "score": { "home": 1, "away": 2 }, "goals": [ { "minute": 33, "side": "home", "player": "メリアー(OG)" }, { "minute": 51, "side": "away", "player": "ベン・ユースフ" }, { "minute": 66, "side": "away", "player": "ハズリ" } ] },
+
+    { "id": "H-1", "group": "H", "matchday": 1, "kickoff": "2018-06-19T15:00", "home": "col", "away": "jpn", "score": { "home": 1, "away": 2 }, "goals": [ { "minute": 6, "side": "away", "player": "香川真司(PK)" }, { "minute": 39, "side": "home", "player": "キンテーロ" }, { "minute": 73, "side": "away", "player": "大迫勇也" } ], "cards": { "home": { "y": 2, "r": 1 }, "away": { "y": 1, "r": 0 } } },
+    { "id": "H-2", "group": "H", "matchday": 1, "kickoff": "2018-06-19T18:00", "home": "pol", "away": "sen", "score": { "home": 1, "away": 2 }, "goals": [ { "minute": 37, "side": "away", "player": "チョネク(OG)" }, { "minute": 60, "side": "away", "player": "ニアン" }, { "minute": 86, "side": "home", "player": "クリホビアク" } ], "cards": { "home": { "y": 1, "r": 0 }, "away": { "y": 2, "r": 0 } } },
+    { "id": "H-3", "group": "H", "matchday": 2, "kickoff": "2018-06-24T18:00", "home": "jpn", "away": "sen", "score": { "home": 2, "away": 2 }, "goals": [ { "minute": 11, "side": "away", "player": "マネ" }, { "minute": 34, "side": "home", "player": "乾貴士" }, { "minute": 71, "side": "away", "player": "ワゲ" }, { "minute": 78, "side": "home", "player": "本田圭佑" } ], "cards": { "home": { "y": 2, "r": 0 }, "away": { "y": 3, "r": 0 } } },
+    { "id": "H-4", "group": "H", "matchday": 2, "kickoff": "2018-06-24T21:00", "home": "pol", "away": "col", "score": { "home": 0, "away": 3 }, "goals": [ { "minute": 40, "side": "away", "player": "ミナ" }, { "minute": 70, "side": "away", "player": "ファルカオ" }, { "minute": 75, "side": "away", "player": "クアドラード" } ], "cards": { "home": { "y": 2, "r": 0 }, "away": { "y": 0, "r": 0 } } },
+    { "id": "H-5", "group": "H", "matchday": 3, "kickoff": "2018-06-28T17:00", "home": "jpn", "away": "pol", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 59, "side": "away", "player": "ベドナレク" } ], "cards": { "home": { "y": 1, "r": 0 }, "away": { "y": 0, "r": 0 } } },
+    { "id": "H-6", "group": "H", "matchday": 3, "kickoff": "2018-06-28T17:00", "home": "sen", "away": "col", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 74, "side": "away", "player": "ミナ" } ], "cards": { "home": { "y": 1, "r": 0 }, "away": { "y": 1, "r": 0 } } }
+  ]
+}

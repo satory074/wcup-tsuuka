@@ -16,6 +16,7 @@ import flagColors from "../data/flag-colors.json";
 export type OverviewPhase = "early" | "final-round" | "decided";
 
 const CUPS: { id: Cup; label: string }[] = [
+  { id: "2018", label: "2018 ロシア" },
   { id: "2022", label: "2022 カタール" },
   { id: "2026", label: "2026 北中米" },
 ];
