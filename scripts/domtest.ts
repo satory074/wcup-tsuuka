@@ -85,8 +85,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const leg0 = root.querySelector(".tl-legend .tl-leg-item")?.textContent ?? "";
   assert(leg0.includes("オランダ") && leg0.includes("1位"), `1: 凡例先頭=オランダ1位（実際: ${leg0}）`);
   assert((root.querySelector(".tl-chart")?.innerHTML ?? "").includes("ガクポ"), "1: 得点者名がツールチップに表示される");
-  // チャート上に節結果スコア（節末リングの脇）= 3節×2試合=6（組A 全消化）
-  assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 6, `1: チャートに節結果スコア6（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
+  // チャート上に節結果スコア（各レーン上＝両参加チームに紐づく）= 3節×4チーム=12（組A 全消化）
+  assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 12, `1: チャートに節結果スコア12（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
   assert([...root.querySelectorAll(".tl-chart .tl-round-score")].some((e) => /\d-\d/.test(e.textContent ?? "")), "1: 節結果スコアにスコア表記");
   // 得点タイムライン（縦型・チャート下）: 節見出し3・ゴール15・「第n節 結果」3
   assert(root.querySelectorAll(".tl-log .tlog-goal").length === 15, `1: 得点行=全15ゴール（実際: ${root.querySelectorAll(".tl-log .tlog-goal").length}）`);
@@ -123,7 +123,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const dots = root.querySelectorAll(".tl-chart .tl-dot").length;
   assert(dots > 24, `1b: 分刻みは頂点が多い（実際: ${dots}）`);
   assert(root.querySelectorAll(".tl-chart .tl-dot.is-roundend").length === 12, "1b: 節末リング=4×3=12");
-  assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 6, `1b: チャートに節結果スコア6（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
+  assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 12, `1b: チャートに節結果スコア12（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
   assert(root.querySelectorAll(".tl-log .tlog-round").length === 3, `1b: 縦型ログに『第n節 結果』3（実際: ${root.querySelectorAll(".tl-log .tlog-round").length}）`);
   assert(root.querySelectorAll(".tl-log .tlog-md-head").length === 3, "1b: 縦型ログに節見出し3");
   // 節末リングの <title> に試合結果が入る（ツールチップ）

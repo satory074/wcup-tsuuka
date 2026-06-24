@@ -499,37 +499,31 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       lines += `<text class="tl-endlabel${oc}" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tc(tid)}</tspan></text>`;
     }
 
-    // 節結果スコア: 各試合のチップを「対戦2チームのレーン中点」に置く＝どの段＝どのカードか分かる（全員分に紐づく）。
-    // 重なる場合は上下に振り分け、プロット内にクランプ。等幅フォント(13px)でチップ幅を概算＝決定的。
+    // 節結果スコア: 各試合のスコアを「対戦した両チームそれぞれのレーン上」に置く＝1スコアが両レーンに2回出る。
+    // 各レーンに「そのチームが戦った試合結果」が乗るので、対戦していない第3チームのレーンと重ならない（中点方式の紛らわしさを解消）。
+    // 4チーム×1試合＝節ごと2試合→4チップ。レーンは rowGap=72 間隔・チップ高 18 なので縦に重ならない。
+    // 両トリコードを各チームの線色で色分け＝乗っているレーン＋色で「自分の試合」が読める。等幅フォント(13px)でチップ幅を概算＝決定的。
     let roundScores = "";
     const CHAR_W = 7.4;
     const CHIP_H = 18;
     for (let ci = 0; ci < cols; ci++) {
       const snap = snaps[ci];
       if (snap.kind !== "roundEnd" || !snap.roundResults) continue;
-      const x = xAt(ci) + 8;
+      // 節末列は全レーンに is-roundend リング（cx=xAt(ci)）が出るので、被らないよう +12 右へずらす。
+      const x = xAt(ci) + 12;
       const idx = idxByCol[ci];
-      const chips = snap.roundResults
-        .slice(0, teamCount)
-        .map((rr) => {
-          const pH = idx.get(rr.homeId);
-          const pA = idx.get(rr.awayId);
-          const mid = pH != null && pA != null ? (pH + pA) / 2 : 0;
-          return { rr, cy: yAt(mid) };
-        })
-        .sort((a, b) => a.cy - b.cy);
-      // 衝突回避（最小間隔を確保）→ 下にはみ出たら全体を上へ寄せる。
-      const sep = CHIP_H + 6;
-      for (let i = 1; i < chips.length; i++) {
-        if (chips[i].cy - chips[i - 1].cy < sep) chips[i].cy = chips[i - 1].cy + sep;
-      }
-      const over = chips.length ? chips[chips.length - 1].cy - plotB : 0;
-      if (over > 0) chips.forEach((c) => (c.cy -= over));
-      for (const { rr, cy } of chips) {
-        const txt = `${rawTc(rr.homeId)} ${rr.homeScore}-${rr.awayScore} ${rawTc(rr.awayId)}`;
-        const w = txt.length * CHAR_W + 12;
-        roundScores += `<rect class="tl-round-chip" x="${f1(x - 5)}" y="${f1(cy - 9)}" width="${f1(w)}" height="${CHIP_H}" rx="4" />`;
-        roundScores += `<text class="tl-round-score" x="${f1(x)}" y="${f1(cy)}" dominant-baseline="middle" text-anchor="start">${esc(txt)}</text>`;
+      for (const rr of snap.roundResults) {
+        const cH = colorOf.get(rr.homeId)!;
+        const cA = colorOf.get(rr.awayId)!;
+        const inner = `<tspan style="fill:${cH}">${esc(rawTc(rr.homeId))}</tspan> ${rr.homeScore}-${rr.awayScore} <tspan style="fill:${cA}">${esc(rawTc(rr.awayId))}</tspan>`;
+        const w = (rawTc(rr.homeId).length + rawTc(rr.awayId).length + 5) * CHAR_W + 12;
+        for (const tid of [rr.homeId, rr.awayId]) {
+          const pos = idx.get(tid);
+          if (pos == null) continue;
+          const cy = yAt(pos);
+          roundScores += `<rect class="tl-round-chip" x="${f1(x - 5)}" y="${f1(cy - 9)}" width="${f1(w)}" height="${CHIP_H}" rx="4" />`;
+          roundScores += `<text class="tl-round-score" x="${f1(x)}" y="${f1(cy)}" dominant-baseline="middle" text-anchor="start">${inner}</text>`;
+        }
       }
     }
 
