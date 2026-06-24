@@ -95,7 +95,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       <div id="detail-view">
         <section id="detail-timeline">
           <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位（節末に試合結果）</span></h2>
-          <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・点＝得点で動いた瞬間・◇＝節末に各試合結果）</p>
+          <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・●＝前半/◉＝後半の得点・◇＝節末に各試合結果）</p>
           <div id="timeline"></div>
         </section>
 
@@ -488,7 +488,9 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         const scorerId = e && e.scorerSide ? (e.scorerSide === "home" ? e.homeId : e.awayId) : undefined;
         const scoring = scorerId === tid;
         const isRE = snap.kind === "roundEnd";
-        const cls = `tl-dot${scoring ? " is-scorer" : ""}${isRE ? " is-roundend" : ""}${oc}`;
+        // 後半(>45')の得点点は縁取り(◉)で区別。前半/通常は塗り(●)。
+        const secondHalf = scoring && snap.event != null && snap.event.minute > 45;
+        const cls = `tl-dot${scoring ? " is-scorer" : ""}${secondHalf ? " is-2nd" : ""}${isRE ? " is-roundend" : ""}${oc}`;
         const r = scoring ? 5 : isRE ? 4 : 3;
         // 節末は色付きの中空リング（チェックポイント）、ゴールは塗りつぶし。
         const dotStyle = isRE ? `fill:var(--surface);stroke:${color}` : `fill:${color}`;
@@ -498,22 +500,38 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       lines += `<text class="tl-endlabel${oc}" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tc(tid)}</tspan></text>`;
     }
 
-    // 節結果スコア（節末リングの右隣・lane1/lane2 の高さ）。不透明チップを敷いて折れ線と重なっても確実に読む。
-    // 等幅フォント(13px)なので字送りからチップ幅を概算でき、決定的に配置できる。
+    // 節結果スコア: 各試合のチップを「対戦2チームのレーン中点」に置く＝どの段＝どのカードか分かる（全員分に紐づく）。
+    // 重なる場合は上下に振り分け、プロット内にクランプ。等幅フォント(13px)でチップ幅を概算＝決定的。
     let roundScores = "";
     const CHAR_W = 7.4;
+    const CHIP_H = 18;
     for (let ci = 0; ci < cols; ci++) {
       const snap = snaps[ci];
       if (snap.kind !== "roundEnd" || !snap.roundResults) continue;
       const x = xAt(ci) + 8;
-      snap.roundResults.forEach((rr, ri) => {
-        if (ri >= teamCount) return;
+      const idx = idxByCol[ci];
+      const chips = snap.roundResults
+        .slice(0, teamCount)
+        .map((rr) => {
+          const pH = idx.get(rr.homeId);
+          const pA = idx.get(rr.awayId);
+          const mid = pH != null && pA != null ? (pH + pA) / 2 : 0;
+          return { rr, cy: yAt(mid) };
+        })
+        .sort((a, b) => a.cy - b.cy);
+      // 衝突回避（最小間隔を確保）→ 下にはみ出たら全体を上へ寄せる。
+      const sep = CHIP_H + 6;
+      for (let i = 1; i < chips.length; i++) {
+        if (chips[i].cy - chips[i - 1].cy < sep) chips[i].cy = chips[i - 1].cy + sep;
+      }
+      const over = chips.length ? chips[chips.length - 1].cy - plotB : 0;
+      if (over > 0) chips.forEach((c) => (c.cy -= over));
+      for (const { rr, cy } of chips) {
         const txt = `${rawTc(rr.homeId)} ${rr.homeScore}-${rr.awayScore} ${rawTc(rr.awayId)}`;
         const w = txt.length * CHAR_W + 12;
-        const cy = yAt(ri);
-        roundScores += `<rect class="tl-round-chip" x="${f1(x - 5)}" y="${f1(cy - 9)}" width="${f1(w)}" height="18" rx="4" />`;
+        roundScores += `<rect class="tl-round-chip" x="${f1(x - 5)}" y="${f1(cy - 9)}" width="${f1(w)}" height="${CHIP_H}" rx="4" />`;
         roundScores += `<text class="tl-round-score" x="${f1(x)}" y="${f1(cy)}" dominant-baseline="middle" text-anchor="start">${esc(txt)}</text>`;
-      });
+      }
     }
 
     const aria = `グループ${view.group}の順位推移。縦軸=順位（上が1位・上位${adv}が通過圏）、横軸=時系列。色付きの線が各国の順位の動き。節末に各試合の結果。`;
@@ -555,10 +573,9 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         );
       }
     }
-    // 既定は折りたたみ＝主役（バンプチャート）を埋もれさせない。全ゴールの一覧は1クリックで開ける。
-    // ※スコア／節結果はチャート上にも出ているので、ここは「誰が・何分に」を補完する任意の詳細。
+    // 常設（折りたたみ廃止）。「誰が・何分に」を時系列で常に見せる。
     const goalCount = snaps.filter((s) => s.kind !== "roundEnd" && s.event).length;
-    const log = `<details class="tl-log"><summary class="tl-log-head">得点タイムライン<span class="tl-log-count">全${goalCount}ゴール</span></summary><ol class="tl-timeline">${items.join("")}</ol></details>`;
+    const log = `<section class="tl-log"><p class="tl-log-head">得点タイムライン<span class="tl-log-count">全${goalCount}ゴール</span></p><ol class="tl-timeline">${items.join("")}</ol></section>`;
 
     return `
       <div class="timeline-scroll"><div class="tl-chart-wrap">${svg}</div></div>

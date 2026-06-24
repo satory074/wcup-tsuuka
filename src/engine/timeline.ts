@@ -19,6 +19,8 @@ export interface SnapshotEvent {
   scorerSide?: GoalSide;
   /** 得点選手名（あれば） */
   scorer?: string;
+  /** 得点時の分（前半/後半の判定用。45超=後半）。 */
+  minute: number;
 }
 
 /** 節末スナップが持つ、その節の各試合の最終結果。 */
@@ -214,6 +216,7 @@ export function buildTimeline(ct: CompiledTournament, group: GroupId): Snapshot[
           matchday: m.matchday,
           scorerSide: ev.goal.side,
           scorer: ev.goal.player,
+          minute: ev.goal.minute,
         },
       });
       snaps.push(snap);

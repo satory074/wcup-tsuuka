@@ -1098,6 +1098,11 @@ table.bt-table {
 .tl-dot.is-roundend {
   stroke-width: 2.5;
 }
+/* 後半(>45')の得点＝塗り(チーム色)＋濃い縁取り(◉)で前半(●)と区別。is-scorer の後に置き stroke を上書き。 */
+.tl-dot.is-2nd {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
 /* F-3: 最終的に圏外の国は淡く＝通過する2本（主役）に注目を集める（selective highlighting）。 */
 .tl-line.is-out {
   stroke-width: 3;
@@ -1204,30 +1209,20 @@ table.bt-table {
   fill: var(--ink-soft);
 }
 /* 得点ログ（live=ゴール時系列／stage=試合結果）= チャートで失われた誰が・何分にを復活 */
-/* 既定は折りたたみ（主役のチャートを埋もれさせない）。開くと全ゴールの時系列が出る。 */
+/* 常設（折りたたみ廃止）。全幅領域内で読みやすい列幅に抑える。 */
 .tl-log {
   margin: var(--sp-3) 0.1rem 0;
   border-top: 1px solid var(--border);
   padding-top: var(--sp-2);
+  max-width: 760px;
 }
 .tl-log-head {
-  cursor: pointer;
-  list-style: none;
   font-family: var(--font-display);
   font-size: var(--ts-sm);
   font-weight: 800;
   letter-spacing: 0.01em;
   color: var(--ink-soft);
-}
-.tl-log-head::-webkit-details-marker {
-  display: none;
-}
-.tl-log-head::before {
-  content: "▸ ";
-  color: var(--pitch-deep);
-}
-.tl-log[open] .tl-log-head::before {
-  content: "▾ ";
+  margin: 0 0 var(--sp-2);
 }
 .tl-log-count {
   margin-left: 0.4rem;
@@ -1235,9 +1230,6 @@ table.bt-table {
   font-weight: 600;
   font-size: var(--ts-2xs);
   color: var(--ink-faint);
-}
-.tl-log[open] .tl-timeline {
-  margin-top: var(--sp-2);
 }
 /* 得点タイムライン（縦型）= 節見出し → ゴール → 第n節 結果 を時系列で。 */
 .tl-timeline {
