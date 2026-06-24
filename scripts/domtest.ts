@@ -82,7 +82,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 6, `1: チャートに節結果スコア6（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
   assert([...root.querySelectorAll(".tl-chart .tl-round-score")].some((e) => /\d-\d/.test(e.textContent ?? "")), "1: 節結果スコアにスコア表記");
   // 得点タイムライン（縦型・チャート下）: 節見出し3・ゴール15・「第n節 結果」3
-  assert(root.querySelectorAll(".tl-log .tl-timeline .tlog-goal").length === 15, `1: 得点行=全15ゴール（実際: ${root.querySelectorAll(".tl-log .tlog-goal").length}）`);
+  assert(root.querySelectorAll(".tl-log .tlog-goal").length === 15, `1: 得点行=全15ゴール（実際: ${root.querySelectorAll(".tl-log .tlog-goal").length}）`);
+  assert(root.querySelectorAll(".tl-log .tlog-cols .tlog-col").length === 3, "1: 節カラム3（第1〜3節を横並び）");
   assert(root.querySelectorAll(".tl-log .tlog-md-head").length === 3, "1: 節見出し3（第1〜3節）");
   assert(root.querySelectorAll(".tl-log .tlog-round").length === 3, "1: 節末『第n節 結果』ブロック3");
   assert((root.querySelector(".tl-log .tlog-round")?.textContent ?? "").includes("結果"), "1: 節末ブロックに『結果』");

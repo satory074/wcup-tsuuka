@@ -545,15 +545,16 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       )
       .join("");
 
-    // 得点タイムライン（縦型）。各節の見出し → ゴール（時刻・得点者・スコア）→「第n節 結果」を時系列で並べる。
+    // 得点タイムラインを「節カラム」に: 節ごとに1列（見出し→ゴール→第n節結果）を横並び＝全幅を使い高さを圧縮。
     // ゴール行の左ボーダー＝得点国の線色でチャートの折れ線と対応づける。
-    let prevMd = 0;
-    const items: string[] = [];
+    const byMd = new Map<number, { goals: string[]; round: string }>();
+    const mdOrder: number[] = [];
     for (const s of snaps) {
-      if (s.matchday !== prevMd) {
-        items.push(`<li class="tlog-md-head">第${s.matchday}節</li>`);
-        prevMd = s.matchday;
+      if (!byMd.has(s.matchday)) {
+        byMd.set(s.matchday, { goals: [], round: "" });
+        mdOrder.push(s.matchday);
       }
+      const bucket = byMd.get(s.matchday)!;
       if (s.kind === "roundEnd") {
         const res = (s.roundResults ?? [])
           .map(
@@ -561,21 +562,27 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
               `<span class="tlog-round-res">${team(r.homeId).flag}${tc(r.homeId)} <b>${r.homeScore}-${r.awayScore}</b> ${tc(r.awayId)}${team(r.awayId).flag}</span>`,
           )
           .join("");
-        items.push(`<li class="tlog-round"><span class="tlog-round-head">第${s.matchday}節 結果</span>${res}</li>`);
+        bucket.round = `<div class="tlog-round"><span class="tlog-round-head">第${s.matchday}節 結果</span>${res}</div>`;
       } else if (s.event) {
         const e = s.event;
         const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
         const color = colorOf.get(scorerId) ?? "var(--border-strong)";
         const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
         const score = `${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}`;
-        items.push(
+        bucket.goals.push(
           `<li class="tlog-goal" style="border-left-color:${color}"><span class="tlog-time">${esc(s.clockLabel)}</span><span class="tlog-scorer">⚽${who}</span><span class="tlog-score">${score}</span></li>`,
         );
       }
     }
-    // 常設（折りたたみ廃止）。「誰が・何分に」を時系列で常に見せる。
+    const logCols = mdOrder
+      .map((md) => {
+        const b = byMd.get(md)!;
+        return `<div class="tlog-col"><p class="tlog-md-head">第${md}節</p><ol class="tlog-goals">${b.goals.join("")}</ol>${b.round}</div>`;
+      })
+      .join("");
+    // 常設（折りたたみ廃止）。「誰が・何分に」を節カラムで常に見せる。
     const goalCount = snaps.filter((s) => s.kind !== "roundEnd" && s.event).length;
-    const log = `<section class="tl-log"><p class="tl-log-head">得点タイムライン<span class="tl-log-count">全${goalCount}ゴール</span></p><ol class="tl-timeline">${items.join("")}</ol></section>`;
+    const log = `<section class="tl-log"><p class="tl-log-head">得点タイムライン<span class="tl-log-count">全${goalCount}ゴール</span></p><div class="tlog-cols">${logCols}</div></section>`;
 
     return `
       <div class="timeline-scroll"><div class="tl-chart-wrap">${svg}</div></div>

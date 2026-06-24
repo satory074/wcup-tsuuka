@@ -140,6 +140,13 @@ body {
 #detail-main {
   grid-column: 1;
 }
+/* R-4: col1 主要カードの最大幅を順位表(660)に揃え、右エッジを揃える（detail のみ・overview の bt-card は不変）。 */
+#detail-main .standings,
+#detail-main .bt-card,
+#detail-main .sched-carousel-wrap,
+#detail-main .scenario-details {
+  max-width: 660px;
+}
 #detail-side {
   grid-column: 2;
   position: sticky;
@@ -1160,8 +1167,9 @@ table.bt-table {
 .tl-legend {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.3rem 0.9rem;
-  margin: 0.55rem 0.15rem 0;
+  margin: var(--sp-2) 0.15rem 0;
   font-size: var(--ts-xs);
   color: var(--ink-soft);
 }
@@ -1209,12 +1217,11 @@ table.bt-table {
   fill: var(--ink-soft);
 }
 /* 得点ログ（live=ゴール時系列／stage=試合結果）= チャートで失われた誰が・何分にを復活 */
-/* 常設（折りたたみ廃止）。全幅領域内で読みやすい列幅に抑える。 */
+/* 常設（折りたたみ廃止）。節カラムで全幅を使う。 */
 .tl-log {
   margin: var(--sp-3) 0.1rem 0;
   border-top: 1px solid var(--border);
   padding-top: var(--sp-2);
-  max-width: 760px;
 }
 .tl-log-head {
   font-family: var(--font-display);
@@ -1231,8 +1238,21 @@ table.bt-table {
   font-size: var(--ts-2xs);
   color: var(--ink-faint);
 }
-/* 得点タイムライン（縦型）= 節見出し → ゴール → 第n節 結果 を時系列で。 */
-.tl-timeline {
+/* 得点タイムライン＝節カラム（第1/2/3節を横並び・全幅活用・高さ圧縮）。狭幅は flex-wrap で縦積み。 */
+.tlog-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  margin-top: var(--sp-2);
+}
+.tlog-col {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+.tlog-goals {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1241,15 +1261,14 @@ table.bt-table {
   gap: 0.28rem;
 }
 .tlog-md-head {
-  margin-top: 0.45rem;
+  margin: 0 0 0.15rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 2px solid var(--border-strong);
   font-family: var(--font-display);
   font-weight: 800;
   font-size: var(--ts-sm);
   color: var(--ink);
   letter-spacing: 0.02em;
-}
-.tl-timeline > .tlog-md-head:first-child {
-  margin-top: 0;
 }
 .tlog-goal {
   display: flex;
@@ -1280,13 +1299,13 @@ table.bt-table {
   font-variant-numeric: tabular-nums;
   color: var(--ink-soft);
 }
-/* 「第n節 結果」= その節の試合スコアをまとめた区切りブロック。 */
+/* 「第n節 結果」= その節の試合スコアをまとめた区切りブロック（節カラムの末尾）。 */
 .tlog-round {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.35rem 0.7rem;
-  margin: 0.1rem 0 0.2rem;
+  gap: 0.35rem 0.5rem;
+  margin: var(--sp-2) 0 0;
   padding: 0.34rem 0.6rem;
   background: var(--advance-soft);
   border: 1px dashed var(--advance);
