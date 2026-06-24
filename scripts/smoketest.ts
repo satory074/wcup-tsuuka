@@ -3,8 +3,20 @@
 //             （P3 以降で 4) マトリックス 5) status 6) URL を追加）
 import worldcupJson from "../src/data/worldcup2022.json";
 import worldcup2026Json from "../src/data/worldcup2026.json";
-import { validateTournament } from "../src/engine/validate";
+import { validateTournament, validateFlagColors } from "../src/engine/validate";
 import { compileTournament } from "../src/engine/compile";
+import flagColorsJson from "../src/data/flag-colors.json";
+import {
+  assignGroupColors,
+  hexToRgb,
+  rgbToHex,
+  rgbToLab,
+  deltaE,
+  relLuminance,
+  DELTA_MIN,
+  LUM_MAX,
+  type FlagPalette,
+} from "../src/app/flagColors";
 import { computeStandings } from "../src/engine/standings";
 import { computeBestThirds } from "../src/engine/thirds";
 import { groupStatus } from "../src/engine/status";
@@ -598,4 +610,63 @@ function mkCt12(slots: number): CompiledTournament {
   console.log("[fifa] fifaRank 検証 OK（正常ロード＋不正値を弾く）");
 }
 
-console.log("✅ smoketest（P1-P5 + 2026/thirds + scorers/fifa）通過");
+// ---- 12) フラグ由来の線色（flagColors.ts） ----
+{
+  const palette = flagColorsJson as FlagPalette;
+  const HEX = /^#[0-9a-f]{6}$/;
+  const ct26 = compileTournament(worldcup2026Json);
+
+  // カバレッジ/形式: 両大会の全 team id に有効な HEX 配列がある
+  const ids2022 = [...CT.teamsById.keys()];
+  const ids2026 = [...ct26.teamsById.keys()];
+  assert(validateFlagColors(flagColorsJson, ids2022).length === 0, "12: 2022 全idの旗色カバレッジ");
+  assert(validateFlagColors(flagColorsJson, ids2026).length === 0, "12: 2026 全idの旗色カバレッジ");
+  for (const [id, arr] of Object.entries(palette)) {
+    for (const hex of arr) assert(HEX.test(hex), `12: ${id} の色 ${hex} が #rrggbb`);
+  }
+  // 未登録idはカバレッジ違反として検出される
+  assert(validateFlagColors({ arg: ["#ffffff"] }, ["arg", "zzz"]).length === 1, "12: 未登録idを弾く");
+  assert(validateFlagColors({ arg: ["nothex"] }, ["arg"]).length === 1, "12: 不正HEXを弾く");
+
+  // 全20グループ（2022:8 + 2026:12）の最終順位順で割当を検証
+  const groupOrders: { gid: string; order: string[] }[] = [];
+  for (const gid of CT.groups) {
+    groupOrders.push({ gid: `2022-${gid}`, order: standingsFor(gid).rows.map((r) => r.teamId) });
+  }
+  for (const gid of ct26.groups) {
+    const ms = ct26.matchesByGroup.get(gid)!;
+    const tids = ct26.teamsByGroup.get(gid)!.map((t) => t.id);
+    groupOrders.push({ gid: `2026-${gid}`, order: computeStandings(gid, ms, tids, ct26.meta).rows.map((r) => r.teamId) });
+  }
+
+  for (const { gid, order } of groupOrders) {
+    const cmap = assignGroupColors(order, palette);
+    assert(cmap.size === 4, `12: 組${gid} は4色`);
+    const colors = order.map((id) => cmap.get(id)!);
+    for (const c of colors) assert(HEX.test(c), `12: 組${gid} の色 ${c} が #rrggbb`);
+    // 同グループ内で ΔE>=DELTA_MIN（4本が必ず判別可能）
+    const labs = colors.map((c) => rgbToLab(hexToRgb(c)));
+    for (let a = 0; a < labs.length; a++) {
+      for (let b = a + 1; b < labs.length; b++) {
+        assert(deltaE(labs[a], labs[b]) >= DELTA_MIN, `12: 組${gid} の ${order[a]}/${order[b]} が近すぎ（ΔE<${DELTA_MIN}）`);
+      }
+    }
+    // コントラストガード: どの色も白地に淡すぎない（LUM<=LUM_MAX）
+    for (const c of colors) assert(relLuminance(hexToRgb(c)) <= LUM_MAX, `12: 組${gid} の色 ${c} が淡すぎ（LUM>${LUM_MAX}）`);
+  }
+
+  // 決定性
+  const probe = groupOrders[0].order;
+  assert(
+    JSON.stringify([...assignGroupColors(probe, palette)]) === JSON.stringify([...assignGroupColors(probe, palette)]),
+    "12: 色割当は決定的",
+  );
+  // ヘルパ健全性
+  assert(rgbToHex(hexToRgb("#74acdf")) === "#74acdf", "12: hex 往復");
+  assert(deltaE(rgbToLab(hexToRgb("#000000")), rgbToLab(hexToRgb("#000000"))) === 0, "12: 同色 ΔE=0");
+  assert(deltaE(rgbToLab(hexToRgb("#000000")), rgbToLab(hexToRgb("#ffffff"))) > 90, "12: 黒白 ΔE 大");
+
+  console.log("[colors] 旗色由来の線色 OK（全20組 ΔE分離・コントラストガード・カバレッジ・決定性）");
+}
+
+console.log("✅ smoketest（P1-P5 + 2026/thirds + scorers/fifa + colors）通過");

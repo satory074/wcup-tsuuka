@@ -66,6 +66,13 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!root.querySelector(".view-toggle"), "1: 表示モードトグルは廃止された");
   assert(!!root.querySelector("svg.tl-chart"), "1: タイムラインがバンプチャート(SVG)で描画される");
   assert(root.querySelectorAll(".tl-chart .tl-line").length === 4, "1: 線=4チーム");
+  // 線色は国旗由来＝4本が4色に分離（潰れ回帰の検出。正確なHEXは brittle なので入れない）
+  const lineStrokes = new Set(
+    [...root.querySelectorAll(".tl-chart .tl-line")].map(
+      (el) => (el.getAttribute("style") ?? "").match(/stroke:\s*(#[0-9a-fA-F]{6})/)?.[1] ?? "",
+    ),
+  );
+  assert(lineStrokes.size === 4 && !lineStrokes.has(""), `1: 線色は旗由来で4色に分離（実際: ${[...lineStrokes].join(",")}）`);
   assert(root.querySelectorAll(".tl-chart .tl-dot").length === 72, `1: 頂点=4チーム×(15ゴール+3節末)=72（実際: ${root.querySelectorAll(".tl-chart .tl-dot").length}）`);
   assert(root.querySelectorAll(".tl-chart .tl-dot.is-roundend").length === 12, `1: 節末頂点=4チーム×3節=12（実際: ${root.querySelectorAll(".tl-chart .tl-dot.is-roundend").length}）`);
   assert(root.querySelectorAll(".tl-chart .tl-md").length === 3, "1: 節ラベルは3（第1〜3節）");

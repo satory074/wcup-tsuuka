@@ -9,6 +9,8 @@ import type { Snapshot } from "../engine/timeline";
 import type { ScorerEntry } from "../engine/scorers";
 import type { BestThirdsResult, ThirdEntry } from "../engine/thirds";
 import type { Cup, Scope } from "./url";
+import { assignGroupColors, type FlagPalette } from "./flagColors";
+import flagColors from "../data/flag-colors.json";
 
 /** 一覧カードの安価な進行フェーズ（消化試合数から導出。列挙ベースの analyzeGroup とは別物）。 */
 export type OverviewPhase = "early" | "final-round" | "decided";
@@ -358,9 +360,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   // ---- タイムライン（主役・順位バンプチャート: x=イベント時系列, y=順位, 線=各国の推移） ----
   // 線にすることで全節が1画面に収まり、各国の軌跡を一目で追える（旧: 横スクロールする国旗の格子）。
   // engine の Snapshot[]（各列の standings 並び＝位置）をそのまま座標列に使う＝engine は不変。
-  // Okabe-Ito 由来のカラーブラインド対応パレット（2型・3型色覚でも判別可・グレースケールでも明度差あり）。
-  // 4チーム組では先頭4色＝青/朱/緑/赤紫＝最も判別しやすい組合せのみ使用。黄(#F0E442)は白地で淡いため除外。
-  const TEAM_LINE_COLORS = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9"];
+  // 線色は各国の国旗の色から算出（flagColors.ts）。同組で近すぎる色は ΔE で検出し段階的にずらす。
   const rawTc = (id: string) => tricode(team(id));
 
   // 節末スナップの試合結果を1行に: "MEX 2-0 RSA ／ KOR 2-1 CZE"。
@@ -394,11 +394,9 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const idxByCol = posByCol.map((arr) => new Map(arr.map((id, i) => [id, i])));
     const teamCount = posByCol[0].length;
 
-    // 色は最終順位（最後の列の位置順）で固定割当＝1位から順に同じ色。決定的。
+    // 色は各国の国旗の色から算出（同組内で判別可能に分離）。最終順位順で割当＝決定的。
     const finalOrder = posByCol[cols - 1];
-    const colorOf = new Map<string, string>(
-      finalOrder.map((id, i) => [id, TEAM_LINE_COLORS[i % TEAM_LINE_COLORS.length]]),
-    );
+    const colorOf = assignGroupColors(finalOrder, flagColors as FlagPalette);
     // 最終的に通過圏（上位 adv）に入る国＝主役として強調、圏外＝淡く（selective highlighting）。
     const advancingSet = new Set(finalOrder.slice(0, adv));
 

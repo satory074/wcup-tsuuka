@@ -222,3 +222,31 @@ export function validateTournament(raw: unknown): ValidateResult {
   if (errors.length > 0) return { ok: false, errors };
   return { ok: true, tournament: raw as unknown as Tournament };
 }
+
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+
+/**
+ * 旗色パレット（flag-colors.json）の検証。Zod 不使用の手書き（線色は旗色から算出するため）。
+ * - ルートがオブジェクト
+ * - 各値が「#rrggbb 形式の非空配列」
+ * - teamIds の全 id にエントリがある（カバレッジ＝2026 に新チーム追加時の色未登録を CI で弾く）。
+ * @returns エラーメッセージ配列（空＝正常）
+ */
+export function validateFlagColors(raw: unknown, teamIds: string[]): string[] {
+  const errors: string[] = [];
+  if (!isRecord(raw)) return ["flag-colors のルートがオブジェクトではない"];
+  for (const [id, v] of Object.entries(raw)) {
+    if (!Array.isArray(v) || v.length === 0) {
+      errors.push(`flag-colors["${id}"] が非空配列ではない`);
+      continue;
+    }
+    for (const [i, hex] of v.entries()) {
+      if (typeof hex !== "string" || !HEX_RE.test(hex))
+        errors.push(`flag-colors["${id}"][${i}] が #rrggbb 形式ではない: ${String(hex)}`);
+    }
+  }
+  for (const id of teamIds) {
+    if (!(id in raw)) errors.push(`flag-colors に "${id}" の色が無い（カバレッジ不足）`);
+  }
+  return errors;
+}
