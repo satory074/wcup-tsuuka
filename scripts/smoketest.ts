@@ -469,19 +469,20 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   assert(liveI!.length === iGoals + iRounds, `2026: 組I は 全ゴール(${iGoals})＋節末(${iRounds})`);
   assert(sortedAdv(liveI![liveI!.length - 1].advancing) === "fra,nor", "2026: 組I 第2節後の暫定通過は fra,nor");
   assert(liveI![liveI!.length - 1].kind === "roundEnd", "2026: 組I 最後は消化済み節の節末");
-  // 組A（第1〜2節消化・goals 投入済み）。
+  // 組A（全3節消化・goals 投入済み）。節末は3つ。
   const liveA = buildTimeline(ct26, "A");
   assert(liveA !== null, "2026: 組A も goals がありタイムライン生成");
   const aGoals = ct26.matchesByGroup.get("A")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
   assert(liveA!.length === aGoals + playedRounds(ct26, "A"), `2026: 組A は 全ゴール(${aGoals})＋節末(${playedRounds(ct26, "A")})`);
-  // 組K（第1節のみ消化・goals 投入済み）。節末は1つ。
+  // 組K（第1〜2節消化・goals 投入済み）。節末は2つ。
   const liveK = buildTimeline(ct26, "K");
-  assert(liveK !== null, "2026: 組K も第1節消化＋goals でタイムライン生成");
+  assert(liveK !== null, "2026: 組K も消化済み試合＋goals でタイムライン生成");
   const kGoals = ct26.matchesByGroup.get("K")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
-  assert(playedRounds(ct26, "K") === 1, "2026: 組K は第1節のみ消化");
-  assert(liveK!.length === kGoals + 1, `2026: 組K は 全ゴール(${kGoals})＋節末(1)`);
+  assert(playedRounds(ct26, "K") === 2, "2026: 組K は第1〜2節消化");
+  assert(liveK!.length === kGoals + playedRounds(ct26, "K"), `2026: 組K は 全ゴール(${kGoals})＋節末(${playedRounds(ct26, "K")})`);
 
-  // 実データ best-thirds: グループステージ進行中＝全エントリ contention・undecided
+  // 実データ best-thirds: グループステージ進行中（一部の組が消化完了）。
+  // 完了した組の3位は groupComplete、未完の組は contention。未完組がある限り全体は未確定。
   const sbg = new Map<GroupId, Standings>();
   for (const gid of ct26.groups) {
     const ms = ct26.matchesByGroup.get(gid)!;
@@ -491,8 +492,11 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   const bt = computeBestThirds(ct26, sbg);
   assert(bt.slots === 8, "2026: best-thirds slots=8");
   assert(bt.entries.length >= 1 && bt.entries.length <= 12, "2026: 3位エントリは1..12組");
-  assert(bt.entries.every((e) => !e.groupComplete && e.state === "contention"), "2026: 進行中は全エントリ contention");
-  assert(bt.undecided, "2026: 進行中は未確定");
+  const complete26 = ct26.groups.filter((g) => ct26.matchesByGroup.get(g)!.every((m) => m.score != null));
+  assert(complete26.length >= 1, "2026: 1組以上が全消化");
+  assert(bt.entries.every((e) => e.groupComplete === complete26.includes(e.group)), "2026: groupComplete はデータと一致");
+  assert(bt.entries.filter((e) => !e.groupComplete).every((e) => e.state === "contention"), "2026: 未完の組の3位は contention");
+  assert(bt.undecided, "2026: 未完の組が残る間は未確定");
   assert(JSON.stringify(computeBestThirds(ct26, sbg)) === JSON.stringify(computeBestThirds(ct26, sbg)), "2026: best-thirds 決定的");
 
   // 2022（advanceBestThirds 未指定）は空を返す（no-regression 契約）
@@ -500,7 +504,7 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   for (const gid of CT.groups) sbg22.set(gid, standingsFor(gid));
   const bt22 = computeBestThirds(CT, sbg22);
   assert(bt22.slots === 0 && bt22.entries.length === 0 && !bt22.undecided, "2022: best-thirds は空（slots=0）");
-  console.log("[thirds] 2026 実データ best-thirds OK（進行中=全組暫定）＋ 2022 空");
+  console.log("[thirds] 2026 実データ best-thirds OK（進行中=一部完了・全体は暫定）＋ 2022 空");
 }
 
 // ---- 9) ベスト3位の単体（合成12組フィクスチャ） ----

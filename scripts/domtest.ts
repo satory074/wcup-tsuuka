@@ -198,13 +198,13 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
   assert(!!root.querySelector("#best-thirds .bt-note"), "8: 進行中は『全行が暫定』注記を1か所に集約");
-  // 2026 組A は第1〜2節消化＝final-round（最終節のみ未消化）＝シナリオパネル表示（チーム条件カード）
-  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 final-round はシナリオパネル表示");
-  assert(!!root.querySelector("#scenario .scenario-teams"), "8: final-round は最終節チーム条件カード");
-  // まだ複数節残る組（K＝第1節のみ消化）は early＝シナリオが定まらずパネル非表示
+  // 2026 組A は全3節消化＝decided＝シナリオパネルに「決着の分かれ目」を表示
+  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 decided(組A)はシナリオパネル表示");
+  assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "8: 2026 decided は決着の分かれ目を表示");
+  // 最終節のみ未消化の組（K＝第1〜2節消化）は final-round＝最終節チーム条件カードを表示
   click(dom, root.querySelector<HTMLElement>('.group-tab[data-group="K"]')!);
-  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === true, "8: 2026 早期(組K)はシナリオパネル非表示");
-  assert((root.querySelector("#scenario")?.innerHTML ?? "") === "", "8: 早期は #scenario 空");
+  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 final-round(組K)はシナリオパネル表示");
+  assert(!!root.querySelector("#scenario .scenario-teams"), "8: 2026 final-round は最終節チーム条件カード");
   console.log("[dom] 大会切替 ?cup=2026（12組・3位比較パネル）OK");
 }
 

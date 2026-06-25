@@ -5,7 +5,7 @@
     "advancePerGroup": 2,
     "advanceBestThirds": 8,
     "points": { "win": 3, "draw": 1, "loss": 0 },
-    "dataLastUpdated": "2026-06-23",
+    "dataLastUpdated": "2026-06-25",
     "source": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup",
     "disclaimer": "2026年北中米大会（48カ国・12組）の非公式可視化です。グループステージ進行中につき、消化済みの試合のみ実スコアを反映しています（残りは未消化）。各組上位2＋3位の上位8の通過判定は暫定です。"
   },
@@ -89,22 +89,22 @@
     { "id": "A-2", "group": "A", "matchday": 1, "kickoff": "2026-06-11T20:00", "home": "kor", "away": "cze", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 59, "side": "away", "player": "クレイチー" }, { "minute": 67, "side": "home", "player": "ファン・インボム" }, { "minute": 80, "side": "home", "player": "オ・ヒョンギュ" } ] },
     { "id": "A-3", "group": "A", "matchday": 2, "kickoff": "2026-06-18T12:00", "home": "cze", "away": "rsa", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 6, "side": "home", "player": "サディレク" }, { "minute": 83, "side": "away", "player": "モコエナ(PK)" } ] },
     { "id": "A-4", "group": "A", "matchday": 2, "kickoff": "2026-06-18T19:00", "home": "mex", "away": "kor", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 50, "side": "home", "player": "ロモ" } ] },
-    { "id": "A-5", "group": "A", "matchday": 3, "kickoff": "2026-06-24T19:00", "home": "cze", "away": "mex" },
-    { "id": "A-6", "group": "A", "matchday": 3, "kickoff": "2026-06-24T19:00", "home": "rsa", "away": "kor" },
+    { "id": "A-5", "group": "A", "matchday": 3, "kickoff": "2026-06-24T19:00", "home": "cze", "away": "mex", "score": { "home": 0, "away": 3 }, "goals": [ { "minute": 55, "side": "away", "player": "チャベス" }, { "minute": 61, "side": "away", "player": "キニョネス" }, { "minute": 90, "plus": 4, "side": "away", "player": "フィダルゴ" } ] },
+    { "id": "A-6", "group": "A", "matchday": 3, "kickoff": "2026-06-24T19:00", "home": "rsa", "away": "kor", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 63, "side": "home", "player": "マセコ" } ] },
 
     { "id": "B-1", "group": "B", "matchday": 1, "kickoff": "2026-06-12T15:00", "home": "can", "away": "bih", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 21, "side": "away", "player": "ルキッチ" }, { "minute": 78, "side": "home", "player": "ラリン" } ] },
     { "id": "B-2", "group": "B", "matchday": 1, "kickoff": "2026-06-13T12:00", "home": "qat", "away": "sui", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 17, "side": "away", "player": "エンボロ(PK)" }, { "minute": 90, "plus": 4, "side": "home", "player": "ムハイム(OG)" } ] },
     { "id": "B-3", "group": "B", "matchday": 2, "kickoff": "2026-06-18T12:00", "home": "sui", "away": "bih", "score": { "home": 4, "away": 1 }, "goals": [ { "minute": 74, "side": "home", "player": "マンザンビ" }, { "minute": 84, "side": "home", "player": "バルガス" }, { "minute": 90, "side": "home", "player": "マンザンビ" }, { "minute": 90, "plus": 3, "side": "away", "player": "マフミッチ" }, { "minute": 90, "plus": 7, "side": "home", "player": "シャカ(PK)" } ] },
     { "id": "B-4", "group": "B", "matchday": 2, "kickoff": "2026-06-18T15:00", "home": "can", "away": "qat", "score": { "home": 6, "away": 0 }, "goals": [ { "minute": 16, "side": "home", "player": "ラリン" }, { "minute": 29, "side": "home", "player": "ダビド" }, { "minute": 45, "plus": 3, "side": "home", "player": "ダビド" }, { "minute": 64, "side": "home", "player": "サリバ" }, { "minute": 75, "side": "home", "player": "マナイ(OG)" }, { "minute": 90, "plus": 2, "side": "home", "player": "ダビド" } ] },
-    { "id": "B-5", "group": "B", "matchday": 3, "kickoff": "2026-06-24T12:00", "home": "sui", "away": "can" },
-    { "id": "B-6", "group": "B", "matchday": 3, "kickoff": "2026-06-24T12:00", "home": "bih", "away": "qat" },
+    { "id": "B-5", "group": "B", "matchday": 3, "kickoff": "2026-06-24T12:00", "home": "sui", "away": "can", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 46, "side": "home", "player": "バルガス" }, { "minute": 57, "side": "home", "player": "マンザンビ" }, { "minute": 76, "side": "away", "player": "ダビド" } ] },
+    { "id": "B-6", "group": "B", "matchday": 3, "kickoff": "2026-06-24T12:00", "home": "bih", "away": "qat", "score": { "home": 3, "away": 1 }, "goals": [ { "minute": 29, "side": "home", "player": "アライベゴビッチ" }, { "minute": 34, "side": "home", "player": "アブナダ(OG)" }, { "minute": 42, "side": "away", "player": "アル＝ハイドス" }, { "minute": 80, "side": "home", "player": "マフミッチ" } ] },
 
     { "id": "C-1", "group": "C", "matchday": 1, "kickoff": "2026-06-13T18:00", "home": "bra", "away": "mar", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 21, "side": "away", "player": "サイビリ" }, { "minute": 32, "side": "home", "player": "ヴィニシウス" } ] },
     { "id": "C-2", "group": "C", "matchday": 1, "kickoff": "2026-06-13T21:00", "home": "hai", "away": "sco", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 28, "side": "away", "player": "マッギン" } ] },
     { "id": "C-3", "group": "C", "matchday": 2, "kickoff": "2026-06-19T18:00", "home": "sco", "away": "mar", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 2, "side": "away", "player": "サイビリ" } ] },
     { "id": "C-4", "group": "C", "matchday": 2, "kickoff": "2026-06-19T20:30", "home": "bra", "away": "hai", "score": { "home": 3, "away": 0 }, "goals": [ { "minute": 23, "side": "home", "player": "クーニャ" }, { "minute": 36, "side": "home", "player": "クーニャ" }, { "minute": 45, "plus": 3, "side": "home", "player": "ヴィニシウス" } ] },
-    { "id": "C-5", "group": "C", "matchday": 3, "kickoff": "2026-06-24T18:00", "home": "sco", "away": "bra" },
-    { "id": "C-6", "group": "C", "matchday": 3, "kickoff": "2026-06-24T18:00", "home": "mar", "away": "hai" },
+    { "id": "C-5", "group": "C", "matchday": 3, "kickoff": "2026-06-24T18:00", "home": "sco", "away": "bra", "score": { "home": 0, "away": 3 }, "goals": [ { "minute": 7, "side": "away", "player": "ヴィニシウス" }, { "minute": 45, "plus": 3, "side": "away", "player": "ヴィニシウス" }, { "minute": 60, "side": "away", "player": "クーニャ" } ] },
+    { "id": "C-6", "group": "C", "matchday": 3, "kickoff": "2026-06-24T18:00", "home": "mar", "away": "hai", "score": { "home": 4, "away": 2 }, "goals": [ { "minute": 10, "side": "away", "player": "ブヌ(OG)" }, { "minute": 39, "side": "home", "player": "ハキミ" }, { "minute": 43, "side": "away", "player": "イシドル" }, { "minute": 45, "plus": 1, "side": "home", "player": "サイビリ" }, { "minute": 78, "side": "home", "player": "ラヒミ" }, { "minute": 89, "side": "home", "player": "ヤシン" } ] },
 
     { "id": "D-1", "group": "D", "matchday": 1, "kickoff": "2026-06-12T18:00", "home": "usa", "away": "par", "score": { "home": 4, "away": 1 }, "goals": [ { "minute": 7, "side": "home", "player": "ボバディージャ(OG)" }, { "minute": 31, "side": "home", "player": "バログン" }, { "minute": 45, "plus": 5, "side": "home", "player": "バログン" }, { "minute": 73, "side": "away", "player": "マウリシオ" }, { "minute": 90, "plus": 8, "side": "home", "player": "レイナ" } ] },
     { "id": "D-2", "group": "D", "matchday": 1, "kickoff": "2026-06-13T21:00", "home": "aus", "away": "tur", "score": { "home": 2, "away": 0 }, "goals": [ { "minute": 27, "side": "home", "player": "イランクンダ" }, { "minute": 75, "side": "home", "player": "メトカーフ" } ] },
@@ -117,8 +117,8 @@
     { "id": "E-2", "group": "E", "matchday": 1, "kickoff": "2026-06-14T19:00", "home": "civ", "away": "ecu", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 90, "side": "home", "player": "ディアロ" } ] },
     { "id": "E-3", "group": "E", "matchday": 2, "kickoff": "2026-06-20T16:00", "home": "ger", "away": "civ", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 30, "side": "away", "player": "ケシエ" }, { "minute": 68, "side": "home", "player": "ウンダフ" }, { "minute": 90, "plus": 4, "side": "home", "player": "ウンダフ" } ] },
     { "id": "E-4", "group": "E", "matchday": 2, "kickoff": "2026-06-20T19:00", "home": "ecu", "away": "cuw", "score": { "home": 0, "away": 0 }, "goals": [] },
-    { "id": "E-5", "group": "E", "matchday": 3, "kickoff": "2026-06-25T16:00", "home": "cuw", "away": "civ" },
-    { "id": "E-6", "group": "E", "matchday": 3, "kickoff": "2026-06-25T16:00", "home": "ecu", "away": "ger" },
+    { "id": "E-5", "group": "E", "matchday": 3, "kickoff": "2026-06-25T16:00", "home": "cuw", "away": "civ", "score": { "home": 0, "away": 2 }, "goals": [ { "minute": 7, "side": "away", "player": "ペペ" }, { "minute": 64, "side": "away", "player": "ペペ" } ] },
+    { "id": "E-6", "group": "E", "matchday": 3, "kickoff": "2026-06-25T16:00", "home": "ecu", "away": "ger", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 2, "side": "away", "player": "サネ" }, { "minute": 9, "side": "home", "player": "アングロ" }, { "minute": 77, "side": "home", "player": "プラタ" } ] },
 
     { "id": "F-1", "group": "F", "matchday": 1, "kickoff": "2026-06-14T15:00", "home": "ned", "away": "jpn", "score": { "home": 2, "away": 2 }, "goals": [ { "minute": 50, "side": "home", "player": "ファン・ダイク" }, { "minute": 57, "side": "away", "player": "中村敬斗" }, { "minute": 64, "side": "home", "player": "サマービル" }, { "minute": 88, "side": "away", "player": "鎌田大地" } ] },
     { "id": "F-2", "group": "F", "matchday": 1, "kickoff": "2026-06-14T20:00", "home": "swe", "away": "tun", "score": { "home": 5, "away": 1 }, "goals": [ { "minute": 7, "side": "home", "player": "アヤリ" }, { "minute": 30, "side": "home", "player": "イサク" }, { "minute": 43, "side": "away", "player": "レキク" }, { "minute": 59, "side": "home", "player": "ヨケレス" }, { "minute": 84, "side": "home", "player": "スバンベリ" }, { "minute": 90, "plus": 6, "side": "home", "player": "アヤリ" } ] },
@@ -157,15 +157,15 @@
 
     { "id": "K-1", "group": "K", "matchday": 1, "kickoff": "2026-06-17T12:00", "home": "por", "away": "cod", "score": { "home": 1, "away": 1 }, "goals": [ { "minute": 6, "side": "home", "player": "ネベス" }, { "minute": 45, "plus": 5, "side": "away", "player": "ウィッサ" } ] },
     { "id": "K-2", "group": "K", "matchday": 1, "kickoff": "2026-06-17T20:00", "home": "uzb", "away": "col", "score": { "home": 1, "away": 3 }, "goals": [ { "minute": 40, "side": "away", "player": "ムニョス" }, { "minute": 60, "side": "home", "player": "ファイズラエフ" }, { "minute": 65, "side": "away", "player": "ディアス" }, { "minute": 90, "plus": 9, "side": "away", "player": "カンパス" } ] },
-    { "id": "K-3", "group": "K", "matchday": 2, "kickoff": "2026-06-23T12:00", "home": "por", "away": "uzb" },
-    { "id": "K-4", "group": "K", "matchday": 2, "kickoff": "2026-06-23T20:00", "home": "col", "away": "cod" },
+    { "id": "K-3", "group": "K", "matchday": 2, "kickoff": "2026-06-23T12:00", "home": "por", "away": "uzb", "score": { "home": 5, "away": 0 }, "goals": [ { "minute": 6, "side": "home", "player": "ロナウド" }, { "minute": 17, "side": "home", "player": "ヌノ・メンデス" }, { "minute": 39, "side": "home", "player": "ロナウド" }, { "minute": 60, "side": "home", "player": "ネマトフ(OG)" }, { "minute": 87, "side": "home", "player": "レオン" } ] },
+    { "id": "K-4", "group": "K", "matchday": 2, "kickoff": "2026-06-23T20:00", "home": "col", "away": "cod", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 76, "side": "home", "player": "ムニョス" } ] },
     { "id": "K-5", "group": "K", "matchday": 3, "kickoff": "2026-06-27T19:30", "home": "col", "away": "por" },
     { "id": "K-6", "group": "K", "matchday": 3, "kickoff": "2026-06-27T19:30", "home": "cod", "away": "uzb" },
 
     { "id": "L-1", "group": "L", "matchday": 1, "kickoff": "2026-06-17T15:00", "home": "eng", "away": "cro", "score": { "home": 4, "away": 2 }, "goals": [ { "minute": 12, "side": "home", "player": "ケイン(PK)" }, { "minute": 36, "side": "away", "player": "バトゥリナ" }, { "minute": 42, "side": "home", "player": "ケイン" }, { "minute": 45, "plus": 5, "side": "away", "player": "ムサ" }, { "minute": 47, "side": "home", "player": "ベリンガム" }, { "minute": 85, "side": "home", "player": "ラッシュフォード" } ] },
     { "id": "L-2", "group": "L", "matchday": 1, "kickoff": "2026-06-17T19:00", "home": "gha", "away": "pan", "score": { "home": 1, "away": 0 }, "goals": [ { "minute": 90, "plus": 5, "side": "home", "player": "イレンキー" } ] },
-    { "id": "L-3", "group": "L", "matchday": 2, "kickoff": "2026-06-23T16:00", "home": "eng", "away": "gha" },
-    { "id": "L-4", "group": "L", "matchday": 2, "kickoff": "2026-06-23T19:00", "home": "pan", "away": "cro" },
+    { "id": "L-3", "group": "L", "matchday": 2, "kickoff": "2026-06-23T16:00", "home": "eng", "away": "gha", "score": { "home": 0, "away": 0 }, "goals": [] },
+    { "id": "L-4", "group": "L", "matchday": 2, "kickoff": "2026-06-23T19:00", "home": "pan", "away": "cro", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 54, "side": "away", "player": "ブディミル" } ] },
     { "id": "L-5", "group": "L", "matchday": 3, "kickoff": "2026-06-27T17:00", "home": "pan", "away": "eng" },
     { "id": "L-6", "group": "L", "matchday": 3, "kickoff": "2026-06-27T17:00", "home": "cro", "away": "gha" }
   ]
