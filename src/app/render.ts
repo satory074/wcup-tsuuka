@@ -503,6 +503,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     // 各レーンに「そのチームが戦った試合結果」が乗るので、対戦していない第3チームのレーンと重ならない（中点方式の紛らわしさを解消）。
     // 4チーム×1試合＝節ごと2試合→4チップ。レーンは rowGap=72 間隔・チップ高 18 なので縦に重ならない。
     // 両トリコードを各チームの線色で色分け＝乗っているレーン＋色で「自分の試合」が読める。等幅フォント(13px)でチップ幅を概算＝決定的。
+    // レーンの当該チームは常に左（自分視点のスコア）＝away 側のレーンでは home/away を反転して描く。
     let roundScores = "";
     const CHAR_W = 7.4;
     const CHIP_H = 18;
@@ -513,13 +514,17 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       const x = xAt(ci) + 12;
       const idx = idxByCol[ci];
       for (const rr of snap.roundResults) {
-        const cH = colorOf.get(rr.homeId)!;
-        const cA = colorOf.get(rr.awayId)!;
-        const inner = `<tspan style="fill:${cH}">${esc(rawTc(rr.homeId))}</tspan> ${rr.homeScore}-${rr.awayScore} <tspan style="fill:${cA}">${esc(rawTc(rr.awayId))}</tspan>`;
-        const w = (rawTc(rr.homeId).length + rawTc(rr.awayId).length + 5) * CHAR_W + 12;
         for (const tid of [rr.homeId, rr.awayId]) {
           const pos = idx.get(tid);
           if (pos == null) continue;
+          // 自分のレーンには「自分を左」に置く＝tid が away 側ならスコア・並びを反転（自分視点）。
+          const selfHome = tid === rr.homeId;
+          const selfId = tid;
+          const oppId = selfHome ? rr.awayId : rr.homeId;
+          const selfScore = selfHome ? rr.homeScore : rr.awayScore;
+          const oppScore = selfHome ? rr.awayScore : rr.homeScore;
+          const inner = `<tspan style="fill:${colorOf.get(selfId)!}">${esc(rawTc(selfId))}</tspan> ${selfScore}-${oppScore} <tspan style="fill:${colorOf.get(oppId)!}">${esc(rawTc(oppId))}</tspan>`;
+          const w = (rawTc(selfId).length + rawTc(oppId).length + 5) * CHAR_W + 12;
           const cy = yAt(pos);
           roundScores += `<rect class="tl-round-chip" x="${f1(x - 5)}" y="${f1(cy - 9)}" width="${f1(w)}" height="${CHIP_H}" rx="4" />`;
           roundScores += `<text class="tl-round-score" x="${f1(x)}" y="${f1(cy)}" dominant-baseline="middle" text-anchor="start">${inner}</text>`;
