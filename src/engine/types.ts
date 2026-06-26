@@ -138,3 +138,48 @@ export interface Standings {
   /** 抽選（drawing of lots）でしか決着しない並びが残ったか */
   undecided: boolean;
 }
+
+// ---- 決勝トーナメント（ノックアウト）ブラケット ----
+// テンプレート（スロット定義）はエンジン定数。チームは standings/best-thirds から解決する（捏造しない）。
+
+export type KoRound = "R32" | "R16" | "QF" | "SF" | "3P" | "F";
+
+/** ブラケットの片側スロット（チーム未解決の定義） */
+export type KoSlot =
+  | { kind: "winner"; group: GroupId } // 組1位
+  | { kind: "runnerup"; group: GroupId } // 組2位
+  | { kind: "third"; groups: GroupId[] } // 対象組の最良3位（割当はしない＝集合のまま）
+  | { kind: "winnerOf"; matchId: string } // 前ラウンドの勝者
+  | { kind: "loserOf"; matchId: string }; // 前ラウンドの敗者（3決用）
+
+/** ブラケットのテンプレート1試合 */
+export interface KoMatch {
+  id: string;
+  round: KoRound;
+  /** 公式の試合番号（2026 のみ "73".."104"。R16テンプレは未設定）。表示用。 */
+  no?: string;
+  slot1: KoSlot;
+  slot2: KoSlot;
+}
+
+/** 解決後の片側（teamId が無ければ未確定でラベル表示） */
+export interface KoSide {
+  teamId?: string;
+  /** スロットラベル（"1A" / "2B" / "3位 C/D/F/G/H" / "M75 勝者"）。teamId が無いとき表示。 */
+  label: string;
+  undecided: boolean;
+}
+
+export interface KoResolvedMatch {
+  id: string;
+  round: KoRound;
+  no?: string;
+  side1: KoSide;
+  side2: KoSide;
+}
+
+export interface KnockoutBracket {
+  /** テンプレートに存在するラウンドを表示順で */
+  rounds: KoRound[];
+  matches: KoResolvedMatch[];
+}

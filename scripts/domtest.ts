@@ -198,6 +198,13 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
   assert(!!root.querySelector("#best-thirds .bt-note"), "8: 進行中は『全行が暫定』注記を1か所に集約");
+  // 決勝トーナメント（ブラケット）: 2026=R32 全32試合・R32は16・確定枠は実チーム・3位枠はラベル・暫定3位プール。
+  assert(!!root.querySelector("#knockout .ko-bracket"), "8: 決勝トーナメント ブラケットがある");
+  assert(root.querySelectorAll("#knockout .ko-match").length === 32, `8: KO 全32試合（実際: ${root.querySelectorAll("#knockout .ko-match").length}）`);
+  assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-match").length === 16, "8: KO R32=16試合");
+  assert(root.querySelectorAll("#knockout .ko-side.is-team[data-team]").length >= 6, "8: 確定組由来の枠は実チーム（data-team）");
+  assert([...root.querySelectorAll("#knockout .ko-side.is-undecided")].some((e) => (e.textContent ?? "").startsWith("3位")), "8: 3位枠は集合ラベル表示");
+  assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "8: 暫定通過の3位プールを併記");
   // 2026 組A は全3節消化＝decided＝シナリオパネルに「決着の分かれ目」を表示
   assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 decided(組A)はシナリオパネル表示");
   assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "8: 2026 decided は決着の分かれ目を表示");
@@ -216,6 +223,11 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".cup-tab").length === 3, "8b: 大会タブ3");
   assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2022", "8b: 既定は2022");
   assert((root.querySelector("#best-thirds")?.innerHTML ?? "").trim() === "", "8b: 2022 は best-thirds 空");
+  // 決勝トーナメント: 2022=R16 全16試合・R16=8・全消化なので R16 の16枠すべて実チーム・3位プールなし。
+  assert(root.querySelectorAll("#knockout .ko-match").length === 16, `8b: 2022 KO 全16試合（実際: ${root.querySelectorAll("#knockout .ko-match").length}）`);
+  assert(root.querySelectorAll("#knockout .ko-round-R16 .ko-match").length === 8, "8b: 2022 KO R16=8試合");
+  assert(root.querySelectorAll("#knockout .ko-round-R16 .ko-side.is-team[data-team]").length === 16, "8b: 2022 R16は全16枠が実チーム");
+  assert(!root.querySelector("#knockout .ko-pool"), "8b: 2022 は3位プールなし");
   console.log("[dom] 2022 は best-thirds 非表示 OK");
 }
 
@@ -256,6 +268,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".overview-grid .mini-group .row-advance").length === 16, "9: 各組上位2が緑=計16");
   assert(root.querySelectorAll(".overview-grid .mini-group .mini-fifa").length === 32, "9: 一覧カードに FIFA順位を併記（8組×4）");
   assert(!root.querySelector(".overview-bt"), "9: 2022 はベスト3位表なし");
+  // 決勝トーナメントは一覧でも全幅表示（両スコープ要件）。2022=R16 全16試合。
+  assert(root.querySelectorAll("#knockout .ko-match").length === 16, "9: 一覧でも決勝トーナメント（2022 R16=16）が表示");
   // カード E をクリック → 詳細（E）へドリルイン
   const cardE = root.querySelector<HTMLElement>('.mini-group[data-group="E"]')!;
   click(dom, cardE);
@@ -276,6 +290,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".overview-grid .mini-group").length === 12, `9b: 2026 はカード12（実際: ${root.querySelectorAll(".overview-grid .mini-group").length}）`);
   assert(!!root.querySelector(".overview-bt .bt-table"), "9b: 一覧にベスト3位表がある");
   assert(!!root.querySelector(".overview-bt .bt-note"), "9b: 一覧の3位比較に暫定注記がある");
+  // 決勝トーナメントは一覧でも全幅表示。2026=R32 全32試合＋暫定3位プール。
+  assert(root.querySelectorAll("#knockout .ko-match").length === 32, "9b: 一覧でも決勝トーナメント（2026 R32=32）が表示");
+  assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "9b: 一覧でも暫定3位プールを併記");
   console.log("[dom] 一覧 2026（12カード・ベスト3位表）OK");
 }
 

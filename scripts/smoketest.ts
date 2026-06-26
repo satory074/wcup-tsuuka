@@ -20,6 +20,7 @@ import {
 } from "../src/app/flagColors";
 import { computeStandings } from "../src/engine/standings";
 import { computeBestThirds } from "../src/engine/thirds";
+import { computeKnockout } from "../src/engine/knockout";
 import { groupStatus } from "../src/engine/status";
 import { analyzeGroup } from "../src/engine/scenario/qualify";
 import { buildTimeline, clockOf, kickoffMinutes, scoreAtClock } from "../src/engine/timeline";
@@ -505,6 +506,64 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   const bt22 = computeBestThirds(CT, sbg22);
   assert(bt22.slots === 0 && bt22.entries.length === 0 && !bt22.undecided, "2022: best-thirds は空（slots=0）");
   console.log("[thirds] 2026 実データ best-thirds OK（進行中=一部完了・全体は暫定）＋ 2022 空");
+}
+
+// ---- 8.5) 決勝トーナメント（ブラケット） knockout.ts ----
+{
+  const sbgOf = (ct: CompiledTournament): Map<GroupId, Standings> => {
+    const m = new Map<GroupId, Standings>();
+    for (const gid of ct.groups) {
+      const ms = ct.matchesByGroup.get(gid)!;
+      const tids = ct.teamsByGroup.get(gid)!.map((t) => t.id);
+      m.set(gid, computeStandings(gid, ms, tids, ct.meta));
+    }
+    return m;
+  };
+
+  // 2026 = R32（48カ国・3位上位8）。進行中＝確定組(A〜F)由来は実チーム、未確定組(G〜L)/3位枠はラベル。
+  const ct26 = compileTournament(worldcup2026Json);
+  const sbg = sbgOf(ct26);
+  const ko = computeKnockout(ct26, sbg);
+  assert(ko.matches.length === 32, `KO 2026: 全32試合（実際 ${ko.matches.length}）`);
+  assert(ko.matches.filter((m) => m.round === "R32").length === 16, "KO 2026: R32=16試合");
+  assert(JSON.stringify(ko.rounds) === JSON.stringify(["R32", "R16", "QF", "SF", "3P", "F"]), "KO 2026: 6ラウンド");
+  // 不変条件（捏造しない）: teamId があれば確定 / 無ければ未確定。解決チームは実在。
+  const sides26 = ko.matches.flatMap((m) => [m.side1, m.side2]);
+  assert(sides26.every((s) => (s.teamId ? !s.undecided : s.undecided)), "KO 2026: teamId↔確定 の整合");
+  assert(sides26.every((s) => !s.teamId || ct26.teamsById.has(s.teamId)), "KO 2026: 解決チームは実在");
+  const byId = new Map(ko.matches.map((m) => [m.id, m]));
+  // 確定組: M73=2A vs 2B（両確定）、M75 の W-F=ned（組F1位）。
+  assert(!!byId.get("73")!.side1.teamId && !!byId.get("73")!.side2.teamId, "KO 2026: M73(2A,2B)は両方確定");
+  assert(byId.get("75")!.side1.teamId === "ned", "KO 2026: M75 の組F1位は ned");
+  // 未確定組: M83=2K vs 2L（両未確定）。
+  assert(byId.get("83")!.side1.undecided && byId.get("83")!.side2.undecided, "KO 2026: M83(2K,2L)は未確定");
+  // 3位枠8つは集合ラベルのまま（割当しない方針）。
+  for (const id of ["74", "77", "79", "80", "81", "82", "85", "87"]) {
+    const s = byId.get(id)!.side2;
+    assert(s.undecided && !s.teamId && s.label.startsWith("3位"), `KO 2026: M${id} の3位枠はラベル表示`);
+  }
+  // R16 以降は前ラウンド勝者/敗者＝KO結果が無いので全て未確定。
+  assert(
+    ko.matches.filter((m) => m.round !== "R32").every((m) => m.side1.undecided && m.side2.undecided),
+    "KO 2026: R16以降は全て未確定",
+  );
+  assert(JSON.stringify(computeKnockout(ct26, sbg)) === JSON.stringify(ko), "KO 2026: 決定的");
+
+  // 2022 / 2018 = R16（全消化＝R16の全枠が実チーム、QF以降は未確定）。組H フェアプレー解決も実チームに。
+  for (const [label, json] of [["2022", worldcupJson], ["2018", worldcup2018Json]] as const) {
+    const ct = compileTournament(json);
+    const ko2 = computeKnockout(ct, sbgOf(ct));
+    assert(ko2.matches.length === 16, `KO ${label}: 全16試合`);
+    assert(ko2.matches.filter((m) => m.round === "R16").length === 8, `KO ${label}: R16=8試合`);
+    assert(JSON.stringify(ko2.rounds) === JSON.stringify(["R16", "QF", "SF", "3P", "F"]), `KO ${label}: 5ラウンド`);
+    const r16 = ko2.matches.filter((m) => m.round === "R16");
+    assert(r16.every((m) => !!m.side1.teamId && !!m.side2.teamId), `KO ${label}: R16は全枠が実チーム（全消化）`);
+    assert(
+      ko2.matches.filter((m) => m.round !== "R16").every((m) => !m.side1.teamId && !m.side2.teamId),
+      `KO ${label}: QF以降は未確定`,
+    );
+  }
+  console.log("[knockout] ブラケット OK（2026 R32=32試合・確定枠解決・3位ラベル・整合／2018-2022 R16 全枠解決）");
 }
 
 // ---- 9) ベスト3位の単体（合成12組フィクスチャ） ----

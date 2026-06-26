@@ -1430,6 +1430,138 @@ table.bt-table {
   border-radius: 999px;
 }
 
+/* ---- 決勝トーナメント（ブラケット）。一覧・詳細の両方で全幅表示 ---- */
+#knockout {
+  margin-top: var(--sp-8);
+}
+#knockout:empty {
+  display: none;
+}
+/* 暫定通過3位プール（凡例） */
+.ko-pool {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-2) 0 var(--sp-4);
+  font-size: var(--ts-sm);
+}
+.ko-pool-label {
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.ko-pool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--advance-edge);
+  background: var(--advance-soft);
+  color: var(--advance-ink);
+  border-radius: 999px;
+  font-family: var(--font-num);
+  font-weight: 700;
+}
+.ko-pool-grp {
+  font-size: var(--ts-2xs);
+  color: var(--ink-faint);
+}
+.ko-pool-note {
+  color: var(--ink-faint);
+  font-size: var(--ts-xs);
+}
+/* 横スクロール容器（狭幅では横スクロール、広幅では全列が収まる） */
+.ko-scroll {
+  overflow-x: auto;
+  padding-bottom: var(--sp-2);
+}
+.ko-bracket {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: stretch;
+  min-width: max-content;
+}
+.ko-round {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  min-width: 132px;
+}
+.ko-round-head {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--ts-xs);
+  color: var(--ink-soft);
+  text-transform: none;
+  text-align: center;
+  padding-bottom: var(--sp-1);
+  margin-bottom: var(--sp-2);
+  border-bottom: 2px solid var(--border-strong);
+}
+/* 各ラウンドの試合を縦に均等配置＝後続ラウンドが2つの供給元の中間に並ぶ（コネクタ線は引かない） */
+.ko-round-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  flex: 1 1 auto;
+  gap: var(--sp-2);
+}
+.ko-match {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-card);
+  padding: 0.25rem 0.3rem 0.3rem;
+}
+.ko-no {
+  display: block;
+  font-family: var(--font-num);
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  line-height: 1;
+  margin-bottom: 0.15rem;
+}
+.ko-sides {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.ko-side {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.3rem;
+  border-radius: var(--r-sm);
+  font-size: var(--ts-sm);
+  line-height: 1.15;
+}
+.ko-side.is-team {
+  background: var(--advance-soft);
+  color: var(--advance-ink);
+  cursor: default;
+}
+.ko-side.is-undecided {
+  color: var(--ink-faint);
+  border: 1px dashed var(--border-strong);
+  font-family: var(--font-num);
+  font-size: var(--ts-xs);
+}
+.ko-flag {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.ko-code {
+  font-family: var(--font-num);
+  font-weight: 700;
+}
+/* ホバー連動（同チームの全セル）。既存 .is-hl と同じ思想。 */
+.ko-side.is-hl,
+.ko-pool-chip.is-hl {
+  outline: 2px solid var(--pitch);
+  outline-offset: 1px;
+}
+
 /* ---- F-7: ダークモード（OS 設定がダークのとき自前の暗色トークンに切替） ----
    ブラウザの自動反転だと緑の通過表現が濁るため、意図した暗色を持つ。色は CSS 変数だけで切替。 */
 @media (prefers-color-scheme: dark) {

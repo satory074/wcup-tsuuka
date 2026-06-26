@@ -1,7 +1,7 @@
 // 唯一の DOM 層。グループ選択・順位表・通過ステータス・タイムライン（主役）・
 // 通過条件シナリオ（折りたたみ）を描画する。
 // イベントはルートの click リスナーで data-action 委譲（kisei/moshirasu パターン）。
-import type { CompiledTournament, GroupId, Standings } from "../engine/types";
+import type { CompiledTournament, GroupId, KnockoutBracket, KoResolvedMatch, KoRound, KoSide, Standings } from "../engine/types";
 import { rankMark, tricode } from "../engine/format";
 import type { TeamStatus } from "../engine/status";
 import type { GroupQualification, TeamQualification, BoundaryNote, TeamCondition } from "../engine/scenario/qualify";
@@ -37,6 +37,8 @@ export interface RenderView {
   phaseByGroup: Map<GroupId, OverviewPhase>;
   /** 2026方式のベスト3位（advanceBestThirds>0 のときのみ中身が出る） */
   bestThirds?: BestThirdsResult;
+  /** 決勝トーナメント（ブラケット）。一覧・詳細の両方で全幅表示。常に渡る。 */
+  knockout?: KnockoutBracket;
   /** 得点ランキング（大会全体・全グループ横断）。常に渡る。 */
   scorers?: ScorerEntry[];
   // ---- 以下は detail のときだけ渡る（overview では未使用） ----
@@ -123,6 +125,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         </aside>
       </div>
 
+      <section id="knockout"></section>
+
       <footer class="site-footer">
         <p class="disclaimer">⚠️ ${esc(ct.meta.disclaimer)}</p>
         <p class="tnum">データ最終更新: ${esc(ct.meta.dataLastUpdated)}（${esc(ct.meta.edition)}）</p>
@@ -143,6 +147,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elScenario = $("#scenario");
   const elScenarioDetails = $("#scenario-details");
   const elCaption = $("#group-caption");
+  const elKnockout = $("#knockout");
 
   // ---- イベント委譲 ----
   root.addEventListener("click", (ev) => {
@@ -178,6 +183,19 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     highlight(el ? el.dataset.team ?? null : null);
   });
   elDetail.addEventListener("pointerleave", () => highlight(null));
+
+  // ブラケットは elDetail の外（一覧でも表示）なので、自前のホバー連動を持つ。
+  // 同チームの全セル（R32 と R16+ のプレースホルダは teamId が無いので R32 のみ）を .is-hl 同期。
+  function highlightKo(tid: string | null): void {
+    for (const el of elKnockout.querySelectorAll(".is-hl")) el.classList.remove("is-hl");
+    if (!tid) return;
+    for (const el of elKnockout.querySelectorAll(`[data-team="${tid}"]`)) el.classList.add("is-hl");
+  }
+  elKnockout.addEventListener("pointerover", (ev) => {
+    const el = (ev.target as HTMLElement).closest("[data-team]") as HTMLElement | null;
+    highlightKo(el ? el.dataset.team ?? null : null);
+  });
+  elKnockout.addEventListener("pointerleave", () => highlightKo(null));
 
   function gdLabel(gd: number): string {
     return gd > 0 ? `+${gd}` : String(gd);
@@ -308,6 +326,60 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
           <tbody>${rows}</tbody>
         </table>
       </div>`;
+  }
+
+  // ---- 決勝トーナメント（ブラケット）。一覧・詳細の両方で全幅表示 ----
+  const ROUND_LABEL: Record<KoRound, string> = {
+    R32: "ラウンド32",
+    R16: "ラウンド16",
+    QF: "準々決勝",
+    SF: "準決勝",
+    "3P": "3位決定戦",
+    F: "決勝",
+  };
+
+  function koSideHTML(side: KoSide): string {
+    if (side.teamId) {
+      return `<span class="ko-side is-team" data-team="${side.teamId}"><span class="ko-flag">${team(side.teamId).flag}</span><span class="ko-code">${tc(side.teamId)}</span></span>`;
+    }
+    return `<span class="ko-side is-undecided">${esc(side.label)}</span>`;
+  }
+
+  function koMatchHTML(m: KoResolvedMatch): string {
+    const no = m.no ? `<span class="ko-no">M${esc(m.no)}</span>` : "";
+    return `<div class="ko-match">${no}<div class="ko-sides">${koSideHTML(m.side1)}${koSideHTML(m.side2)}</div></div>`;
+  }
+
+  function knockoutHTML(view: RenderView): string {
+    const ko = view.knockout;
+    if (!ko || ko.matches.length === 0) return "";
+    const cols = ko.rounds
+      .map((r) => {
+        const ms = ko.matches.filter((m) => m.round === r);
+        return `<div class="ko-round ko-round-${r}"><div class="ko-round-head">${ROUND_LABEL[r]}</div><div class="ko-round-body">${ms.map(koMatchHTML).join("")}</div></div>`;
+      })
+      .join("");
+
+    // 2026: 「勝者 vs 3位」枠の暫定通過3位を凡例として併記（どの枠に入るかは未割当）。
+    let pool = "";
+    const bt = view.bestThirds;
+    if (bt && bt.slots > 0) {
+      const adv = bt.entries.filter((e) => e.advances);
+      if (adv.length > 0) {
+        const chips = adv
+          .map(
+            (e) =>
+              `<span class="ko-pool-chip" data-team="${e.teamId}"><span class="ko-flag">${team(e.teamId).flag}</span>${tc(e.teamId)}<span class="ko-pool-grp">${e.group}</span></span>`,
+          )
+          .join("");
+        pool = `<div class="ko-pool"><span class="ko-pool-label">暫定通過の3位（${bt.slots}枠）:</span>${chips}<span class="ko-pool-note">※ どの3位がどの「3位枠」に入るかは未割当（進行中）</span></div>`;
+      }
+    }
+
+    return `
+      <h2 class="section-title">決勝トーナメント 組み合わせ <span class="hint">確定枠は実チーム／未確定はスロット（1A=A組1位・2B=B組2位・3位=対象組の最良3位）</span></h2>
+      ${pool}
+      <div class="ko-scroll"><div class="ko-bracket">${cols}</div></div>`;
   }
 
   // ---- 一覧（全グループ）: コンパクト順位表カードのグリッド ----
@@ -755,6 +827,9 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     (root.querySelector(".wrap") as HTMLElement).classList.toggle("is-overview", isOverview);
     // ヒーロー内側幅を本文に合わせる（overview は本文 1200px に追従させ左端を揃える）。
     root.classList.toggle("scope-overview", isOverview);
+
+    // 決勝トーナメントは一覧・詳細の両方で全幅表示（早期 return より前に更新）。
+    elKnockout.innerHTML = knockoutHTML(view);
 
     if (isOverview) {
       elOverview.innerHTML = overviewHTML(view);

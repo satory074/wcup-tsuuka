@@ -6,6 +6,7 @@ import worldcup2026 from "../data/worldcup2026.json";
 import { compileTournament } from "../engine/compile";
 import { computeStandings } from "../engine/standings";
 import { computeBestThirds } from "../engine/thirds";
+import { computeKnockout } from "../engine/knockout";
 import { groupStatus } from "../engine/status";
 import { analyzeGroup } from "../engine/scenario/qualify";
 import { buildTimeline } from "../engine/timeline";
@@ -77,12 +78,14 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
       phaseByGroup.set(gid, derivePhase(st));
     }
     const bestThirds = computeBestThirds(ct, standingsByGroup);
+    // 決勝トーナメント（ブラケット）は順位から解決。両スコープで全幅表示するので scope 非依存に算出。
+    const knockout = computeKnockout(ct, standingsByGroup);
     // 得点ランキングは大会全体（全グループ横断）で安価に算出。両スコープで渡す。
     const scorers = computeScorers(ct);
 
     // 一覧（overview）は順位の投影のみ。列挙コストのある詳細計算は detail のときだけ行う。
     if (scope !== "detail") {
-      renderer.render({ scope, group, standingsByGroup, phaseByGroup, bestThirds, scorers });
+      renderer.render({ scope, group, standingsByGroup, phaseByGroup, bestThirds, knockout, scorers });
       return;
     }
 
@@ -96,6 +99,7 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
       standingsByGroup,
       phaseByGroup,
       bestThirds,
+      knockout,
       scorers,
       standings,
       status,
