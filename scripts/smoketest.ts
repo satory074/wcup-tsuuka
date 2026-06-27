@@ -468,8 +468,9 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   const iGoals = ct26.matchesByGroup.get("I")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
   const iRounds = playedRounds(ct26, "I");
   assert(liveI!.length === iGoals + iRounds, `2026: 組I は 全ゴール(${iGoals})＋節末(${iRounds})`);
-  assert(sortedAdv(liveI![liveI!.length - 1].advancing) === "fra,nor", "2026: 組I 第2節後の暫定通過は fra,nor");
+  assert(sortedAdv(liveI![liveI!.length - 1].advancing) === "fra,nor", "2026: 組I 最終節消化後の通過は fra,nor");
   assert(liveI![liveI!.length - 1].kind === "roundEnd", "2026: 組I 最後は消化済み節の節末");
+  assert(playedRounds(ct26, "I") === 3, "2026: 組I は全3節消化");
   // 組A（全3節消化・goals 投入済み）。節末は3つ。
   const liveA = buildTimeline(ct26, "A");
   assert(liveA !== null, "2026: 組A も goals がありタイムライン生成");
