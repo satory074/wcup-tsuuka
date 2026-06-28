@@ -112,18 +112,22 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   // 順位表に FIFA順位を併記（組A=ned8/sen18/ecu44/qat50）。
   assert(root.querySelectorAll(".standings-table .team-fifa").length === 4, "1: 順位表に FIFA順位を4チーム併記");
   assert((root.querySelector(".standings-table .team-fifa")?.textContent ?? "").includes("FIFA"), "1: 併記は『FIFA ◯位』");
-  // FIFAランキング（大会全体）は右サイドバー(#detail-side)内＝全出場国を FIFA順位順。2022=32カ国。
-  assert(!!root.querySelector("#detail-side #fifa-ranking .fr-table"), "1: FIFAランキングは右サイドバー内");
+  // FIFAランキングは一覧・詳細で共通の #rankings セクション内（scope 非依存）。
+  assert(!!root.querySelector("#rankings #fifa-ranking .fr-table"), "1: FIFAランキングは共通 #rankings 内");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 211, `1: FIFAランキングは世界全211カ国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
+  // 常時表示は出場最下位（2022=ガーナ61位）まで＝61行・以降は details.fr-more に折りたたみ。
+  assert(root.querySelectorAll("#fifa-ranking .fr-card > .fr-table tbody tr").length === 61, `1: 常時表示は出場最下位61位まで=61行（実際: ${root.querySelectorAll("#fifa-ranking .fr-card > .fr-table tbody tr").length}）`);
+  assert(!!root.querySelector("#fifa-ranking details.fr-more"), "1: 以降は折りたたみ（details.fr-more）");
+  assert(root.querySelectorAll("#fifa-ranking .fr-more .fr-table tbody tr").length === 211 - 61, "1: 折りたたみは残り150カ国");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-team").length === 32, "1: 出場32カ国を強調（.is-team）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-out").length === 211 - 32, "1: 非出場179カ国は淡色（.is-out）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr[data-team]").length === 32, "1: 出場国のみ data-team（ホバー連動）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-current").length === 4, "1: 現在の組（A）4チームを強調");
   assert((root.querySelector("#fifa-ranking .fr-table tbody tr .fr-rank")?.textContent ?? "") === "1", "1: 先頭はFIFA1位");
-  // 得点ランキング（大会全体）は右サイドバー(#detail-side)内。2022 得点王=エクアドルのバレンシア。
-  assert(!!root.querySelector("#detail-side #top-scorers .ts-table"), "1: 得点ランキングは右サイドバー内");
+  // 得点ランキングも共通 #rankings 内。2022 得点王はムバッペ（KO込み）。
+  assert(!!root.querySelector("#rankings #top-scorers .ts-table"), "1: 得点ランキングは共通 #rankings 内");
   assert(root.querySelectorAll("#top-scorers .ts-table tbody tr").length >= 1, "1: 得点ランキングに行がある");
-  assert((root.querySelector("#top-scorers")?.textContent ?? "").includes("バレンシア"), "1: 得点王バレンシアが載る");
+  assert((root.querySelector("#top-scorers")?.textContent ?? "").includes("バレンシア"), "1: バレンシア(3点)も得点ランキングに載る");
   // 通過条件シナリオは折りたたみ <details> 内に降格（2022 組Aは全消化=決め手解説）
   assert(!!root.querySelector("details#scenario-details"), "1: シナリオは details 内");
   assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "1: decided は決着の分かれ目を表示");
@@ -220,6 +224,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!root.querySelector("#best-thirds .bt-note"), "8: 全消化＝『暫定』注記は出さない");
   // FIFAランキング（大会全体）: 2026 は全48出場国を FIFA順位順。組Aの4チームを強調。
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 211, `8: FIFAランキングは世界全211カ国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
+  // 常時表示は出場最下位（2026=NZL 85位）まで＝85行・以降は折りたたみ。
+  assert(root.querySelectorAll("#fifa-ranking .fr-card > .fr-table tbody tr").length === 85, `8: 常時表示は出場最下位85位まで=85行（実際: ${root.querySelectorAll("#fifa-ranking .fr-card > .fr-table tbody tr").length}）`);
+  assert(!!root.querySelector("#fifa-ranking details.fr-more"), "8: 以降は折りたたみ（details.fr-more）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-team").length === 48, "8: 出場48カ国を強調（.is-team）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-current").length === 4, "8: 現在の組（A）4チームを強調");
   // 決勝トーナメント（ブラケット）: 2026=R32 全32試合・R32は16・確定枠は実チーム・3位枠はラベル・通過3位プール。

@@ -129,12 +129,10 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
             </div>
           </details>
         </div>
-
-        <aside id="detail-side">
-          <div id="top-scorers"></div>
-          <div id="fifa-ranking"></div>
-        </aside>
       </div>
+
+      <!-- ランキング（得点＋FIFA）は一覧・詳細で共通＝scope 非依存の全幅セクション（#knockout と同じ思想）。 -->
+      <section id="rankings"></section>
 
       <section id="knockout"></section>
 
@@ -154,8 +152,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elStatus = $("#status");
   const elBestThirds = $("#best-thirds");
   const elTimeline = $("#timeline");
-  const elTopScorers = $("#top-scorers");
-  const elFifaRanking = $("#fifa-ranking");
+  const elRankings = $("#rankings");
   const elScenario = $("#scenario");
   const elScenarioDetails = $("#scenario-details");
   const elCaption = $("#group-caption");
@@ -175,26 +172,31 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     }
   });
 
-  // ---- ホバー連動ハイライト（凡例・順位表行・チャートの線/点を data-team で同期） ----
+  // ---- ホバー連動ハイライト（凡例・順位表行・チャートの線/点・ランキング行を data-team で同期） ----
   // 1本に注目を集める selective highlighting。再描画で innerHTML が差し替わっても委譲リスナーは生存。
+  // ランキングは scope 非依存の別セクション(#rankings)なので detail とランキングの両領域で同期する。
+  const hlRoots = [elDetail, elRankings];
   let hoverTeam: string | null = null;
   function highlight(tid: string | null): void {
     if (tid === hoverTeam) return;
     hoverTeam = tid;
-    for (const el of elDetail.querySelectorAll(".is-hl")) el.classList.remove("is-hl");
+    for (const r of hlRoots) for (const el of r.querySelectorAll(".is-hl")) el.classList.remove("is-hl");
     const svg = elTimeline.querySelector(".tl-chart");
     if (!tid) {
       svg?.classList.remove("is-hovering");
       return;
     }
-    for (const el of elDetail.querySelectorAll(`[data-team="${tid}"]`)) el.classList.add("is-hl");
+    for (const r of hlRoots) for (const el of r.querySelectorAll(`[data-team="${tid}"]`)) el.classList.add("is-hl");
     svg?.classList.add("is-hovering");
   }
-  elDetail.addEventListener("pointerover", (ev) => {
+  const onHover = (ev: Event): void => {
     const el = (ev.target as HTMLElement).closest("[data-team]") as HTMLElement | null;
     highlight(el ? el.dataset.team ?? null : null);
-  });
-  elDetail.addEventListener("pointerleave", () => highlight(null));
+  };
+  for (const r of hlRoots) {
+    r.addEventListener("pointerover", onHover);
+    r.addEventListener("pointerleave", () => highlight(null));
+  }
 
   // ブラケットは elDetail の外（一覧でも表示）なので、自前のホバー連動を持つ。
   // 同チームの全セル（R32 と R16+ のプレースホルダは teamId が無いので R32 のみ）を .is-hl 同期。
@@ -443,18 +445,20 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       view.bestThirds && view.bestThirds.slots > 0
         ? `<div class="overview-bt">${bestThirdsHTML(view.bestThirds)}</div>`
         : "";
-    // サイドのコンテンツ（得点ランキング＋FIFAランキング）を一覧でも全幅2カラムで表示。
-    // ビルダーの生成物は内部にIDを持たない（クラスのみ）ので detail の #top-scorers/#fifa-ranking と衝突しない。
-    // 各ランキングは「見出し＋カード」の2要素を返すので、1グリッドセルに収まるよう列ラッパで包む。
-    const rankings = `<div class="overview-rankings">`
-      + `<div class="overview-rank-col">${topScorersHTML(view.scorers ?? [])}</div>`
-      + `<div class="overview-rank-col">${fifaRankingHTML(view.group)}</div>`
-      + `</div>`;
+    // ランキング（得点＋FIFA）は #rankings（scope 非依存・一覧/詳細共通）で別途描画する。
     return `
       <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}） ／ 🎲 抽選 ／ カードをタップでそのグループの詳細（タイムライン）へ</p>
       <div class="overview-grid">${cards}</div>
-      ${bt}
-      ${rankings}`;
+      ${bt}`;
+  }
+
+  // ---- ランキング（得点＋FIFA）= 一覧・詳細で共通の全幅2カラム（#rankings へ描画） ----
+  // 各ビルダーは「見出し＋カード」の2要素を返すので、列ラッパ（#top-scorers / #fifa-ranking）で1グリッドセルに収める。
+  function rankingsHTML(view: RenderView): string {
+    return `<div class="overview-rankings">`
+      + `<div class="overview-rank-col" id="top-scorers">${topScorersHTML(view.scorers ?? [])}</div>`
+      + `<div class="overview-rank-col" id="fifa-ranking">${fifaRankingHTML(view.group)}</div>`
+      + `</div>`;
   }
 
   // ---- タイムライン（主役・順位バンプチャート: x=イベント時系列, y=順位, 線=各国の推移） ----
@@ -727,33 +731,42 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   function fifaRankingHTML(currentGroup: GroupId): string {
     const list = fifaRankingsByCup[cup] ?? [];
     if (list.length === 0) return "";
-    let partCount = 0;
-    const rows = list
-      .map((e) => {
-        const t = ct.teamsById.get(e.code); // 出場国なら team（旗/国名は team データを正とする）
-        const isPart = !!t;
-        if (isPart) partCount++;
-        const cur = isPart && t!.group === currentGroup;
-        const flag = isPart ? t!.flag : e.flag;
-        const name = isPart ? t!.name : e.name;
-        // 出場国は強調(.is-team)＋data-team でホバー連動。非出場国は淡色(.is-out)。現在の組は .is-current。
-        const cls = `fr-row${isPart ? " is-team" : " is-out"}${cur ? " is-current" : ""}`;
-        const dt = isPart ? ` data-team="${e.code}"` : "";
-        const grp = isPart ? `<span class="fr-grp-badge">${t!.group}</span>` : "";
-        return `<tr class="${cls}"${dt}>
+    const rowHTML = (e: FifaRankRow): string => {
+      const t = ct.teamsById.get(e.code); // 出場国なら team（旗/国名は team データを正とする）
+      const isPart = !!t;
+      const cur = isPart && t!.group === currentGroup;
+      const flag = isPart ? t!.flag : e.flag;
+      const name = isPart ? t!.name : e.name;
+      // 出場国は強調(.is-team)＋data-team でホバー連動。非出場国は淡色(.is-out)。現在の組は .is-current。
+      const cls = `fr-row${isPart ? " is-team" : " is-out"}${cur ? " is-current" : ""}`;
+      const dt = isPart ? ` data-team="${e.code}"` : "";
+      const grp = isPart ? `<span class="fr-grp-badge">${t!.group}</span>` : "";
+      return `<tr class="${cls}"${dt}>
             <td class="fr-rank">${e.rank}</td>
             <td class="col-team"><span class="team-cell"><span class="team-flag">${flag}</span><span class="team-name">${esc(name)}</span><span class="fr-code">${esc(e.code.toUpperCase())}</span></span></td>
             <td class="fr-grp">${grp}</td>
           </tr>`;
-      })
-      .join("");
+    };
+    // 出場国の最下位順位まで常時表示・以降（出場国より下位）は折りたたむ。
+    const partRanks = list.filter((e) => ct.teamsById.has(e.code)).map((e) => e.rank);
+    const partCount = partRanks.length;
+    const lastPartRank = partRanks.length ? Math.max(...partRanks) : list[list.length - 1].rank;
+    const shown = list.filter((e) => e.rank <= lastPartRank);
+    const rest = list.filter((e) => e.rank > lastPartRank);
+    const lastRank = list[list.length - 1].rank;
+    const more = rest.length
+      ? `<details class="fr-more"><summary class="fr-more-summary">以降の${rest.length}カ国（${lastPartRank + 1}位〜${lastRank}位・出場国なし）を表示</summary>
+          <table class="fr-table fr-table-rest"><tbody>${rest.map(rowHTML).join("")}</tbody></table>
+        </details>`
+      : "";
     return `
-      <h2 class="section-title">FIFAランキング <span class="hint">${FIFA_AS_OF[cup]}時点の世界ランキング（全${list.length}カ国／<b>出場${partCount}カ国を強調</b>・他は淡色）</span></h2>
+      <h2 class="section-title">FIFAランキング <span class="hint">${FIFA_AS_OF[cup]}時点の世界ランキング（<b>出場${partCount}カ国を強調</b>・最下位${lastPartRank}位まで表示／以降は折りたたみ）</span></h2>
       <div class="card fr-card tnum">
         <table class="fr-table">
           <thead><tr><th class="fr-rank">順</th><th class="col-team">国</th><th class="fr-grp">組</th></tr></thead>
-          <tbody>${rows}</tbody>
+          <tbody>${shown.map(rowHTML).join("")}</tbody>
         </table>
+        ${more}
       </div>`;
   }
 
@@ -894,7 +907,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     // ヒーロー内側幅を本文に合わせる（overview は本文 1200px に追従させ左端を揃える）。
     root.classList.toggle("scope-overview", isOverview);
 
-    // 決勝トーナメントは一覧・詳細の両方で全幅表示（早期 return より前に更新）。
+    // ランキング（得点＋FIFA）と決勝トーナメントは一覧・詳細で共通＝早期 return より前に更新。
+    elRankings.innerHTML = rankingsHTML(view);
     elKnockout.innerHTML = knockoutHTML(view);
 
     if (isOverview) {
@@ -919,8 +933,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     elStatus.innerHTML = statusHTML(view.status!);
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
-    elTopScorers.innerHTML = topScorersHTML(view.scorers ?? []);
-    elFifaRanking.innerHTML = fifaRankingHTML(view.group);
     // シナリオが定まらない early フェーズはパネルごと隠す（意味がある時だけ出す）。
     if (qualification.phase === "early") {
       elScenarioDetails.hidden = true;
