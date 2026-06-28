@@ -1,5 +1,5 @@
-// アプリの配線: compileTournament → standings / thirds / status / qualify → render → URL クエリ同期。
-// エンジン（純TS）と render（DOM）をつなぐ唯一の場所。大会（2022/2026）は ?cup で選ぶ。
+// アプリの配線: compileTournament → standings / thirds / status / timeline → render → URL クエリ同期。
+// エンジン（純TS）と render（DOM）をつなぐ唯一の場所。大会（2018/2022/2026）は ?cup で選ぶ。
 import worldcup2018 from "../data/worldcup2018.json";
 import worldcup2022 from "../data/worldcup2022.json";
 import worldcup2026 from "../data/worldcup2026.json";
@@ -8,7 +8,6 @@ import { computeStandings } from "../engine/standings";
 import { computeBestThirds } from "../engine/thirds";
 import { computeKnockout } from "../engine/knockout";
 import { groupStatus } from "../engine/status";
-import { analyzeGroup } from "../engine/scenario/qualify";
 import { buildTimeline } from "../engine/timeline";
 import { computeScorers } from "../engine/scorers";
 import type { CompiledTournament, GroupId, Standings } from "../engine/types";
@@ -92,7 +91,6 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
     const standings = standingsByGroup.get(group)!;
     const status = groupStatus(ct, group);
     const timeline = buildTimeline(ct, group);
-    const qualification = analyzeGroup(ct, group);
     renderer.render({
       scope,
       group,
@@ -104,7 +102,6 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
       standings,
       status,
       timeline,
-      qualification,
     });
   }
 

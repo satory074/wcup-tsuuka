@@ -23,7 +23,6 @@ import { computeStandings } from "../src/engine/standings";
 import { computeBestThirds } from "../src/engine/thirds";
 import { computeKnockout } from "../src/engine/knockout";
 import { groupStatus } from "../src/engine/status";
-import { analyzeGroup } from "../src/engine/scenario/qualify";
 import { buildTimeline, clockOf, kickoffMinutes, scoreAtClock } from "../src/engine/timeline";
 import { computeScorers } from "../src/engine/scorers";
 import type { Goal } from "../src/engine/types";
@@ -246,73 +245,6 @@ function synthCt(teamIds: string[], matches: Match[]): CompiledTournament {
   };
 }
 
-// ---- 4) 通過条件シナリオ（qualify.ts） ----
-{
-  // 4a) decided（2022 全消化）: 隣接順位を分けた決め手（タイブレーク）を解説
-  const qE = analyzeGroup(CT, "E");
-  assert(qE.phase === "decided", "4: 2022 組E は decided");
-  assert(qE.teams.length === 4, "4: 4チーム");
-  assert(qE.boundaries.length === 2, "4: 境界は 1↔2 と 2↔3 の2件");
-  const eB12 = qE.boundaries.find((b) => b.rankHigher === 1)!;
-  assert(eB12.higher === "jpn" && eB12.lower === "esp" && eB12.reason === "points", "4: E 1↔2 は勝点で jpn>esp");
-  const eB23 = qE.boundaries.find((b) => b.rankHigher === 2)!;
-  assert(eB23.higher === "esp" && eB23.lower === "ger" && eB23.reason === "gd" && eB23.cutoff, "4: E 2↔3(通過境界)は総得失点差で esp>ger");
-
-  // H: 2↔3 = kor>uru は総得点（4-2）
-  const qH = analyzeGroup(CT, "H");
-  const hB23 = qH.boundaries.find((b) => b.rankHigher === 2)!;
-  assert(hB23.higher === "kor" && hB23.lower === "uru" && hB23.reason === "gf", "4: H 2↔3 は総得点で kor>uru");
-  assert(hB23.detail.includes("4-2"), `4: H 決め手 detail に 4-2（実際: ${hB23.detail}）`);
-
-  // decided は alive 無し・条件空（反実仮想を出さない）
-  assert(qE.teams.every((t) => t.status !== "alive" && t.conditions.length === 0), "4: decided は alive 無し・条件空");
-
-  // 決定性
-  assert(JSON.stringify(analyzeGroup(CT, "E")) === JSON.stringify(analyzeGroup(CT, "E")), "4: 同入力なら同一（決定的）");
-
-  // 4b) final-round（合成: 4試合消化・最終節2試合未消化）
-  // 既消化: A>B 1-0, C>D 1-0, A>C 1-0, B>D 1-0 → A=6, B=3, C=3, D=0
-  // 未消化: A-D, B-C（同時刻の最終節）
-  const frCt = synthCt(
-    ["A", "B", "C", "D"],
-    [
-      mk("A", "B", 1, 0),
-      mk("C", "D", 1, 0),
-      mk("A", "C", 1, 0),
-      mk("B", "D", 1, 0),
-      mkU("A", "D"),
-      mkU("B", "C"),
-    ],
-  );
-  const qFR = analyzeGroup(frCt, "A");
-  assert(qFR.phase === "final-round", "4b: 最終節のみ未消化は final-round");
-  assert(qFR.remaining.length === 2, "4b: 未消化2試合");
-  const fr = new Map(qFR.teams.map((t) => [t.teamId, t]));
-  assert(fr.get("A")!.status === "advanced", "4b: A は突破確定");
-  assert(fr.get("D")!.status === "eliminated", "4b: D は敗退");
-  const tB = fr.get("B")!;
-  assert(tB.status === "alive", "4b: B は可能性あり");
-  const condB = (r: "win" | "draw" | "loss") => tB.conditions.find((c) => c.result === r)?.verdict;
-  assert(condB("win") === "advance", "4b: B は C に勝てば突破");
-  assert(condB("loss") === "out", "4b: B は C に敗れると敗退");
-  assert(condB("draw") === "depends", "4b: B は引き分けなら他会場しだい");
-  // 前向きタイブレーク予告: 勝点で並びうるのは上位争いの B・C（引分で4並び）。D は最大3で除外。
-  assert(!!qFR.tiebreakWatch && qFR.tiebreakWatch.includes("B") && qFR.tiebreakWatch.includes("C"), "4b: tiebreakWatch に B・C");
-  assert(!qFR.tiebreakWatch!.includes("D"), "4b: tiebreakWatch に D は含まない");
-
-  // 4c) early（合成: 2試合消化・4試合未消化）→ 条件は出さず次戦のみ
-  const earlyCt = synthCt(
-    ["A", "B", "C", "D"],
-    [mk("A", "B", 1, 0), mk("C", "D", 1, 0), mkU("A", "C"), mkU("B", "D"), mkU("A", "D"), mkU("B", "C")],
-  );
-  const qEarly = analyzeGroup(earlyCt, "A");
-  assert(qEarly.phase === "early", "4c: 未消化が多い（列挙不能）は early");
-  assert(qEarly.teams.every((t) => t.conditions.length === 0), "4c: early は条件を出さない");
-  assert(qEarly.teams.some((t) => t.nextOpponent), "4c: early は次戦相手を出す");
-  assert(qEarly.tiebreakWatch === undefined, "4c: early は tiebreakWatch を出さない");
-
-  console.log("[qualify] 通過条件シナリオ OK（decided 決め手/final-round 条件/early/決定性）");
-}
 
 // ---- 5) 通過ステータス（status.ts） ----
 {
@@ -865,13 +797,8 @@ function mkCt12(slots: number): CompiledTournament {
   const sen = h.rows.find((r) => r.teamId === "sen")!;
   assert(jpn.rank === 2 && jpn.advances, "2018 組H: 日本2位・通過");
   assert(sen.rank === 3 && !sen.advances, "2018 組H: セネガル3位・敗退");
-  assert(jpn.points === sen.points && jpn.gd === sen.gd && jpn.gf === sen.gf, "2018 組H: 日本/セネガルは勝点・GD・GF 同値（決め手はフェアプレー）");
-  // qualify が「決め手＝フェアプレー」と特定できる（基準g の end-to-end）
-  const qH = analyzeGroup(ct18, "H");
-  assert(qH.phase === "decided", "2018 組H: decided");
-  const b = qH.boundaries.find((x) => x.higher === "jpn" && x.lower === "sen");
-  assert(!!b && b.reason === "fairplay", "2018 組H: 2↔3 の決め手は fairplay");
-  console.log("[standings] 2018 実順位 OK（組H フェアプレー＝日本2位通過・基準g end-to-end）");
+  assert(jpn.points === sen.points && jpn.gd === sen.gd && jpn.gf === sen.gf, "2018 組H: 日本/セネガルは勝点・GD・GF 同値（フェアプレーで確定）");
+  console.log("[standings] 2018 実順位 OK（組H フェアプレー＝日本2位通過・基準g）");
 
   // 旗色なしの 2022/2026 はフェアプレー不適用＝従来どおり（カード皆無 → 抽選フォールバック不変）
   // ＝ section 8/12 が 2022/2026 の不変性を担保済み。

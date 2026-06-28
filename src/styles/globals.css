@@ -111,8 +111,7 @@ body {
 .tl-ch-time,
 .tl-ch-score,
 .tl-code,
-.tl-dateband,
-.cond-stat {
+.tl-dateband {
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
 }
@@ -154,11 +153,8 @@ body {
 #detail-timeline {
   margin-bottom: var(--sp-6);
 }
-/* R-4: 主要カードの最大幅を順位表(660)に揃え、左寄せで読みやすく。 */
-#detail-main .standings,
-#detail-main .bt-card,
-#detail-main .sched-carousel-wrap,
-#detail-main .scenario-details {
+/* R-4: 順位表の最大幅を 660 に（左寄せで読みやすく）。 */
+#detail-main .standings {
   max-width: 660px;
 }
 /* 各領域の先頭見出しは上マージンを消す。 */
@@ -582,151 +578,6 @@ table.bt-table {
   border-color: var(--border);
 }
 
-/* ---- 通過条件シナリオ ---- */
-.scenario-intro {
-  font-size: var(--ts-base);
-  line-height: 1.6;
-  color: var(--ink-soft);
-  margin: 0.25rem 0 0.85rem;
-}
-.scenario-intro b {
-  color: var(--ink);
-}
-.scenario-note {
-  font-size: var(--ts-sm);
-  line-height: 1.55;
-  color: var(--alive-ink);
-  background: var(--alive-soft);
-  border-radius: var(--r-sm);
-  padding: 0.55rem 0.75rem;
-  margin: 0 0 0.85rem;
-}
-.scenario-block-title {
-  font-size: var(--ts-sm);
-  font-weight: 800;
-  color: var(--ink);
-  margin-bottom: 0.6rem;
-}
-.scenario-boundaries {
-  padding: 0.95rem 1.05rem;
-}
-.boundary-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-.boundary-note {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding-left: 0.7rem;
-  border-left: 3px solid var(--border-strong);
-  line-height: 1.55;
-}
-.boundary-note.is-cutoff {
-  border-left-color: var(--advance);
-}
-.boundary-rank {
-  font-weight: 800;
-  font-size: var(--ts-base);
-  color: var(--ink);
-}
-.boundary-sep {
-  color: var(--ink-soft);
-  font-weight: 600;
-  margin: 0 0.15rem;
-}
-.boundary-prose {
-  font-size: var(--ts-sm);
-  color: var(--ink-soft);
-}
-.scenario-teams {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 0.7rem;
-}
-.team-cond {
-  padding: 0.7rem 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-.cond-head {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-.cond-rank {
-  font-weight: 800;
-  font-size: var(--ts-md);
-}
-.cond-flag {
-  font-size: 1.15rem;
-}
-.cond-name {
-  font-weight: 700;
-}
-.cond-stat {
-  font-size: var(--ts-xs);
-  color: var(--ink-soft);
-}
-.cond-status {
-  margin-left: auto;
-  font-size: var(--ts-2xs);
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 0.12rem 0.5rem;
-  border: 1px solid transparent;
-}
-.cond-status.is-advanced {
-  background: var(--advance-soft);
-  color: var(--advance-ink);
-}
-.cond-status.is-alive {
-  background: var(--alive-soft);
-  color: var(--alive-ink);
-}
-.cond-status.is-eliminated {
-  background: var(--eliminated-soft);
-  color: var(--ink-soft);
-  border-color: var(--border);
-}
-.cond-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.cond-line {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  font-size: var(--ts-sm);
-  line-height: 1.5;
-}
-.cond-icon {
-  flex: 0 0 auto;
-}
-.cond-line b {
-  font-weight: 800;
-}
-.cond-advance b {
-  color: var(--advance-ink);
-}
-.cond-out b {
-  color: var(--eliminated-ink, var(--ink-soft));
-}
-.cond-note,
-.cond-next {
-  font-size: var(--ts-sm);
-  color: var(--ink-soft);
-}
-.cond-next b {
-  color: var(--ink);
-}
-
 /* ---- メッセージ・フッタ ---- */
 .empty-msg {
   margin: 0.75rem 0;
@@ -898,10 +749,12 @@ table.bt-table {
 .mini-flag {
   margin-right: 0.3rem;
 }
-.mini-code {
-  font-family: var(--font-display);
+.mini-name {
   font-weight: 700;
   color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* 一覧カードの FIFA順位（小さく沈める併記） */
 .mini-fifa {
@@ -926,7 +779,7 @@ table.bt-table {
   background: var(--advance-soft);
   box-shadow: inset 3px 0 0 var(--advance-edge);
 }
-.mini-table .row-advance .mini-code {
+.mini-table .row-advance .mini-name {
   color: var(--advance-ink);
 }
 .mini-table .advance-line td {
@@ -969,11 +822,20 @@ table.bt-table {
 }
 .sched-card {
   flex: 0 0 auto;
-  width: 7.4rem;
+  width: 10rem;
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   background: var(--surface-2);
   padding: 0.35rem 0.45rem;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sched-card:hover {
+  border-color: var(--pitch);
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.16);
 }
 /* 該当グループの試合を緑で強調。 */
 .sched-card.is-current {
@@ -1016,14 +878,19 @@ table.bt-table {
   gap: 0.32rem;
   font-size: var(--ts-xs);
   line-height: 1.55;
+  min-width: 0;
 }
 .sched-card-row .sched-flag {
   flex: 0 0 auto;
 }
-.sched-code {
-  font-family: var(--font-display);
+.sched-name {
+  flex: 1 1 auto;
+  min-width: 0;
   font-weight: 700;
   color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sched-pts {
   margin-left: auto;
@@ -1242,8 +1109,22 @@ table.bt-table {
   gap: var(--sp-4);
   margin-top: var(--sp-2);
 }
+/* 1節＝2試合を1ブロックに（節見出し＋2カラム）。 */
+.tlog-md-group {
+  flex: 1 1 340px;
+  min-width: 0;
+}
+.tlog-md-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+@media (max-width: 560px) {
+  .tlog-md-cols {
+    grid-template-columns: 1fr;
+  }
+}
 .tlog-col {
-  flex: 1 1 300px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1258,7 +1139,7 @@ table.bt-table {
   gap: 0.28rem;
 }
 .tlog-md-head {
-  margin: 0 0 0.15rem;
+  margin: 0 0 0.3rem;
   padding-bottom: 0.2rem;
   border-bottom: 2px solid var(--border-strong);
   font-family: var(--font-display);
@@ -1266,6 +1147,19 @@ table.bt-table {
   font-size: var(--ts-sm);
   color: var(--ink);
   letter-spacing: 0.02em;
+}
+/* 試合カラムの対戦見出し（国名 vs 国名＋最終スコア）。 */
+.tlog-match {
+  margin: 0 0 0.1rem;
+  font-size: var(--ts-xs);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.tlog-match-score {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  margin: 0 0.15rem;
 }
 .tlog-goal {
   display: flex;
@@ -1296,28 +1190,12 @@ table.bt-table {
   font-variant-numeric: tabular-nums;
   color: var(--ink-soft);
 }
-/* 「第n節 結果」= その節の試合スコアをまとめた区切りブロック（節カラムの末尾）。 */
-.tlog-round {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.5rem;
-  margin: var(--sp-2) 0 0;
-  padding: 0.34rem 0.6rem;
-  background: var(--advance-soft);
-  border: 1px dashed var(--advance);
-  border-radius: var(--r-sm);
-  font-size: var(--ts-sm);
-}
-.tlog-round-head {
-  font-family: var(--font-display);
-  font-weight: 800;
-  color: var(--advance-ink);
-}
-.tlog-round-res {
-  font-family: var(--font-num);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
+/* 得点なしの試合（0-0）。 */
+.tlog-noscore {
+  background: transparent;
+  border-left-color: transparent;
+  color: var(--ink-faint);
+  padding-left: 0.1rem;
 }
 
 /* ---- 順位表に併記する FIFA順位 ---- */
@@ -1489,42 +1367,6 @@ table.bt-table {
   color: var(--ink);
 }
 
-/* ---- 通過条件シナリオ（折りたたみ） ---- */
-.scenario-details {
-  margin-top: var(--sp-6);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-.scenario-details > summary {
-  cursor: pointer;
-  padding: 0.95rem 1.1rem;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: var(--ts-md);
-  letter-spacing: 0.01em;
-  list-style: none;
-  transition: background 0.15s ease;
-}
-.scenario-details > summary:hover {
-  background: var(--surface-2);
-}
-.scenario-details > summary::-webkit-details-marker {
-  display: none;
-}
-.scenario-details > summary::before {
-  content: "▸ ";
-  color: var(--pitch-deep);
-}
-.scenario-details[open] > summary::before {
-  content: "▾ ";
-}
-.scenario-details-body {
-  padding: 0 1.1rem 1.1rem;
-}
-
 /* ---- F-9: 横スクロールできることを示すスクロールバーの視認性（チャート・カルーセル） ---- */
 .timeline-scroll,
 .sched-carousel {
@@ -1663,10 +1505,15 @@ table.bt-table {
 .ko-flag {
   font-size: 1.05rem;
   line-height: 1;
+  flex: 0 0 auto;
 }
-.ko-code {
-  font-family: var(--font-num);
+.ko-name {
+  flex: 1 1 auto;
   font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* スコア（消化済みKOのみ）＝右端・等幅。 */
 .ko-score {
@@ -1680,7 +1527,7 @@ table.bt-table {
   background: var(--advance);
   color: #fff;
 }
-.ko-side.is-team.is-winner .ko-code {
+.ko-side.is-team.is-winner .ko-name {
   color: #fff;
 }
 .ko-match.is-played .ko-side.is-team:not(.is-winner) {
@@ -1753,9 +1600,6 @@ table.bt-table {
   }
   .hero-inner {
     padding: 1.3rem 0.75rem 1.25rem;
-  }
-  .scenario-teams {
-    grid-template-columns: 1fr;
   }
   /* グループタブ A〜L は横スクロール1行で破綻を防ぐ */
   .group-tabs {

@@ -2,9 +2,8 @@
 // 通過条件シナリオ（折りたたみ）を描画する。
 // イベントはルートの click リスナーで data-action 委譲（kisei/moshirasu パターン）。
 import type { CompiledTournament, GroupId, KnockoutBracket, KoResolvedMatch, KoRound, KoSide, Standings } from "../engine/types";
-import { rankMark, tricode } from "../engine/format";
+import { tricode } from "../engine/format";
 import type { TeamStatus } from "../engine/status";
-import type { GroupQualification, TeamQualification, BoundaryNote, TeamCondition } from "../engine/scenario/qualify";
 import type { Snapshot } from "../engine/timeline";
 import type { ScorerEntry } from "../engine/scorers";
 import type { BestThirdsResult, ThirdEntry } from "../engine/thirds";
@@ -56,8 +55,6 @@ export interface RenderView {
   status?: TeamStatus[];
   /** タイムライン（分刻みゴール＋節末）。データが無ければ null。 */
   timeline?: Snapshot[] | null;
-  /** 通過条件（シナリオ）パネル用 */
-  qualification?: GroupQualification;
 }
 
 function esc(s: string): string {
@@ -66,7 +63,8 @@ function esc(s: string): string {
 
 export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: Cup, dispatch: Dispatch) {
   const team = (id: string) => ct.teamsById.get(id)!;
-  const tc = (id: string) => esc(tricode(team(id)));
+  /** 表示用の国名（FIFAランキングと同じ日本語表記）。略号に代えて各所で使う。 */
+  const tn = (id: string) => esc(team(id).name);
   /** 順位表に併記する FIFA世界ランキング（無ければ空）。 */
   const fifaInline = (id: string) => {
     const r = team(id).fifaRank;
@@ -107,30 +105,23 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
       <div class="layout-grid">
         <div class="layout-main">
+      <!-- 日程・結果＝一覧・詳細共通・左カラム最上部。カードクリックでそのグループ詳細へドリル。 -->
+      <div id="schedule"></div>
+
       <div id="overview" hidden></div>
 
       <div id="detail-view">
+        <div id="detail-main">
+          <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
+          <div id="standings"></div>
+          <div id="status"></div>
+        </div>
+
         <section id="detail-timeline">
           <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位（節末に試合結果）</span></h2>
           <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・●＝前半/◉＝後半の得点・◇＝節末に各試合結果）</p>
           <div id="timeline"></div>
         </section>
-
-        <div id="detail-main">
-          <h2 class="section-title">最終順位 <span class="hint" id="group-caption"></span></h2>
-          <div id="standings"></div>
-          <div id="status"></div>
-          <div id="best-thirds"></div>
-
-          <div id="schedule"></div>
-
-          <details class="scenario-details" id="scenario-details">
-            <summary>通過条件（シナリオ）を見る</summary>
-            <div class="scenario-details-body">
-              <div id="scenario"></div>
-            </div>
-          </details>
-        </div>
       </div>
 
           <!-- 決勝トーナメントは左カラム（主筋）に収める（両 scope）。 -->
@@ -156,11 +147,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elSchedule = $("#schedule");
   const elStandings = $("#standings");
   const elStatus = $("#status");
-  const elBestThirds = $("#best-thirds");
   const elTimeline = $("#timeline");
   const elRankings = $("#rankings");
-  const elScenario = $("#scenario");
-  const elScenarioDetails = $("#scenario-details");
   const elCaption = $("#group-caption");
   const elKnockout = $("#knockout");
 
@@ -232,7 +220,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       return ka < kb ? -1 : ka > kb ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
     const teamRow = (id: string, pts: string) =>
-      `<div class="sched-card-row"><span class="sched-flag">${team(id).flag}</span><span class="sched-code">${tc(id)}</span><span class="sched-pts">${pts}</span></div>`;
+      `<div class="sched-card-row"><span class="sched-flag">${team(id).flag}</span><span class="sched-name">${tn(id)}</span><span class="sched-pts">${pts}</span></div>`;
     const cards = ordered
       .map((m) => {
         const { date, time } = fmtKickoff(m.kickoff ?? "");
@@ -240,11 +228,11 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         const cur = m.group === group;
         const cls = `sched-card${cur ? " is-current" : ""}${played ? "" : " is-upcoming"}`;
         return (
-          `<div class="${cls}"${cur ? ' data-current="1"' : ""}>` +
+          `<button type="button" class="${cls}" data-action="drill-group" data-group="${m.group}"${cur ? ' data-current="1"' : ""} aria-label="グループ${m.group}の詳細へ">` +
           `<div class="sched-card-head"><span class="sched-date">${esc(date)}</span><span class="sched-time">${esc(time)}</span><span class="sched-grp">${m.group}</span></div>` +
           teamRow(m.home, played ? String(m.score!.home) : "–") +
           teamRow(m.away, played ? String(m.score!.away) : "–") +
-          `</div>`
+          `</button>`
         );
       })
       .join("");
@@ -361,7 +349,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   function koSideHTML(side: KoSide, score?: number, isWinner?: boolean): string {
     const sc = score != null ? `<span class="ko-score">${score}</span>` : "";
     if (side.teamId) {
-      return `<span class="ko-side is-team${isWinner ? " is-winner" : ""}" data-team="${side.teamId}"><span class="ko-flag">${team(side.teamId).flag}</span><span class="ko-code">${tc(side.teamId)}</span>${sc}</span>`;
+      return `<span class="ko-side is-team${isWinner ? " is-winner" : ""}" data-team="${side.teamId}"><span class="ko-flag">${team(side.teamId).flag}</span><span class="ko-name">${tn(side.teamId)}</span>${sc}</span>`;
     }
     return `<span class="ko-side is-undecided">${esc(side.label)}</span>`;
   }
@@ -395,7 +383,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         const chips = adv
           .map(
             (e) =>
-              `<span class="ko-pool-chip" data-team="${e.teamId}"><span class="ko-flag">${team(e.teamId).flag}</span>${tc(e.teamId)}<span class="ko-pool-grp">${e.group}</span></span>`,
+              `<span class="ko-pool-chip" data-team="${e.teamId}"><span class="ko-flag">${team(e.teamId).flag}</span>${tn(e.teamId)}<span class="ko-pool-grp">${e.group}</span></span>`,
           )
           .join("");
         const poolLabel = bt.undecided ? `暫定通過の3位（${bt.slots}枠）:` : `通過する3位（${bt.slots}組）:`;
@@ -429,7 +417,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         return `
           <tr class="${cls}">
             <td class="mini-rank">${r.rank}</td>
-            <td class="mini-team"><span class="mini-flag">${team(r.teamId).flag}</span><span class="mini-code">${tc(r.teamId)}</span>${team(r.teamId).fifaRank ? `<span class="mini-fifa" title="FIFA世界ランキング">FIFA${team(r.teamId).fifaRank}</span>` : ""}${tie}</td>
+            <td class="mini-team"><span class="mini-flag">${team(r.teamId).flag}</span><span class="mini-name">${tn(r.teamId)}</span>${team(r.teamId).fifaRank ? `<span class="mini-fifa" title="FIFA世界ランキング">FIFA${team(r.teamId).fifaRank}</span>` : ""}${tie}</td>
             <td class="mini-gd">${gd}</td>
             <td class="mini-pts">${pts}</td>
           </tr>`;
@@ -471,11 +459,13 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   // engine の Snapshot[]（各列の standings 並び＝位置）をそのまま座標列に使う＝engine は不変。
   // 線色は各国の国旗の色から算出（flagColors.ts）。同組で近すぎる色は ΔE で検出し段階的にずらす。
   const rawTc = (id: string) => tricode(team(id));
+  // ツールチップ用の素の国名（最後に esc される）。
+  const rawName = (id: string) => team(id).name;
 
-  // 節末スナップの試合結果を1行に: "MEX 2-0 RSA ／ KOR 2-1 CZE"。
+  // 節末スナップの試合結果を1行に: "メキシコ 2-0 南アフリカ ／ 韓国 2-1 チェコ"。
   const roundResultText = (snap: Snapshot): string =>
     (snap.roundResults ?? [])
-      .map((r) => `${rawTc(r.homeId)} ${r.homeScore}-${r.awayScore} ${rawTc(r.awayId)}`)
+      .map((r) => `${rawName(r.homeId)} ${r.homeScore}-${r.awayScore} ${rawName(r.awayId)}`)
       .join(" ／ ");
 
   // 頂点ツールチップ: 「国名・順位｜（ゴール）クロック スコア（得点者）／（節末）第n節 終了 試合結果」。
@@ -486,7 +476,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       s += `｜${snap.clockLabel}　${roundResultText(snap)}`;
     } else if (snap.event) {
       const e = snap.event;
-      s += `｜${snap.clockLabel} ${rawTc(e.homeId)} ${e.homeScore}-${e.awayScore} ${rawTc(e.awayId)}`;
+      s += `｜${snap.clockLabel} ${rawName(e.homeId)} ${e.homeScore}-${e.awayScore} ${rawName(e.awayId)}`;
       if (scoring && e.scorer) s += ` ⚽${e.scorer}`;
     }
     return esc(s);
@@ -604,7 +594,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         lines += `<circle class="${cls}" data-team="${tid}" cx="${f1(xAt(ci))}" cy="${f1(yAt(idxByCol[ci].get(tid)!))}" r="${r}" style="${dotStyle}"><title>${tipText(tid, snap, scoring)}</title></circle>`;
       }
       const fy = yAt(idxByCol[cols - 1].get(tid)!);
-      lines += `<text class="tl-endlabel${oc}" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tc(tid)}</tspan></text>`;
+      lines += `<text class="tl-endlabel${oc}" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tn(tid)}</tspan></text>`;
     }
 
     // 節結果スコア: 各試合のスコアを「対戦した両チームそれぞれのレーン上」に置く＝1スコアが両レーンに2回出る。
@@ -652,41 +642,67 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       .join("");
 
     // 得点タイムラインを「節カラム」に: 節ごとに1列（見出し→ゴール→第n節結果）を横並び＝全幅を使い高さを圧縮。
+    // 得点ログ＝試合ごとのカラム（1節=2試合=2カラム）。matchId で集約し、節→試合id順に並べる。
     // ゴール行の左ボーダー＝得点国の線色でチャートの折れ線と対応づける。
-    const byMd = new Map<number, { goals: string[]; round: string }>();
-    const mdOrder: number[] = [];
-    for (const s of snaps) {
-      if (!byMd.has(s.matchday)) {
-        byMd.set(s.matchday, { goals: [], round: "" });
-        mdOrder.push(s.matchday);
+    interface MatchLog { matchday: number; homeId: string; awayId: string; goals: string[]; home: number; away: number; hasResult: boolean }
+    const byMatch = new Map<string, MatchLog>();
+    const order: string[] = [];
+    const ensure = (id: string, matchday: number, homeId: string, awayId: string): MatchLog => {
+      let m = byMatch.get(id);
+      if (!m) {
+        m = { matchday, homeId, awayId, goals: [], home: 0, away: 0, hasResult: false };
+        byMatch.set(id, m);
+        order.push(id);
       }
-      const bucket = byMd.get(s.matchday)!;
+      return m;
+    };
+    for (const s of snaps) {
       if (s.kind === "roundEnd") {
-        const res = (s.roundResults ?? [])
-          .map(
-            (r) =>
-              `<span class="tlog-round-res">${team(r.homeId).flag}${tc(r.homeId)} <b>${r.homeScore}-${r.awayScore}</b> ${tc(r.awayId)}${team(r.awayId).flag}</span>`,
-          )
-          .join("");
-        bucket.round = `<div class="tlog-round"><span class="tlog-round-head">第${s.matchday}節 結果</span>${res}</div>`;
+        for (const r of s.roundResults ?? []) {
+          const m = ensure(r.matchId, s.matchday, r.homeId, r.awayId);
+          m.home = r.homeScore;
+          m.away = r.awayScore;
+          m.hasResult = true;
+        }
       } else if (s.event) {
         const e = s.event;
+        const m = ensure(e.matchId, e.matchday, e.homeId, e.awayId);
+        if (!m.hasResult) {
+          m.home = e.homeScore;
+          m.away = e.awayScore;
+        }
         const scorerId = e.scorerSide === "home" ? e.homeId : e.awayId;
         const color = colorOf.get(scorerId) ?? "var(--border-strong)";
         const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
-        const score = `${tc(e.homeId)} ${e.homeScore}-${e.awayScore} ${tc(e.awayId)}`;
-        bucket.goals.push(
-          `<li class="tlog-goal" style="border-left-color:${color}"><span class="tlog-time">${esc(s.clockLabel)}</span><span class="tlog-scorer">⚽${who}</span><span class="tlog-score">${score}</span></li>`,
+        m.goals.push(
+          `<li class="tlog-goal" style="border-left-color:${color}"><span class="tlog-time">${esc(s.clockLabel)}</span><span class="tlog-scorer">⚽${who}</span><span class="tlog-score">${e.homeScore}-${e.awayScore}</span></li>`,
         );
       }
     }
+    // 節id順（matchId 昇順で各節2試合が並ぶ）→ 節ごとに2カラムをまとめる。
+    order.sort((a, b) => {
+      const ma = byMatch.get(a)!;
+      const mb = byMatch.get(b)!;
+      return ma.matchday - mb.matchday || (a < b ? -1 : a > b ? 1 : 0);
+    });
+    const mdGroups = new Map<number, string[]>();
+    const mdOrder: number[] = [];
+    for (const id of order) {
+      const m = byMatch.get(id)!;
+      if (!mdGroups.has(m.matchday)) {
+        mdGroups.set(m.matchday, []);
+        mdOrder.push(m.matchday);
+      }
+      const matchup = `${team(m.homeId).flag}${tn(m.homeId)} <b class="tlog-match-score">${m.home}-${m.away}</b> ${tn(m.awayId)}${team(m.awayId).flag}`;
+      const goals = m.goals.length ? m.goals.join("") : `<li class="tlog-goal tlog-noscore">得点なし</li>`;
+      mdGroups.get(m.matchday)!.push(
+        `<div class="tlog-col"><p class="tlog-match">${matchup}</p><ol class="tlog-goals">${goals}</ol></div>`,
+      );
+    }
     const logCols = mdOrder
-      .map((md) => {
-        const b = byMd.get(md)!;
-        return `<div class="tlog-col"><p class="tlog-md-head">第${md}節</p><ol class="tlog-goals">${b.goals.join("")}</ol>${b.round}</div>`;
-      })
+      .map((md) => `<div class="tlog-md-group"><p class="tlog-md-head">第${md}節</p><div class="tlog-md-cols">${mdGroups.get(md)!.join("")}</div></div>`)
       .join("");
-    // 常設（折りたたみ廃止）。「誰が・何分に」を節カラムで常に見せる。
+    // 常設（折りたたみ廃止）。「誰が・何分に」を試合カラムで常に見せる。
     const goalCount = snaps.filter((s) => s.kind !== "roundEnd" && s.event).length;
     const log = `<section class="tl-log"><p class="tl-log-head">得点タイムライン<span class="tl-log-count">全${goalCount}ゴール</span></p><div class="tlog-cols">${logCols}</div></section>`;
 
@@ -709,7 +725,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       .map(
         (e) =>
           `<tr><td class="col-rank"><span class="rank-badge">${e.rank}</span></td>
-            <td class="col-team"><span class="team-cell"><span class="team-flag">${team(e.teamId).flag}</span><span class="team-name">${esc(e.player)}</span><span class="ts-team">${tc(e.teamId)}</span></span></td>
+            <td class="col-team"><span class="team-cell"><span class="team-flag">${team(e.teamId).flag}</span><span class="team-name">${esc(e.player)}</span><span class="ts-team">${tn(e.teamId)}</span></span></td>
             <td class="ts-goals tnum">${e.goals}${e.pk ? `<span class="ts-pk">PK${e.pk}</span>` : ""}</td>
           </tr>`,
       )
@@ -775,127 +791,6 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       </div>`;
   }
 
-  // ---- 通過条件シナリオ（折りたたみ内） ----
-  const STATUS_META: Record<TeamStatus["status"], { cls: string; word: string }> = {
-    advanced: { cls: "is-advanced", word: "突破確定" },
-    alive: { cls: "is-alive", word: "可能性あり" },
-    eliminated: { cls: "is-eliminated", word: "敗退" },
-  };
-
-  function statusBadge(status: TeamStatus["status"]): string {
-    const m = STATUS_META[status];
-    return `<span class="cond-status ${m.cls}">${m.word}</span>`;
-  }
-
-  // decided: 隣接順位を分けた決め手（タイブレーク）を1行の文章に。
-  function boundaryHTML(b: BoundaryNote, st: Standings): string {
-    const rowOf = (id: string) => st.rows.find((r) => r.teamId === id)!;
-    const h = rowOf(b.higher);
-    const l = rowOf(b.lower);
-    const hN = `${team(b.higher).flag}${esc(team(b.higher).name)}`;
-    const lN = `${team(b.lower).flag}${esc(team(b.lower).name)}`;
-    const verb = b.cutoff ? "通過" : "上位";
-    let prose: string;
-    switch (b.reason) {
-      case "points":
-        prose = `勝点 ${h.points}-${l.points} で ${hN} が${verb}`;
-        break;
-      case "gd":
-        prose = `勝点${h.points}で並び → 総得失点差 ${gdLabel(h.gd)} / ${gdLabel(l.gd)} で ${hN} が${verb}`;
-        break;
-      case "gf":
-        prose = `勝点${h.points}・得失点差${gdLabel(h.gd)} で並び → 総得点 ${h.gf}-${l.gf} で ${hN} が${verb}`;
-        break;
-      case "h2h_pts":
-      case "h2h_gd":
-      case "h2h_gf":
-        prose = `総合成績が並び → ${esc(b.detail)}で ${hN} が${verb}`;
-        break;
-      case "fairplay":
-        prose = `総合・直接対決とも並び → フェアプレー（警告少）で ${hN} が${verb}`;
-        break;
-      default:
-        prose = `総合・直接対決とも並び → 🎲抽選で決定`;
-    }
-    return `
-      <li class="boundary-note${b.cutoff ? " is-cutoff" : ""}">
-        <span class="boundary-rank">${rankMark(h.rank)}${hN} <span class="boundary-sep">/</span> ${rankMark(l.rank)}${lN}</span>
-        <span class="boundary-prose">${prose}</span>
-      </li>`;
-  }
-
-  // final-round: 自チームの結果（勝/分/敗）ごとの通過可否を ✅⚠️❌ で。
-  function conditionHTML(c: TeamCondition): string {
-    const ante =
-      c.result === "win"
-        ? c.verdict === "advance" && c.note
-          ? esc(c.note)
-          : "勝てば"
-        : c.result === "draw"
-          ? "引き分けなら"
-          : "敗れると";
-    const cons = c.verdict === "advance" ? "突破" : c.verdict === "out" ? "敗退" : "他会場・得失点しだい";
-    const icon = c.verdict === "advance" ? "✅" : c.verdict === "out" ? "❌" : "⚠️";
-    return `<li class="cond-line cond-${c.verdict}"><span class="cond-icon">${icon}</span><span>${ante}<b>${cons}</b></span></li>`;
-  }
-
-  // final-round のチームカード（decided は決め手リスト・early はパネル非表示なので呼ばれない）。
-  function teamCondHTML(tq: TeamQualification): string {
-    const head = `
-      <div class="cond-head">
-        <span class="cond-rank">${rankMark(tq.rank)}</span>
-        <span class="cond-flag">${team(tq.teamId).flag}</span>
-        <span class="cond-name">${esc(team(tq.teamId).name)}</span>
-        <span class="cond-stat tnum">勝点${tq.points}・${gdLabel(tq.gd)}</span>
-        ${statusBadge(tq.status)}
-      </div>`;
-
-    let body: string;
-    if (tq.status === "advanced") {
-      body = `<p class="cond-note">✅ すでに突破確定</p>`;
-    } else if (tq.status === "eliminated") {
-      body = `<p class="cond-note">❌ すでに敗退</p>`;
-    } else if (tq.conditions.length > 0) {
-      body = `<ul class="cond-list">${tq.conditions.map(conditionHTML).join("")}</ul>`;
-    } else {
-      body = `<p class="cond-note">⚠️ 他会場の結果しだい</p>`;
-    }
-    return `<div class="card team-cond">${head}${body}</div>`;
-  }
-
-  function scenarioHTML(view: RenderView): string {
-    const q = view.qualification!;
-    if (q.phase === "decided") {
-      const notes = q.boundaries.map((b) => boundaryHTML(b, view.standings!)).join("");
-      return `
-        <p class="scenario-intro">全試合が終了。各順位を分けた<b>決め手（タイブレーク）</b>を解説します。</p>
-        <div class="card scenario-boundaries">
-          <p class="scenario-block-title">決着の分かれ目</p>
-          <ul class="boundary-list">${notes}</ul>
-        </div>`;
-    }
-    if (q.phase === "final-round") {
-      const watch = q.tiebreakWatch ?? [];
-      let tb = "";
-      if (watch.length > 0) {
-        const names = watch.map((id) => `${team(id).flag}${esc(team(id).name)}`);
-        const joined = names.length === 2 ? names.join("と") : names.join("・");
-        tb = `<p class="scenario-note">⚠️ ${joined} が<b>勝点で並ぶ可能性</b>。並んだ場合は ②総得失点差 → ③総得点 → 直接対決 の順で決まります。</p>`;
-      }
-      const simul = q.simultaneous
-        ? `<p class="scenario-note">⏱️ 最終節の2試合は<b>同時刻キックオフ</b>。「他会場しだい」はもう1試合の結果に依存します。</p>`
-        : "";
-      const cards = q.teams.map((t) => teamCondHTML(t)).join("");
-      return `
-        <p class="scenario-intro">最終節の結果しだいで通過が決まります。各チームが<b>自分の試合でどうすれば通過するか</b>:</p>
-        ${tb}
-        ${simul}
-        <div class="scenario-teams">${cards}</div>`;
-    }
-    // early はパネルごと非表示（render が呼ばない）。防御的に空を返す。
-    return "";
-  }
-
   function render(view: RenderView): void {
     // グループタブのハイライトは両モード共通で同期。
     for (const tab of root.querySelectorAll<HTMLElement>(".group-tab")) {
@@ -912,18 +807,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     // ヒーロー内側幅を本文に合わせる（overview は本文 1200px に追従させ左端を揃える）。
     root.classList.toggle("scope-overview", isOverview);
 
-    // ランキング（得点＋FIFA）と決勝トーナメントは一覧・詳細で共通＝早期 return より前に更新。
-    elRankings.innerHTML = rankingsHTML(view);
-    elKnockout.innerHTML = knockoutHTML(view);
-
-    if (isOverview) {
-      elOverview.innerHTML = overviewHTML(view);
-      return; // detail 専用フィールドには触れない
-    }
-
-    // ---- detail（1グループ）。main.ts が detail のとき必ず渡す。 ----
-    const qualification = view.qualification!;
-    elCaption.textContent = `グループ ${view.group}`;
+    // 日程・結果（左カラム最上部）・ランキング・決勝トーナメントは一覧/詳細で共通＝早期 return より前に更新。
     elSchedule.innerHTML = scheduleHTML(view.group);
     // 日程カルーセルを該当グループの最初の試合まで横スクロール（rect 差分＝ページ縦には影響しない）。
     // レイアウト確定後に測るため rAF 経由（jsdom では no-op＝テストに影響なし）。
@@ -934,18 +818,19 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         car.scrollLeft += curCard.getBoundingClientRect().left - car.getBoundingClientRect().left - 16;
       });
     }
+    elRankings.innerHTML = rankingsHTML(view);
+    elKnockout.innerHTML = knockoutHTML(view);
+
+    if (isOverview) {
+      elOverview.innerHTML = overviewHTML(view);
+      return; // detail 専用フィールドには触れない
+    }
+
+    // ---- detail（1グループ）。main.ts が detail のとき必ず渡す。 ----
+    elCaption.textContent = `グループ ${view.group}`;
     elStandings.innerHTML = standingsHTML(view.standings!);
     elStatus.innerHTML = statusHTML(view.status!);
-    elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
-    // シナリオが定まらない early フェーズはパネルごと隠す（意味がある時だけ出す）。
-    if (qualification.phase === "early") {
-      elScenarioDetails.hidden = true;
-      elScenario.innerHTML = "";
-    } else {
-      elScenarioDetails.hidden = false;
-      elScenario.innerHTML = scenarioHTML(view);
-    }
   }
 
   return { render };

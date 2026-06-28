@@ -1,5 +1,5 @@
-// DOM レベルのスモークテスト: boot → グループ選択 → 順位/FIFA/ステータス/シナリオ描画 →
-// 単一タイムライン（分刻み＋節末＋縦型ログ）→ 得点ランキング → 共有URL復元 → 大会切替 を jsdom で検証。
+// DOM レベルのスモークテスト: boot → 日程・結果（上部・ドリル）→ 最終順位/ステータス →
+// タイムライン（チャート＋試合別得点ログ）→ ランキング(右レール)/決勝T(左) → 共有URL復元 → 大会切替 を jsdom で検証。
 // 実行: npx tsx scripts/domtest.ts
 import { JSDOM } from "jsdom";
 import { boot } from "../src/app/main";
@@ -58,17 +58,16 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#schedule .sched-card.is-current").length === 6, `1: 該当グループAの6試合を強調（実際: ${root.querySelectorAll("#schedule .sched-card.is-current").length}）`);
   assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "1: 2022は全消化＝未消化なし");
   assert([...root.querySelectorAll("#schedule .sched-date")].some((e) => /\d+\/\d+/.test(e.textContent ?? "")), "1: カードに日付");
-  // レイアウト順序（レビュー反映）: チャート(全幅)が先頭 → 本文(順位表→…→日程) → サイドバー。
-  // 日程カルーセルは「主役の下＝secondary」位置へ降格、順位表が本文先頭。
+  // カードはクリックでそのグループ詳細へドリル（drill-group）。
+  assert(root.querySelectorAll('#schedule .sched-card[data-action="drill-group"]').length === 48, "1: 日程カードはドリル可能（data-action）");
+  // レイアウト順序: 左カラム＝日程・結果(最上部) → 詳細ビュー → 決勝トーナメント。詳細内は 最終順位 → タイムライン。
   {
-    const order = [...root.querySelector("#detail-view")!.children].map((c) => c.id);
-    const tlIdx = order.indexOf("detail-timeline");
-    const mainIdx = order.indexOf("detail-main");
-    assert(tlIdx === 0 && mainIdx > tlIdx, "1: タイムライン(全幅)が本文より先頭");
-    const kids = [...root.querySelector("#detail-main")!.children];
-    const finalH2Idx = kids.findIndex((c) => (c.textContent ?? "").includes("最終順位"));
-    const schedIdx = kids.findIndex((c) => c.id === "schedule");
-    assert(finalH2Idx === 0 && schedIdx > finalH2Idx, "1: 本文は順位表が先・日程はその下へ降格");
+    const mainKids = [...root.querySelector(".layout-main")!.children].map((c) => c.id);
+    assert(mainKids.indexOf("schedule") === 0, "1: 日程・結果が左カラム最上部");
+    assert(mainKids.indexOf("schedule") < mainKids.indexOf("detail-view"), "1: 日程は詳細ビューより前");
+    assert(mainKids.indexOf("detail-view") < mainKids.indexOf("knockout"), "1: 決勝トーナメントは左カラム末尾");
+    const dv = [...root.querySelector("#detail-view")!.children].map((c) => c.id);
+    assert(dv.indexOf("detail-main") < dv.indexOf("detail-timeline"), "1: 最終順位(detail-main)がタイムラインより前");
   }
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "1: 順位表4行");
   assert(!!root.querySelector(".standings .tiebreak-legend"), "1: タイブレーク優先順位の凡例がある");
@@ -93,7 +92,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".tl-chart .tl-poslabel").length === 4, "1: 順位ラベル4（1〜4）");
   assert(root.querySelectorAll(".tl-chart .tl-endlabel").length === 4, "1: 右端の最終順位ラベル4");
   assert(root.querySelectorAll(".tl-chart .tl-dot.is-scorer").length === 15, "1: 得点で動いた頂点=全15ゴール");
-  assert((root.querySelector('.tl-chart .tl-endlabel[data-team="ned"]')?.textContent ?? "").includes("NED"), "1: 右端ラベルにオランダ(NED)");
+  assert((root.querySelector('.tl-chart .tl-endlabel[data-team="ned"]')?.textContent ?? "").includes("オランダ"), "1: 右端ラベルは国名（オランダ）");
   // 最終順位1位（凡例先頭）がオランダ
   const leg0 = root.querySelector(".tl-legend .tl-leg-item")?.textContent ?? "";
   assert(leg0.includes("オランダ") && leg0.includes("1位"), `1: 凡例先頭=オランダ1位（実際: ${leg0}）`);
@@ -101,12 +100,13 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   // チャート上に節結果スコア（各レーン上＝両参加チームに紐づく）= 3節×4チーム=12（組A 全消化）
   assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 12, `1: チャートに節結果スコア12（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
   assert([...root.querySelectorAll(".tl-chart .tl-round-score")].some((e) => /\d-\d/.test(e.textContent ?? "")), "1: 節結果スコアにスコア表記");
-  // 得点タイムライン（縦型・チャート下）: 節見出し3・ゴール15・「第n節 結果」3
-  assert(root.querySelectorAll(".tl-log .tlog-goal").length === 15, `1: 得点行=全15ゴール（実際: ${root.querySelectorAll(".tl-log .tlog-goal").length}）`);
-  assert(root.querySelectorAll(".tl-log .tlog-cols .tlog-col").length === 3, "1: 節カラム3（第1〜3節を横並び）");
+  // 得点タイムライン（チャート下）: 試合別カラム＝1節2カラム。組A=3節×2試合=6カラム・節見出し3・対戦見出し6。
+  assert(root.querySelectorAll(".tl-log .tlog-goal:not(.tlog-noscore)").length === 15, `1: 得点行=全15ゴール（実際: ${root.querySelectorAll(".tl-log .tlog-goal:not(.tlog-noscore)").length}）`);
+  assert(root.querySelectorAll(".tl-log .tlog-cols .tlog-md-group").length === 3, "1: 節グループ3（第1〜3節）");
+  assert(root.querySelectorAll(".tl-log .tlog-col").length === 6, "1: 試合カラム6（3節×2試合）");
   assert(root.querySelectorAll(".tl-log .tlog-md-head").length === 3, "1: 節見出し3（第1〜3節）");
-  assert(root.querySelectorAll(".tl-log .tlog-round").length === 3, "1: 節末『第n節 結果』ブロック3");
-  assert((root.querySelector(".tl-log .tlog-round")?.textContent ?? "").includes("結果"), "1: 節末ブロックに『結果』");
+  assert(root.querySelectorAll(".tl-log .tlog-match").length === 6, "1: 各試合カラムに対戦見出し6");
+  assert([...root.querySelectorAll(".tl-log .tlog-match")].some((e) => (e.textContent ?? "").includes("オランダ")), "1: 対戦見出しは国名（オランダ）");
   assert((root.querySelector(".tl-log")?.textContent ?? "").includes("ガクポ"), "1: 得点タイムラインに得点者名が見える");
   assert([...root.querySelectorAll(".tl-md-date")].some((e) => /\d+\/\d+/.test(e.textContent ?? "")), "1: 節ラベルに日付 M/D");
   // 順位表に FIFA順位を併記（組A=ned8/sen18/ecu44/qat50）。
@@ -132,10 +132,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector("#rankings #top-scorers .ts-table"), "1: 得点ランキングは共通 #rankings 内");
   assert(root.querySelectorAll("#top-scorers .ts-table tbody tr").length >= 1, "1: 得点ランキングに行がある");
   assert((root.querySelector("#top-scorers")?.textContent ?? "").includes("バレンシア"), "1: バレンシア(3点)も得点ランキングに載る");
-  // 通過条件シナリオは折りたたみ <details> 内に降格（2022 組Aは全消化=決め手解説）
-  assert(!!root.querySelector("details#scenario-details"), "1: シナリオは details 内");
-  assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "1: decided は決着の分かれ目を表示");
-  assert(root.querySelectorAll("#scenario-details .boundary-note").length === 2, "1: 境界ノート2件（1↔2/2↔3）");
+  // 通過条件（シナリオ）は削除済み＝パネルは存在しない。
+  assert(!root.querySelector("#scenario-details") && !root.querySelector("#scenario"), "1: 通過条件パネルは削除されている");
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "1: 既定はグループA");
   console.log("[dom] 初期描画（タイムライン＝順位バンプチャート）OK");
 }
@@ -152,7 +150,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(dots > 24, `1b: 分刻みは頂点が多い（実際: ${dots}）`);
   assert(root.querySelectorAll(".tl-chart .tl-dot.is-roundend").length === 12, "1b: 節末リング=4×3=12");
   assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 12, `1b: チャートに節結果スコア12（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
-  assert(root.querySelectorAll(".tl-log .tlog-round").length === 3, `1b: 縦型ログに『第n節 結果』3（実際: ${root.querySelectorAll(".tl-log .tlog-round").length}）`);
+  assert(root.querySelectorAll(".tl-log .tlog-col").length === 6, `1b: 試合カラム6（3節×2試合）（実際: ${root.querySelectorAll(".tl-log .tlog-col").length}）`);
   assert(root.querySelectorAll(".tl-log .tlog-md-head").length === 3, "1b: 縦型ログに節見出し3");
   // 節末リングの <title> に試合結果が入る（ツールチップ）
   assert([...root.querySelectorAll(".tl-chart .tl-dot.is-roundend title")].some((t) => /\d-\d/.test(t.textContent ?? "")), "1b: 節末頂点ツールチップに試合結果");
@@ -168,7 +166,6 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   click(dom, tabE);
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "E", "2: E が選択状態");
   assert(decodeQuery(dom.window.location.search).group === "E", "2: URL に group=E");
-  assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "2: 切替後もシナリオ（決め手）描画");
   // E の1位は日本（順位表先頭）
   const firstTeam = root.querySelector(".standings-table tbody tr .team-name")?.textContent ?? "";
   assert(firstTeam.includes("日本"), `2: E の1位は日本（実際: ${firstTeam}）`);
@@ -183,7 +180,6 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "H", "6: H が復元");
   const firstTeam = root.querySelector(".standings-table tbody tr .team-name")?.textContent ?? "";
   assert(firstTeam.includes("ポルトガル"), `6: H の1位はポルトガル（実際: ${firstTeam}）`);
-  assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "6: シナリオ（決め手）描画");
   console.log("[dom] 共有URL復元 OK");
 }
 
@@ -223,9 +219,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#schedule .sched-card").length === 72, `8: 2026 は全72カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
   assert(root.querySelectorAll("#schedule .sched-card.is-current").length === 6, "8: 該当グループAの6試合を強調");
   assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "8: 全消化＝未消化カードなし");
-  assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
-  assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
-  assert(!root.querySelector("#best-thirds .bt-note"), "8: 全消化＝『暫定』注記は出さない");
+  // 3位比較は一覧のみ＝詳細には無い。
+  assert(!root.querySelector("#best-thirds"), "8: 3位比較は詳細に無い（一覧のみ）");
   // FIFAランキング（大会全体）: 2026 は全48出場国を FIFA順位順。組Aの4チームを強調。
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 211, `8: FIFAランキングは世界全211カ国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
   // 常時表示は出場最下位（2026=NZL 85位）まで＝85行・以降は折りたたみ。
@@ -240,14 +235,12 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#knockout .ko-side.is-team[data-team]").length >= 6, "8: 確定組由来の枠は実チーム（data-team）");
   assert([...root.querySelectorAll("#knockout .ko-side.is-undecided")].some((e) => (e.textContent ?? "").startsWith("3位")), "8: 3位枠は集合ラベル表示");
   assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "8: 通過する3位プールを併記");
-  // 2026 組A は全3節消化＝decided＝シナリオパネルに「決着の分かれ目」を表示
-  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 decided(組A)はシナリオパネル表示");
-  assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "8: 2026 decided は決着の分かれ目を表示");
-  // 全12組消化＝どの組も decided。組K に切替えても「決着の分かれ目」を表示。
+  // 通過条件パネルは削除済み。
+  assert(!root.querySelector("#scenario-details"), "8: 通過条件パネルは無い");
+  // 組K に切替えても順位表が描画される（タブ動作の確認）。
   click(dom, root.querySelector<HTMLElement>('.group-tab[data-group="K"]')!);
-  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 decided(組K)はシナリオパネル表示");
-  assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "8: 2026 decided(組K)は決着の分かれ目を表示");
-  console.log("[dom] 大会切替 ?cup=2026（12組・3位比較パネル）OK");
+  assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "8: 組K 切替で順位表4行");
+  console.log("[dom] 大会切替 ?cup=2026（12組・KO・FIFA）OK");
 }
 
 // ---- 8b) 2022 は best-thirds 非表示（DOM 不変） ----
@@ -257,7 +250,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   const root = app(dom);
   assert(root.querySelectorAll(".cup-tab").length === 3, "8b: 大会タブ3");
   assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2022", "8b: 2022 を選択");
-  assert((root.querySelector("#best-thirds")?.innerHTML ?? "").trim() === "", "8b: 2022 は best-thirds 空");
+  assert(!root.querySelector("#best-thirds"), "8b: 3位比較は詳細に無い（一覧のみ）");
   // 決勝トーナメント: 2022=R16 全16試合・R16=8・全消化なので R16 の16枠すべて実チーム・3位プールなし。
   assert(root.querySelectorAll("#knockout .ko-match").length === 16, `8b: 2022 KO 全16試合（実際: ${root.querySelectorAll("#knockout .ko-match").length}）`);
   assert(root.querySelectorAll("#knockout .ko-round-R16 .ko-match").length === 8, "8b: 2022 KO R16=8試合");
@@ -286,8 +279,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   // 全48試合・全消化（is-upcoming なし）
   assert(root.querySelectorAll("#schedule .sched-card").length === 48, `8c: 2018 は全48カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
   assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "8c: 2018 は全消化（未消化カードなし）");
-  // 2018 は advanceBestThirds 無し＝best-thirds 空（2022 と同じ DOM 不変契約）
-  assert((root.querySelector("#best-thirds")?.innerHTML ?? "").trim() === "", "8c: 2018 は best-thirds 空");
+  // 3位比較は一覧のみ＝詳細に無い。
+  assert(!root.querySelector("#best-thirds"), "8c: 3位比較は詳細に無い（一覧のみ）");
   // R5: KO結果入り＝優勝フランス・勝者ハイライト。R6: 得点王ケイン6点（グループ5+KO1）。
   assert(root.querySelector('#knockout .ko-round-F .ko-side.is-winner')?.getAttribute("data-team") === "fra", "8c: 2018 優勝はフランス");
   assert(root.querySelectorAll("#knockout .ko-side.is-winner").length === 16, "8c: 2018 KO 各試合に勝者ハイライト16");
@@ -309,6 +302,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert((root.querySelector("#overview") as HTMLElement).hidden === false, "9: 既定で一覧が表示");
   assert((root.querySelector("#detail-view") as HTMLElement).hidden === true, "9: 詳細は非表示");
   assert(decodeQuery(dom.window.location.search).scope === undefined, "9: 既定 overview は URL に scope を出さない");
+  // 日程・結果は一覧にも表示（左カラム最上部・両scope共通）。
+  assert(!!root.querySelector(".layout-main #schedule .sched-carousel"), "9: 一覧にも日程・結果がある");
+  assert(root.querySelectorAll('#schedule .sched-card[data-action="drill-group"]').length === 48, "9: 一覧の日程カードもドリル可能");
   assert(root.querySelectorAll(".overview-grid .mini-group").length === 8, "9: 2022 はカード8");
   assert(root.querySelectorAll(".overview-grid .mini-group .mini-table tbody tr").length === 32, "9: 8組×4行=32");
   assert(root.querySelectorAll(".overview-grid .mini-group .row-advance").length === 16, "9: 各組上位2が緑=計16");
