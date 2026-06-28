@@ -521,7 +521,7 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
     return m;
   };
 
-  // 2026 = R32（48カ国・3位上位8）。進行中＝確定組(A〜F)由来は実チーム、未確定組(G〜L)/3位枠はラベル。
+  // 2026 = R32（48カ国・3位上位8）。進行中＝確定組(A〜I＋L)由来は実チーム、未確定組(J・K)/3位枠はラベル。
   const ct26 = compileTournament(worldcup2026Json);
   const sbg = sbgOf(ct26);
   const ko = computeKnockout(ct26, sbg);
@@ -536,8 +536,12 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   // 確定組: M73=2A vs 2B（両確定）、M75 の W-F=ned（組F1位）。
   assert(!!byId.get("73")!.side1.teamId && !!byId.get("73")!.side2.teamId, "KO 2026: M73(2A,2B)は両方確定");
   assert(byId.get("75")!.side1.teamId === "ned", "KO 2026: M75 の組F1位は ned");
-  // 未確定組: M83=2K vs 2L（両未確定）。
-  assert(byId.get("83")!.side1.undecided && byId.get("83")!.side2.undecided, "KO 2026: M83(2K,2L)は未確定");
+  // 残る未消化組 J・K 由来の枠は未確定 / 消化済み組由来は確定。
+  // M83=2K vs 2L → 2K(組K未消化)は未確定・2L(組L消化済み)は確定。
+  assert(byId.get("83")!.side1.undecided && !byId.get("83")!.side1.teamId, "KO 2026: M83 の 2K(組K未消化)は未確定");
+  assert(!byId.get("83")!.side2.undecided && !!byId.get("83")!.side2.teamId, "KO 2026: M83 の 2L(組L消化済み)は確定");
+  // M84=1H vs 2J → 2J(組J未消化)は未確定。
+  assert(byId.get("84")!.side2.undecided && !byId.get("84")!.side2.teamId, "KO 2026: M84 の 2J(組J未消化)は未確定");
   // 3位枠8つは集合ラベルのまま（割当しない方針）。
   for (const id of ["74", "77", "79", "80", "81", "82", "85", "87"]) {
     const s = byId.get(id)!.side2;
