@@ -119,7 +119,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
         <section id="detail-timeline">
           <h2 class="section-title">タイムライン <span class="hint">この時間に得点 → この時点ではこの順位（節末に試合結果）</span></h2>
-          <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・●＝前半/◉＝後半の得点・◇＝節末に各試合結果）</p>
+          <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}${btNote}） ／ 線＝各国の順位推移（右端＝最終順位・●＝得点・◇＝節末に各試合結果）</p>
           <div id="timeline"></div>
         </section>
       </div>
@@ -610,9 +610,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         const scorerId = e && e.scorerSide ? (e.scorerSide === "home" ? e.homeId : e.awayId) : undefined;
         const scoring = scorerId === tid;
         const isRE = snap.kind === "roundEnd";
-        // 後半(>45')の得点点は縁取り(◉)で区別。前半/通常は塗り(●)。
-        const secondHalf = scoring && snap.event != null && snap.event.minute > 45;
-        const cls = `tl-dot${scoring ? " is-scorer" : ""}${secondHalf ? " is-2nd" : ""}${isRE ? " is-roundend" : ""}${oc}`;
+        // 得点点は前半/後半を問わず一律で強調丸（is-scorer）。
+        const cls = `tl-dot${scoring ? " is-scorer" : ""}${isRE ? " is-roundend" : ""}${oc}`;
         const r = scoring ? 5 : isRE ? 4 : 3;
         // 節末は色付きの中空リング（チェックポイント）、ゴールは塗りつぶし。
         const dotStyle = isRE ? `fill:var(--surface);stroke:${color}` : `fill:${color}`;

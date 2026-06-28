@@ -19,7 +19,7 @@ export interface SnapshotEvent {
   scorerSide?: GoalSide;
   /** 得点選手名（あれば） */
   scorer?: string;
-  /** 得点時の分（前半/後半の判定用。45超=後半）。 */
+  /** 得点時の分（ツールチップ・得点ログの時刻表示用）。 */
   minute: number;
 }
 

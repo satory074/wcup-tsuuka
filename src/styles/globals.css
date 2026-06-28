@@ -993,11 +993,6 @@ table.bt-table {
 .tl-dot.is-roundend {
   stroke-width: 2.5;
 }
-/* 後半(>45')の得点＝塗り(チーム色)＋濃い縁取り(◉)で前半(●)と区別。is-scorer の後に置き stroke を上書き。 */
-.tl-dot.is-2nd {
-  stroke: var(--ink);
-  stroke-width: 2;
-}
 /* F-3: 最終的に圏外の国は淡く＝通過する2本（主役）に注目を集める（selective highlighting）。 */
 .tl-line.is-out {
   stroke-width: 3;
