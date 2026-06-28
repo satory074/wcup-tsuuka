@@ -427,10 +427,18 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       view.bestThirds && view.bestThirds.slots > 0
         ? `<div class="overview-bt">${bestThirdsHTML(view.bestThirds)}</div>`
         : "";
+    // サイドのコンテンツ（得点ランキング＋FIFAランキング）を一覧でも全幅2カラムで表示。
+    // ビルダーの生成物は内部にIDを持たない（クラスのみ）ので detail の #top-scorers/#fifa-ranking と衝突しない。
+    // 各ランキングは「見出し＋カード」の2要素を返すので、1グリッドセルに収まるよう列ラッパで包む。
+    const rankings = `<div class="overview-rankings">`
+      + `<div class="overview-rank-col">${topScorersHTML(view.scorers ?? [])}</div>`
+      + `<div class="overview-rank-col">${fifaRankingHTML(view.group)}</div>`
+      + `</div>`;
     return `
       <p class="tl-legend-note">🟩 暫定通過圏（上位${ct.meta.advancePerGroup}） ／ 🎲 抽選 ／ カードをタップでそのグループの詳細（タイムライン）へ</p>
       <div class="overview-grid">${cards}</div>
-      ${bt}`;
+      ${bt}
+      ${rankings}`;
   }
 
   // ---- タイムライン（主役・順位バンプチャート: x=イベント時系列, y=順位, 線=各国の推移） ----

@@ -23,8 +23,8 @@ function derivePhase(st: Standings): OverviewPhase {
 }
 
 const DATA: Record<Cup, unknown> = { "2018": worldcup2018, "2022": worldcup2022, "2026": worldcup2026 };
-// 既定大会は 2022（既存の共有URL＝?cup無し＝2022 を温存）。2026 は切替UIで前面に出す。
-const DEFAULT_CUP: Cup = "2022";
+// 既定大会は 2026（最新大会）。トップは「最新大会の一覧」＝?cup/?scope 無しで 2026・overview。
+const DEFAULT_CUP: Cup = "2026";
 
 export function boot(root: HTMLElement, dataArg?: unknown): void {
   // ?cup を compile 前に読み、データを選ぶ（テスト注入の dataArg は最優先）。
@@ -44,7 +44,7 @@ export function boot(root: HTMLElement, dataArg?: unknown): void {
   }
 
   let group: GroupId = ct.groups[0];
-  let scope: Scope = "detail";
+  let scope: Scope = "overview";
 
   const renderer = createRenderer(root, ct, cup, (cmd) => {
     switch (cmd.type) {

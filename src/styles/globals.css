@@ -130,7 +130,7 @@ body {
    sticky サイドバーは背の高い隣(本文)と並ぶので隙間が出ない。 */
 #detail-view:not([hidden]) {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: var(--sp-6);
   align-items: start;
 }
@@ -147,13 +147,10 @@ body {
 #detail-main .scenario-details {
   max-width: 660px;
 }
+/* 入れ子スクロールは廃止＝通常フローの列（得点＋FIFAは縦に全件並び、ページスクロールで閲覧）。 */
 #detail-side {
   grid-column: 2;
-  position: sticky;
-  top: var(--sp-4);
   align-self: start;
-  max-height: calc(100vh - 2rem);
-  overflow-y: auto;
 }
 /* 各領域の先頭見出しは grid の row-gap と二重に空かないよう上マージンを消す。 */
 #detail-timeline > .section-title:first-child,
@@ -177,8 +174,6 @@ body {
     margin-bottom: var(--sp-6);
   }
   #detail-side {
-    position: static;
-    max-height: none;
     margin-top: var(--sp-6);
   }
 }
@@ -951,6 +946,23 @@ table.bt-table {
      比較表は内容量が少ないので幅を抑えて中央寄せ＝名前のすぐ隣に数値が並ぶ。 */
   max-width: 760px;
   margin-inline: auto;
+}
+/* 一覧でも得点ランキング＋FIFAランキングを表示（全幅・横2カラム。狭幅で1カラム）。 */
+.overview-rankings {
+  margin-top: var(--sp-6);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-6);
+  align-items: start;
+}
+/* 各列ラッパ（見出し＋カード）。見出しは上マージンを消してカラム頭を揃える。 */
+.overview-rank-col > .section-title:first-child {
+  margin-top: 0;
+}
+@media (max-width: 760px) {
+  .overview-rankings {
+    grid-template-columns: 1fr;
+  }
 }
 .tl-legend-note {
   font-size: var(--ts-sm);
