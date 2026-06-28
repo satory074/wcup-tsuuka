@@ -1378,6 +1378,81 @@ table.bt-table {
   color: var(--ink-soft);
 }
 
+/* ---- FIFAランキング（大会全体・右サイドバー） ---- */
+.fr-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.fr-table th,
+.fr-table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+.fr-table thead th {
+  font-size: var(--ts-xs);
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.fr-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.fr-table .team-flag {
+  font-size: 1.15rem;
+}
+.fr-table .team-name {
+  font-size: var(--ts-sm);
+}
+/* 順位列＝FIFA世界ランキングの数値（最大3桁を見据えて右寄せ・等幅）。 */
+.fr-rank {
+  width: 2.2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.fr-code {
+  margin-left: 0.4rem;
+  font-family: var(--font-num);
+  font-size: var(--ts-2xs);
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.fr-grp {
+  width: 2rem;
+  text-align: center;
+}
+.fr-grp-badge {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 0.32rem;
+}
+/* 現在表示中グループの国を強調（日程カードの is-current と同思想）。 */
+.fr-table tbody tr.is-current {
+  background: var(--advance-soft);
+  box-shadow: inset 3px 0 0 var(--pitch);
+}
+.fr-table tbody tr.is-current .fr-grp-badge {
+  background: var(--pitch);
+  color: #fff;
+  border-color: var(--pitch);
+}
+/* ホバー連動（チャート・順位表・凡例と同期。既存 .is-hl と同思想）。 */
+.fr-table tbody tr.is-hl {
+  background: var(--surface-2);
+}
+.fr-table tbody tr.is-hl .team-name {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ---- 通過条件シナリオ（折りたたみ） ---- */
 .scenario-details {
   margin-top: var(--sp-6);

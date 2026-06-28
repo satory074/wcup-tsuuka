@@ -122,6 +122,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
         <aside id="detail-side">
           <div id="top-scorers"></div>
+          <div id="fifa-ranking"></div>
         </aside>
       </div>
 
@@ -144,6 +145,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elBestThirds = $("#best-thirds");
   const elTimeline = $("#timeline");
   const elTopScorers = $("#top-scorers");
+  const elFifaRanking = $("#fifa-ranking");
   const elScenario = $("#scenario");
   const elScenarioDetails = $("#scenario-details");
   const elCaption = $("#group-caption");
@@ -693,6 +695,35 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       </div>`;
   }
 
+  // ---- FIFAランキング（大会全体・全出場国を FIFA順位順） ----
+  // ランキング値の「時点」ラベル（大会直前のスナップショット。データは worldcup<year>.json に投入済み）。
+  const FIFA_AS_OF: Record<Cup, string> = { "2018": "2018年6月", "2022": "2022年10月", "2026": "2026年6月" };
+  function fifaRankingHTML(currentGroup: GroupId): string {
+    const teams = [...ct.teamsById.values()].filter((t) => t.fifaRank != null);
+    if (teams.length === 0) return "";
+    // FIFA順位 昇順（同値は teamId 昇順で決定的）。
+    teams.sort((a, b) => a.fifaRank! - b.fifaRank! || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const rows = teams
+      .map((t) => {
+        const cur = t.group === currentGroup;
+        // data-team で既存のホバー連動（.is-hl）に乗る。現在表示中グループは .is-current で強調。
+        return `<tr class="fr-row${cur ? " is-current" : ""}" data-team="${t.id}">
+            <td class="fr-rank">${t.fifaRank}</td>
+            <td class="col-team"><span class="team-cell"><span class="team-flag">${t.flag}</span><span class="team-name">${esc(t.name)}</span><span class="fr-code">${tc(t.id)}</span></span></td>
+            <td class="fr-grp"><span class="fr-grp-badge">${t.group}</span></td>
+          </tr>`;
+      })
+      .join("");
+    return `
+      <h2 class="section-title">FIFAランキング <span class="hint">大会全体・${FIFA_AS_OF[cup]}時点（出場${teams.length}カ国／現在の組を強調）</span></h2>
+      <div class="card fr-card tnum">
+        <table class="fr-table">
+          <thead><tr><th class="fr-rank">順</th><th class="col-team">国</th><th class="fr-grp">組</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
   // ---- 通過条件シナリオ（折りたたみ内） ----
   const STATUS_META: Record<TeamStatus["status"], { cls: string; word: string }> = {
     advanced: { cls: "is-advanced", word: "突破確定" },
@@ -856,6 +887,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     elBestThirds.innerHTML = view.bestThirds ? bestThirdsHTML(view.bestThirds) : "";
     elTimeline.innerHTML = timelineHTML(view);
     elTopScorers.innerHTML = topScorersHTML(view.scorers ?? []);
+    elFifaRanking.innerHTML = fifaRankingHTML(view.group);
     // シナリオが定まらない early フェーズはパネルごと隠す（意味がある時だけ出す）。
     if (qualification.phase === "early") {
       elScenarioDetails.hidden = true;

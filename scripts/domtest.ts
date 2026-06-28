@@ -96,10 +96,15 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert((root.querySelector(".tl-log .tlog-round")?.textContent ?? "").includes("結果"), "1: 節末ブロックに『結果』");
   assert((root.querySelector(".tl-log")?.textContent ?? "").includes("ガクポ"), "1: 得点タイムラインに得点者名が見える");
   assert([...root.querySelectorAll(".tl-md-date")].some((e) => /\d+\/\d+/.test(e.textContent ?? "")), "1: 節ラベルに日付 M/D");
-  // 順位表に FIFA順位を併記（組A=ned8/sen18/ecu44/qat50）。専用パネルは廃止。
+  // 順位表に FIFA順位を併記（組A=ned8/sen18/ecu44/qat50）。
   assert(root.querySelectorAll(".standings-table .team-fifa").length === 4, "1: 順位表に FIFA順位を4チーム併記");
   assert((root.querySelector(".standings-table .team-fifa")?.textContent ?? "").includes("FIFA"), "1: 併記は『FIFA ◯位』");
-  assert(!root.querySelector("#fifa-ranking .fifa-item"), "1: FIFAランキング専用パネルは廃止");
+  // FIFAランキング（大会全体）は右サイドバー(#detail-side)内＝全出場国を FIFA順位順。2022=32カ国。
+  assert(!!root.querySelector("#detail-side #fifa-ranking .fr-table"), "1: FIFAランキングは右サイドバー内");
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 32, `1: FIFAランキングに全32出場国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr[data-team]").length === 32, "1: FIFA各行に data-team（ホバー連動）");
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-current").length === 4, "1: 現在の組（A）4チームを強調");
+  assert((root.querySelector("#fifa-ranking .fr-table tbody tr .fr-rank")?.textContent ?? "") === "1", "1: 先頭はFIFA1位");
   // 得点ランキング（大会全体）は右サイドバー(#detail-side)内。2022 得点王=エクアドルのバレンシア。
   assert(!!root.querySelector("#detail-side #top-scorers .ts-table"), "1: 得点ランキングは右サイドバー内");
   assert(root.querySelectorAll("#top-scorers .ts-table tbody tr").length >= 1, "1: 得点ランキングに行がある");
@@ -198,6 +203,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
   assert(!root.querySelector("#best-thirds .bt-note"), "8: 全消化＝『暫定』注記は出さない");
+  // FIFAランキング（大会全体）: 2026 は全48出場国を FIFA順位順。組Aの4チームを強調。
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 48, `8: FIFAランキングに全48出場国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-current").length === 4, "8: 現在の組（A）4チームを強調");
   // 決勝トーナメント（ブラケット）: 2026=R32 全32試合・R32は16・確定枠は実チーム・3位枠はラベル・通過3位プール。
   assert(!!root.querySelector("#knockout .ko-bracket"), "8: 決勝トーナメント ブラケットがある");
   assert(root.querySelectorAll("#knockout .ko-match").length === 32, `8: KO 全32試合（実際: ${root.querySelectorAll("#knockout .ko-match").length}）`);
