@@ -209,36 +209,57 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     return gd > 0 ? `+${gd}` : String(gd);
   }
 
-  // ---- 日程・結果（全試合・横並びカルーセル。時系列・該当グループを強調） ----
-  function scheduleHTML(group: GroupId): string {
-    // 全グループの全試合を集約 → キックオフ（ISO は辞書順＝時系列）昇順・同時刻は id。
-    const all = ct.groups.flatMap((g) => ct.matchesByGroup.get(g) ?? []);
-    if (all.length === 0) return "";
-    const ordered = [...all].sort((a, b) => {
-      const ka = a.kickoff ?? "";
-      const kb = b.kickoff ?? "";
-      return ka < kb ? -1 : ka > kb ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-    });
+  // ---- 日程・結果（全試合＋決勝トーナメント・横並びカルーセル。時系列・該当グループを強調） ----
+  const KO_SHORT: Record<KoRound, string> = { R32: "R32", R16: "R16", QF: "準々", SF: "準決", "3P": "3決", F: "決勝" };
+  function scheduleHTML(view: RenderView): string {
+    const group = view.group;
     const teamRow = (id: string, pts: string) =>
       `<div class="sched-card-row"><span class="sched-flag">${team(id).flag}</span><span class="sched-name">${tn(id)}</span><span class="sched-pts">${pts}</span></div>`;
-    const cards = ordered
+    // グループステージの全試合（該当グループは強調＋クリックでドリル）。
+    const groupCards = ct.groups
+      .flatMap((g) => ct.matchesByGroup.get(g) ?? [])
       .map((m) => {
         const { date, time } = fmtKickoff(m.kickoff ?? "");
         const played = m.score !== undefined && m.score !== null;
         const cur = m.group === group;
         const cls = `sched-card${cur ? " is-current" : ""}${played ? "" : " is-upcoming"}`;
-        return (
+        const html =
           `<button type="button" class="${cls}" data-action="drill-group" data-group="${m.group}"${cur ? ' data-current="1"' : ""} aria-label="グループ${m.group}の詳細へ">` +
           `<div class="sched-card-head"><span class="sched-date">${esc(date)}</span><span class="sched-time">${esc(time)}</span><span class="sched-grp">${m.group}</span></div>` +
           teamRow(m.home, played ? String(m.score!.home) : "–") +
           teamRow(m.away, played ? String(m.score!.away) : "–") +
-          `</button>`
-        );
-      })
-      .join("");
+          `</button>`;
+        return { kickoff: m.kickoff ?? "", key: m.id, html };
+      });
+    // 決勝トーナメント（kickoff を持つ＝日程確定の試合。確定チームは旗＋国名、未確定はスロットラベル）。
+    const koRow = (side: KoSide, pts: string, win: boolean) =>
+      `<div class="sched-card-row${win ? " is-winner" : ""}">` +
+      (side.teamId
+        ? `<span class="sched-flag">${team(side.teamId).flag}</span><span class="sched-name">${tn(side.teamId)}</span>`
+        : `<span class="sched-name sched-ko-label">${esc(side.label)}</span>`) +
+      `<span class="sched-pts">${pts}</span></div>`;
+    const koCards = (view.knockout?.matches ?? [])
+      .filter((m) => m.kickoff)
+      .map((m) => {
+        const { date, time } = fmtKickoff(m.kickoff!);
+        const r = m.result;
+        const s1 = r ? String(r.side1Score) : "–";
+        const s2 = r ? String(r.side2Score) : "–";
+        const html =
+          `<div class="sched-card is-ko${r ? "" : " is-upcoming"}">` +
+          `<div class="sched-card-head"><span class="sched-date">${esc(date)}</span><span class="sched-time">${esc(time)}</span><span class="sched-grp sched-ko-badge">${KO_SHORT[m.round]}</span></div>` +
+          koRow(m.side1, s1, r?.winnerSide === 1) +
+          koRow(m.side2, s2, r?.winnerSide === 2) +
+          `</div>`;
+        return { kickoff: m.kickoff!, key: m.id, html };
+      });
+    const all = [...groupCards, ...koCards];
+    if (all.length === 0) return "";
+    // キックオフ昇順（ISO は辞書順＝時系列）・同時刻は id 安定化。KO は全グループ後の日付なので末尾に並ぶ。
+    all.sort((a, b) => (a.kickoff < b.kickoff ? -1 : a.kickoff > b.kickoff ? 1 : a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
     return `
-      <h2 class="section-title">日程・結果 <span class="hint">全試合（該当＝グループ${group}を強調・横スクロール）</span></h2>
-      <div class="card sched-carousel-wrap tnum"><div class="sched-carousel">${cards}</div></div>`;
+      <h2 class="section-title">日程・結果 <span class="hint">全試合＋決勝トーナメント（該当＝グループ${group}を強調・横スクロール）</span></h2>
+      <div class="card sched-carousel-wrap tnum"><div class="sched-carousel">${all.map((c) => c.html).join("")}</div></div>`;
   }
 
   // ---- 最終順位表 ----
@@ -356,12 +377,13 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
   function koMatchHTML(m: KoResolvedMatch): string {
     const no = m.no ? `<span class="ko-no">M${esc(m.no)}</span>` : "";
+    const dt = m.kickoff ? `<span class="ko-date">${esc(fmtKickoff(m.kickoff).date)}</span>` : "";
     const r = m.result;
     // PK戦は勝者側のスコアを先に「PK 4-2」表記（勝者視点）。
     const so = r?.shootout
       ? `<span class="ko-so">PK ${r.winnerSide === 1 ? `${r.shootout.side1}-${r.shootout.side2}` : `${r.shootout.side2}-${r.shootout.side1}`}</span>`
       : "";
-    return `<div class="ko-match${r ? " is-played" : ""}">${no}<div class="ko-sides">${koSideHTML(m.side1, r?.side1Score, r?.winnerSide === 1)}${koSideHTML(m.side2, r?.side2Score, r?.winnerSide === 2)}</div>${so}</div>`;
+    return `<div class="ko-match${r ? " is-played" : ""}">${no}${dt}<div class="ko-sides">${koSideHTML(m.side1, r?.side1Score, r?.winnerSide === 1)}${koSideHTML(m.side2, r?.side2Score, r?.winnerSide === 2)}</div>${so}</div>`;
   }
 
   function knockoutHTML(view: RenderView): string {
@@ -374,10 +396,13 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       })
       .join("");
 
-    // 2026: 「勝者 vs 3位」枠の通過3位を凡例として併記（どの枠に入るかは未割当）。
+    // 2026: 「勝者 vs 3位」枠の通過3位を凡例として併記（割当が未確定のときだけ。確定済み＝R32 に実チームが入る）。
     let pool = "";
     const bt = view.bestThirds;
-    if (bt && bt.slots > 0) {
+    const hasUnassignedThird = ko.matches.some(
+      (m) => (m.side1.undecided && m.side1.label.startsWith("3位")) || (m.side2.undecided && m.side2.label.startsWith("3位")),
+    );
+    if (bt && bt.slots > 0 && hasUnassignedThird) {
       const adv = bt.entries.filter((e) => e.advances);
       if (adv.length > 0) {
         const chips = adv
@@ -675,7 +700,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         const color = colorOf.get(scorerId) ?? "var(--border-strong)";
         const who = e.scorer ? `${team(scorerId).flag}${esc(e.scorer)}` : `${team(scorerId).flag}`;
         m.goals.push(
-          `<li class="tlog-goal" style="border-left-color:${color}"><span class="tlog-time">${esc(s.clockLabel)}</span><span class="tlog-scorer">⚽${who}</span><span class="tlog-score">${e.homeScore}-${e.awayScore}</span></li>`,
+          `<li class="tlog-goal" style="border-left-color:${color}"><span class="tlog-time">${esc(s.clockLabel)}</span><span class="tlog-scorer">⚽${who}</span><span class="tlog-score">${tn(e.homeId)} ${e.homeScore}-${e.awayScore} ${tn(e.awayId)}</span></li>`,
         );
       }
     }
@@ -808,7 +833,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     root.classList.toggle("scope-overview", isOverview);
 
     // 日程・結果（左カラム最上部）・ランキング・決勝トーナメントは一覧/詳細で共通＝早期 return より前に更新。
-    elSchedule.innerHTML = scheduleHTML(view.group);
+    elSchedule.innerHTML = scheduleHTML(view);
     // 日程カルーセルを該当グループの最初の試合まで横スクロール（rect 差分＝ページ縦には影響しない）。
     // レイアウト確定後に測るため rAF 経由（jsdom では no-op＝テストに影響なし）。
     const car = elSchedule.querySelector<HTMLElement>(".sched-carousel");

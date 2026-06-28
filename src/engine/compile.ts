@@ -1,6 +1,6 @@
 // 生 JSON → CompiledTournament（Map 群とグループ↔試合の索引）。
 // validateTournament を内部で呼び、失敗時は結合エラーで throw する（boot で catch して表示）。
-import type { CompiledTournament, GroupId, Match, Team } from "./types";
+import type { CompiledTournament, GroupId, KnockoutScheduleEntry, Match, Team } from "./types";
 import { validateTournament } from "./validate";
 
 export function compileTournament(raw: unknown): CompiledTournament {
@@ -33,6 +33,9 @@ export function compileTournament(raw: unknown): CompiledTournament {
 
   const groups = declared.filter((g) => teamsByGroup.has(g));
 
+  const knockoutSchedule = new Map<string, KnockoutScheduleEntry>();
+  for (const e of t.knockoutSchedule ?? []) knockoutSchedule.set(e.id, e);
+
   return {
     meta: t.meta,
     teamsById,
@@ -40,5 +43,6 @@ export function compileTournament(raw: unknown): CompiledTournament {
     teamsByGroup,
     matchesByGroup,
     knockout: t.knockout ?? [],
+    knockoutSchedule,
   };
 }

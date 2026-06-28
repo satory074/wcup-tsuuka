@@ -243,6 +243,26 @@ export function validateTournament(raw: unknown): ValidateResult {
     }
   }
 
+  // ---- knockoutSchedule（任意・KO日程＝テンプレ id キー。kickoff 形式＋3位割当チーム存在を担保） ----
+  if (raw.knockoutSchedule !== undefined && raw.knockoutSchedule !== null) {
+    if (!Array.isArray(raw.knockoutSchedule)) err("knockoutSchedule が配列ではない");
+    else {
+      const seenKoIds = new Set<string>();
+      for (const [i, e] of raw.knockoutSchedule.entries()) {
+        const at = `knockoutSchedule[${i}]`;
+        if (!isRecord(e)) { err(`${at} がオブジェクトではない`); continue; }
+        if (typeof e.id !== "string" || !e.id) err(`${at}.id が空`);
+        else if (seenKoIds.has(e.id)) err(`${at}.id "${e.id}" が重複`);
+        else seenKoIds.add(e.id);
+        if (typeof e.kickoff !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(e.kickoff))
+          err(`${at}.kickoff が "YYYY-MM-DDThh:mm" ではない`);
+        if (e.third !== undefined && e.third !== null) {
+          if (typeof e.third !== "string" || !teamIds.has(e.third)) err(`${at}.third "${String(e.third)}" がチームに無い`);
+        }
+      }
+    }
+  }
+
   // ---- 組ごとに 4チームの総当り（6対戦・各チーム3試合）になっているか ----
   // 宇宙（GROUP_IDS）ではなく、宣言された組だけを回す（2022=8組 / 2026=12組 に追従）。
   if (errors.length === 0) {

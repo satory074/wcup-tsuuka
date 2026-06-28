@@ -106,6 +106,20 @@ export interface KnockoutResult {
   goals?: Goal[];
 }
 
+/**
+ * 決勝トーナメントの日程（試合ごとのキックオフ）。結果（KnockoutResult）とは別系統で、
+ * テンプレート（bracketTemplate）の KoMatch.id をキーに結ぶ。未消化の大会（2026）でも
+ * 日程だけ先に持てる＝「日程・結果」やブラケットに日付を出すための任意データ。
+ */
+export interface KnockoutScheduleEntry {
+  /** テンプレ KoMatch.id（2026="73".."104" / 2018・2022="r16-1".."f"）。 */
+  id: string;
+  /** キックオフ日時（ISO 現地。2018 は MSK 正規化）。 */
+  kickoff: string;
+  /** 2026 R32 の「3位枠（slot=third）」に入る実チーム teamId（確定済みの割当・8件のみ）。 */
+  third?: string;
+}
+
 /** 生 JSON のルート（= worldcup2022.json） */
 export interface Tournament {
   meta: Meta;
@@ -114,6 +128,8 @@ export interface Tournament {
   matches: Match[];
   /** 決勝トーナメントの実結果（任意。完了大会のみ）。 */
   knockout?: KnockoutResult[];
+  /** 決勝トーナメントの日程（任意。試合ごとの kickoff＋2026 の3位割当）。 */
+  knockoutSchedule?: KnockoutScheduleEntry[];
 }
 
 /** 検証後にインデックス化した実行時表現 */
@@ -125,6 +141,8 @@ export interface CompiledTournament {
   matchesByGroup: Map<GroupId, Match[]>;
   /** 決勝トーナメントの実結果（無ければ空配列）。 */
   knockout: KnockoutResult[];
+  /** 決勝トーナメントの日程（テンプレ KoMatch.id キー。無ければ空 Map）。 */
+  knockoutSchedule: Map<string, KnockoutScheduleEntry>;
 }
 
 /** 仮定スコア・マトリックスのピボットなどで「この試合はこのスコア」を上書きする */
@@ -195,6 +213,8 @@ export interface KoResolvedMatch {
   id: string;
   round: KoRound;
   no?: string;
+  /** キックオフ日時（knockoutSchedule 由来。無ければ未定）。 */
+  kickoff?: string;
   side1: KoSide;
   side2: KoSide;
   /** 実結果（両スロットが実チームに解決でき、KO結果データがある場合のみ）。 */

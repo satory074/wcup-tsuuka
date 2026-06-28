@@ -872,6 +872,30 @@ table.bt-table {
   color: #fff;
   border-color: var(--pitch);
 }
+/* 決勝トーナメントのカード（グループに紐づかない＝非クリック）。 */
+.sched-card.is-ko {
+  cursor: default;
+  border-style: dashed;
+}
+.sched-card.is-ko:hover {
+  border-color: var(--border);
+  box-shadow: none;
+}
+.sched-ko-badge {
+  background: var(--alive);
+  color: #fff;
+  border-color: var(--alive);
+}
+.sched-ko-label {
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.sched-card-row.is-winner .sched-name {
+  font-weight: 800;
+}
+.sched-card-row.is-winner .sched-pts {
+  color: var(--advance-ink);
+}
 .sched-card-row {
   display: flex;
   align-items: center;
@@ -1105,13 +1129,12 @@ table.bt-table {
 /* 得点タイムライン＝節カラム（第1/2/3節を横並び・全幅活用・高さ圧縮）。狭幅は flex-wrap で縦積み。 */
 .tlog-cols {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--sp-4);
   margin-top: var(--sp-2);
 }
-/* 1節＝2試合を1ブロックに（節見出し＋2カラム）。 */
+/* 1節＝2試合を1ブロックに（節見出し＋2カラム）。節ごとに段（行）を分ける＝縦積み。 */
 .tlog-md-group {
-  flex: 1 1 340px;
   min-width: 0;
 }
 .tlog-md-cols {
@@ -1181,13 +1204,17 @@ table.bt-table {
 }
 .tlog-scorer {
   flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 700;
   color: var(--ink);
 }
 .tlog-score {
   flex: 0 0 auto;
-  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   color: var(--ink-soft);
 }
 /* 得点なしの試合（0-0）。 */
@@ -1476,6 +1503,16 @@ table.bt-table {
   color: var(--ink-faint);
   line-height: 1;
   margin-bottom: 0.15rem;
+}
+/* キックオフ日（M/D）＝試合カード右上に小さく。 */
+.ko-date {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.35rem;
+  font-family: var(--font-num);
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  line-height: 1;
 }
 .ko-sides {
   display: flex;

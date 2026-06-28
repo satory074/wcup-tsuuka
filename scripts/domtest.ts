@@ -54,9 +54,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert((root.querySelector("#detail-view") as HTMLElement).hidden === false, "1: 詳細表示");
   // 日程・結果（本文トップ・全試合の横並びカルーセル）。2022は全48試合・組Aの6試合を強調。
   assert(!!root.querySelector("#schedule .sched-carousel"), "1: 日程カルーセルがある");
-  assert(root.querySelectorAll("#schedule .sched-card").length === 48, `1: 全試合48カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
+  assert(root.querySelectorAll("#schedule .sched-card").length === 64, `1: 全試合48＋決勝T16=64カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
+  assert(root.querySelectorAll("#schedule .sched-card.is-ko").length === 16, "1: 決勝Tカード16（R16〜決勝）");
   assert(root.querySelectorAll("#schedule .sched-card.is-current").length === 6, `1: 該当グループAの6試合を強調（実際: ${root.querySelectorAll("#schedule .sched-card.is-current").length}）`);
-  assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "1: 2022は全消化＝未消化なし");
+  assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "1: 2022は全消化＝未消化なし（KO結果入り）");
   assert([...root.querySelectorAll("#schedule .sched-date")].some((e) => /\d+\/\d+/.test(e.textContent ?? "")), "1: カードに日付");
   // カードはクリックでそのグループ詳細へドリル（drill-group）。
   assert(root.querySelectorAll('#schedule .sched-card[data-action="drill-group"]').length === 48, "1: 日程カードはドリル可能（data-action）");
@@ -215,10 +216,11 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".group-tab").length === 12, `8: 2026 はグループタブ12（実際: ${root.querySelectorAll(".group-tab").length}）`);
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "8: 既定はグループA");
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "8: 順位表4行（単一組）");
-  // 日程カルーセル: 2026 は全72試合。組Aの6試合を強調。グループステージ全消化＝未消化(is-upcoming)なし。
-  assert(root.querySelectorAll("#schedule .sched-card").length === 72, `8: 2026 は全72カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
+  // 日程カルーセル: 2026 は全72試合＋決勝T32＝104カード。組Aの6試合を強調。KOは未消化＝is-upcoming。
+  assert(root.querySelectorAll("#schedule .sched-card").length === 104, `8: 2026 は全72＋決勝T32=104カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
+  assert(root.querySelectorAll("#schedule .sched-card.is-ko").length === 32, "8: 決勝Tカード32（R32〜決勝）");
   assert(root.querySelectorAll("#schedule .sched-card.is-current").length === 6, "8: 該当グループAの6試合を強調");
-  assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "8: 全消化＝未消化カードなし");
+  assert(root.querySelectorAll("#schedule .sched-card.is-ko.is-upcoming").length === 32, "8: 2026 KOは未消化＝32カードが is-upcoming");
   // 3位比較は一覧のみ＝詳細には無い。
   assert(!root.querySelector("#best-thirds"), "8: 3位比較は詳細に無い（一覧のみ）");
   // FIFAランキング（大会全体）: 2026 は全48出場国を FIFA順位順。組Aの4チームを強調。
@@ -228,13 +230,13 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector("#fifa-ranking details.fr-more"), "8: 以降は折りたたみ（details.fr-more）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-team").length === 48, "8: 出場48カ国を強調（.is-team）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-current").length === 4, "8: 現在の組（A）4チームを強調");
-  // 決勝トーナメント（ブラケット）: 2026=R32 全32試合・R32は16・確定枠は実チーム・3位枠はラベル・通過3位プール。
+  // 決勝トーナメント（ブラケット）: 2026=R32 全32試合・R32は16試合＝3位8枠も割当済みで全32枠が実チーム・プールは消滅。
   assert(!!root.querySelector("#knockout .ko-bracket"), "8: 決勝トーナメント ブラケットがある");
   assert(root.querySelectorAll("#knockout .ko-match").length === 32, `8: KO 全32試合（実際: ${root.querySelectorAll("#knockout .ko-match").length}）`);
   assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-match").length === 16, "8: KO R32=16試合");
-  assert(root.querySelectorAll("#knockout .ko-side.is-team[data-team]").length >= 6, "8: 確定組由来の枠は実チーム（data-team）");
-  assert([...root.querySelectorAll("#knockout .ko-side.is-undecided")].some((e) => (e.textContent ?? "").startsWith("3位")), "8: 3位枠は集合ラベル表示");
-  assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "8: 通過する3位プールを併記");
+  assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-side.is-team[data-team]").length === 32, "8: R32 全32枠が実チーム（3位割当済み）");
+  assert(!root.querySelector("#knockout .ko-pool"), "8: 3位割当済み＝『未割当』プールは出さない");
+  assert(!!root.querySelector('#knockout .ko-match .ko-date'), "8: ブラケット各試合に日付（knockoutSchedule）");
   // 通過条件パネルは削除済み。
   assert(!root.querySelector("#scenario-details"), "8: 通過条件パネルは無い");
   // 組K に切替えても順位表が描画される（タブ動作の確認）。
@@ -276,9 +278,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".cup-tab").length === 3, "8c: 大会タブ3");
   assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2018", "8c: 2018 が選択状態");
   assert(root.querySelectorAll(".group-tab").length === 8, `8c: 2018 はグループタブ8（実際: ${root.querySelectorAll(".group-tab").length}）`);
-  // 全48試合・全消化（is-upcoming なし）
-  assert(root.querySelectorAll("#schedule .sched-card").length === 48, `8c: 2018 は全48カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
-  assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "8c: 2018 は全消化（未消化カードなし）");
+  // 全48試合＋決勝T16＝64カード・全消化（KO結果入り＝is-upcoming なし）
+  assert(root.querySelectorAll("#schedule .sched-card").length === 64, `8c: 2018 は全48＋決勝T16=64カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
+  assert(root.querySelectorAll("#schedule .sched-card.is-ko").length === 16, "8c: 2018 決勝Tカード16");
+  assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "8c: 2018 は全消化（KO結果入り＝未消化なし）");
   // 3位比較は一覧のみ＝詳細に無い。
   assert(!root.querySelector("#best-thirds"), "8c: 3位比較は詳細に無い（一覧のみ）");
   // R5: KO結果入り＝優勝フランス・勝者ハイライト。R6: 得点王ケイン6点（グループ5+KO1）。
@@ -340,9 +343,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector("#rankings .ts-table"), "9b: 一覧に得点ランキング");
   assert(root.querySelectorAll("#rankings .fr-table tbody tr").length === 211, "9b: 一覧のFIFAランキングも世界全211カ国");
   assert(root.querySelectorAll("#rankings .fr-table tbody tr.is-team").length === 48, "9b: 一覧でも出場48カ国を強調");
-  // 決勝トーナメントは一覧でも全幅表示。2026=R32 全32試合＋通過3位プール。
+  // 決勝トーナメントは一覧でも全幅表示。2026=R32 全32試合・3位割当済みで全32枠が実チーム。
   assert(root.querySelectorAll("#knockout .ko-match").length === 32, "9b: 一覧でも決勝トーナメント（2026 R32=32）が表示");
-  assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "9b: 一覧でも通過3位プールを併記");
+  assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-side.is-team[data-team]").length === 32, "9b: 一覧でも R32 全32枠が実チーム（3位割当済み）");
+  assert(!root.querySelector("#knockout .ko-pool"), "9b: 3位割当済み＝『未割当』プールは出さない");
   console.log("[dom] 一覧 2026（12カード・ベスト3位表・サイドランキング）OK");
 }
 

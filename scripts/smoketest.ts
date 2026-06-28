@@ -102,7 +102,17 @@ function assert(cond: boolean, msg: string): void {
   const bk2 = clone();
   (bk2.knockout as { winner: string }[])[0].winner = "draw";
   assert(!validateTournament(bk2).ok, "KO の不正 winner を弾く");
-  console.log("[data] 不正データ検出 + goals/KO 本数==score + winner + 選手名 OK");
+  // knockoutSchedule: kickoff 形式不正 / id 重複 / third が非チーム を弾く。
+  const ks1 = clone();
+  ks1.knockoutSchedule = [{ id: "r16-1", kickoff: "2022/12/03" }];
+  assert(!validateTournament(ks1).ok, "knockoutSchedule の不正 kickoff を弾く");
+  const ks2 = clone();
+  ks2.knockoutSchedule = [{ id: "x", kickoff: "2022-12-03T18:00" }, { id: "x", kickoff: "2022-12-03T22:00" }];
+  assert(!validateTournament(ks2).ok, "knockoutSchedule の id 重複を弾く");
+  const ks3 = clone();
+  ks3.knockoutSchedule = [{ id: "r16-1", kickoff: "2022-12-03T18:00", third: "zzz" }];
+  assert(!validateTournament(ks3).ok, "knockoutSchedule の third 非チームを弾く");
+  console.log("[data] 不正データ検出 + goals/KO 本数==score + winner + knockoutSchedule + 選手名 OK");
 }
 
 // ---- 2) 2022 実順位の再現 ----
@@ -242,6 +252,7 @@ function synthCt(teamIds: string[], matches: Match[]): CompiledTournament {
     teamsByGroup: new Map([["A", teamIds.map(team)]]),
     matchesByGroup: new Map([["A", matches]]),
     knockout: [],
+    knockoutSchedule: new Map(),
   };
 }
 
@@ -463,7 +474,7 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
     return m;
   };
 
-  // 2026 = R32（48カ国・3位上位8）。グループステージ全消化＝winner/runnerup 枠(24)は全て実チーム、3位枠(8)のみラベル。
+  // 2026 = R32（48カ国・3位上位8）。グループステージ全消化＋knockoutSchedule で3位8枠も実チームに割当済み＝R32 全32枠が実チーム。
   const ct26 = compileTournament(worldcup2026Json);
   const sbg = sbgOf(ct26);
   const ko = computeKnockout(ct26, sbg);
@@ -474,21 +485,23 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   const sides26 = ko.matches.flatMap((m) => [m.side1, m.side2]);
   assert(sides26.every((s) => (s.teamId ? !s.undecided : s.undecided)), "KO 2026: teamId↔確定 の整合");
   assert(sides26.every((s) => !s.teamId || ct26.teamsById.has(s.teamId)), "KO 2026: 解決チームは実在");
+  // 全 KO 試合に kickoff（knockoutSchedule 由来）。
+  assert(ko.matches.every((m) => typeof m.kickoff === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(m.kickoff!)), "KO 2026: 全試合に kickoff");
   const byId = new Map(ko.matches.map((m) => [m.id, m]));
   // 確定組: M73=2A vs 2B（両確定）、M75 の W-F=ned（組F1位）。
   assert(!!byId.get("73")!.side1.teamId && !!byId.get("73")!.side2.teamId, "KO 2026: M73(2A,2B)は両方確定");
   assert(byId.get("75")!.side1.teamId === "ned", "KO 2026: M75 の組F1位は ned");
-  // 全12組消化＝R32 の winner/runnerup 枠は全て実チーム（M83=2K vs 2L も両方確定）。
   assert(!byId.get("83")!.side1.undecided && !byId.get("83")!.side2.undecided, "KO 2026: M83(2K,2L)は両方確定");
+  // R32 全32枠が実チーム（winner/runnerup 24＋割当済み3位8）。
   const r32sides = ko.matches.filter((m) => m.round === "R32").flatMap((m) => [m.side1, m.side2]);
-  assert(r32sides.filter((s) => s.teamId).length === 24, "KO 2026: R32 の winner/runnerup 24枠は全て実チーム");
-  assert(r32sides.filter((s) => s.label.startsWith("3位")).length === 8, "KO 2026: R32 の3位枠は8つ");
-  // 3位枠8つは集合ラベルのまま（割当しない方針）。
-  for (const id of ["74", "77", "79", "80", "81", "82", "85", "87"]) {
+  assert(r32sides.filter((s) => s.teamId).length === 32, "KO 2026: R32 全32枠が実チーム（3位割当済み）");
+  assert(r32sides.every((s) => !s.undecided), "KO 2026: R32 に未確定枠なし");
+  // 3位8枠が knockoutSchedule.third で実チームに解決（割当の実例を検証）。
+  for (const [id, tid] of [["74", "par"], ["77", "swe"], ["79", "ecu"], ["80", "cod"], ["81", "bih"], ["82", "sen"], ["85", "alg"], ["87", "gha"]] as const) {
     const s = byId.get(id)!.side2;
-    assert(s.undecided && !s.teamId && s.label.startsWith("3位"), `KO 2026: M${id} の3位枠はラベル表示`);
+    assert(s.teamId === tid && !s.undecided, `KO 2026: M${id} の3位枠は ${tid} に割当`);
   }
-  // R16 以降は前ラウンド勝者/敗者＝KO結果が無いので全て未確定。
+  // R16 以降は前ラウンド勝者/敗者＝KO結果が無いので全て未確定（kickoff だけ持つ）。
   assert(
     ko.matches.filter((m) => m.round !== "R32").every((m) => m.side1.undecided && m.side2.undecided),
     "KO 2026: R16以降は全て未確定",
@@ -508,6 +521,7 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
     // KO結果解決＝全16枠が実チーム＋全試合に result（スコア・勝者）。
     assert(ko2.matches.every((m) => !!m.side1.teamId && !!m.side2.teamId), `KO ${label}: 全16枠が実チーム（KO結果解決）`);
     assert(ko2.matches.every((m) => !!m.result), `KO ${label}: 全試合に result`);
+    assert(ko2.matches.every((m) => typeof m.kickoff === "string"), `KO ${label}: 全試合に kickoff（knockoutSchedule）`);
     // 決勝・3位決定戦の勝者が実史と一致（捏造でなく KO結果データから解決）。
     const final = ko2.matches.find((m) => m.round === "F")!;
     const champion = final.result!.winnerSide === 1 ? final.side1.teamId : final.side2.teamId;
@@ -523,7 +537,7 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
     const f22 = ko22.matches.find((m) => m.round === "F")!;
     assert(!!f22.result!.shootout && f22.result!.shootout.side1 === 4 && f22.result!.shootout.side2 === 2, "KO 2022: 決勝は PK 4-2");
   }
-  console.log("[knockout] ブラケット OK（2026 R32=32・3位ラベル／2018-2022 全16枠＋勝者解決＝優勝fra/arg・3位bel/cro・PK）");
+  console.log("[knockout] ブラケット OK（2026 R32=32・3位8枠割当済み・全試合kickoff／2018-2022 全16枠＋勝者解決＝優勝fra/arg・3位bel/cro・PK）");
 }
 
 // ---- 9) ベスト3位の単体（合成12組フィクスチャ） ----
@@ -553,6 +567,7 @@ function mkCt12(slots: number): CompiledTournament {
     teamsByGroup: new Map(),
     matchesByGroup: new Map(GROUPS12.map((g) => [g, [] as Match[]])),
     knockout: [],
+    knockoutSchedule: new Map(),
   };
 }
 {

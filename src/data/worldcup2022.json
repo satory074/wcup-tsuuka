@@ -133,5 +133,23 @@
     { "round": "SF", "home": "fra", "away": "mar", "score": { "home": 2, "away": 0 }, "winner": "home", "goals": [ { "minute": 5, "side": "home", "player": "T.エルナンデス" }, { "minute": 79, "side": "home", "player": "コロ・ムアニ" } ] },
     { "round": "3P", "home": "cro", "away": "mar", "score": { "home": 2, "away": 1 }, "winner": "home", "goals": [ { "minute": 7, "side": "home", "player": "グバルディオル" }, { "minute": 9, "side": "away", "player": "ダリ" }, { "minute": 42, "side": "home", "player": "オルシッチ" } ] },
     { "round": "F", "home": "arg", "away": "fra", "score": { "home": 3, "away": 3 }, "winner": "home", "shootout": { "home": 4, "away": 2 }, "goals": [ { "minute": 23, "side": "home", "player": "メッシ(PK)" }, { "minute": 36, "side": "home", "player": "ディ・マリア" }, { "minute": 80, "side": "away", "player": "ムバッペ(PK)" }, { "minute": 81, "side": "away", "player": "ムバッペ" }, { "minute": 108, "side": "home", "player": "メッシ" }, { "minute": 118, "side": "away", "player": "ムバッペ(PK)" } ] }
+  ],
+  "knockoutSchedule": [
+    { "id": "r16-1", "kickoff": "2022-12-03T18:00" },
+    { "id": "r16-2", "kickoff": "2022-12-03T22:00" },
+    { "id": "r16-3", "kickoff": "2022-12-05T18:00" },
+    { "id": "r16-4", "kickoff": "2022-12-05T22:00" },
+    { "id": "r16-5", "kickoff": "2022-12-04T22:00" },
+    { "id": "r16-6", "kickoff": "2022-12-04T18:00" },
+    { "id": "r16-7", "kickoff": "2022-12-06T18:00" },
+    { "id": "r16-8", "kickoff": "2022-12-06T22:00" },
+    { "id": "qf-1", "kickoff": "2022-12-09T18:00" },
+    { "id": "qf-2", "kickoff": "2022-12-09T22:00" },
+    { "id": "qf-3", "kickoff": "2022-12-10T22:00" },
+    { "id": "qf-4", "kickoff": "2022-12-10T18:00" },
+    { "id": "sf-1", "kickoff": "2022-12-13T22:00" },
+    { "id": "sf-2", "kickoff": "2022-12-14T22:00" },
+    { "id": "3p", "kickoff": "2022-12-17T18:00" },
+    { "id": "f", "kickoff": "2022-12-18T18:00" }
   ]
 }

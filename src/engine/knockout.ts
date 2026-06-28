@@ -141,6 +141,7 @@ function resolveSlot(
   template: KoMatch[],
   winnerById: Map<string, string>,
   loserById: Map<string, string>,
+  third?: string,
 ): KoSide {
   switch (slot.kind) {
     case "winner":
@@ -148,7 +149,8 @@ function resolveSlot(
     case "runnerup":
       return resolveRank(standingsByGroup.get(slot.group), slot.group, 2);
     case "third":
-      // 割当はしない方針＝対象グループ集合のラベルのまま。
+      // 確定済みの3位割当（knockoutSchedule.third）があれば実チームに。無ければ集合ラベルのまま。
+      if (third) return { teamId: third, label: `3位 ${slot.groups.join("/")}`, undecided: false };
       return { label: `3位 ${slot.groups.join("/")}`, undecided: true };
     case "winnerOf": {
       const no = noOf(slot.matchId, template);
@@ -186,8 +188,9 @@ export function computeKnockout(
 
   // template は依存順（前ラウンドが先）なので map の逐次実行で winnerById が間に合う。
   const matches: KoResolvedMatch[] = template.map((m) => {
-    const side1 = resolveSlot(m.slot1, standingsByGroup, template, winnerById, loserById);
-    const side2 = resolveSlot(m.slot2, standingsByGroup, template, winnerById, loserById);
+    const sched = ct.knockoutSchedule?.get(m.id);
+    const side1 = resolveSlot(m.slot1, standingsByGroup, template, winnerById, loserById, sched?.third);
+    const side2 = resolveSlot(m.slot2, standingsByGroup, template, winnerById, loserById, sched?.third);
     let result: KoResolvedMatch["result"] | undefined;
     if (side1.teamId && side2.teamId) {
       const r = resultByPair.get(pairKey(side1.teamId, side2.teamId));
@@ -210,7 +213,7 @@ export function computeKnockout(
         };
       }
     }
-    return { id: m.id, round: m.round, no: m.no, side1, side2, result };
+    return { id: m.id, round: m.round, no: m.no, kickoff: sched?.kickoff, side1, side2, result };
   });
 
   const present = new Set(template.map((m) => m.round));

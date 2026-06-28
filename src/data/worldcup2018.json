@@ -133,5 +133,23 @@
     { "round": "SF", "home": "cro", "away": "eng", "score": { "home": 2, "away": 1 }, "winner": "home", "goals": [ { "minute": 5, "side": "away", "player": "トリッピアー" }, { "minute": 68, "side": "home", "player": "ペリシッチ" }, { "minute": 109, "side": "home", "player": "マンジュキッチ" } ] },
     { "round": "3P", "home": "bel", "away": "eng", "score": { "home": 2, "away": 0 }, "winner": "home", "goals": [ { "minute": 4, "side": "home", "player": "ムニエ" }, { "minute": 82, "side": "home", "player": "アザール" } ] },
     { "round": "F", "home": "fra", "away": "cro", "score": { "home": 4, "away": 2 }, "winner": "home", "goals": [ { "minute": 18, "side": "home", "player": "マンジュキッチ(OG)" }, { "minute": 28, "side": "away", "player": "ペリシッチ" }, { "minute": 38, "side": "home", "player": "グリーズマン(PK)" }, { "minute": 59, "side": "home", "player": "ポグバ" }, { "minute": 65, "side": "home", "player": "エムバペ" }, { "minute": 69, "side": "away", "player": "マンジュキッチ" } ] }
+  ],
+  "knockoutSchedule": [
+    { "id": "r16-1", "kickoff": "2018-06-30T21:00" },
+    { "id": "r16-2", "kickoff": "2018-06-30T17:00" },
+    { "id": "r16-3", "kickoff": "2018-07-02T17:00" },
+    { "id": "r16-4", "kickoff": "2018-07-02T15:00" },
+    { "id": "r16-5", "kickoff": "2018-07-01T17:00" },
+    { "id": "r16-6", "kickoff": "2018-07-01T21:00" },
+    { "id": "r16-7", "kickoff": "2018-07-03T15:00" },
+    { "id": "r16-8", "kickoff": "2018-07-03T19:00" },
+    { "id": "qf-1", "kickoff": "2018-07-06T17:00" },
+    { "id": "qf-2", "kickoff": "2018-07-06T19:00" },
+    { "id": "qf-3", "kickoff": "2018-07-07T19:00" },
+    { "id": "qf-4", "kickoff": "2018-07-07T15:00" },
+    { "id": "sf-1", "kickoff": "2018-07-10T19:00" },
+    { "id": "sf-2", "kickoff": "2018-07-11T19:00" },
+    { "id": "3p", "kickoff": "2018-07-14T17:00" },
+    { "id": "f", "kickoff": "2018-07-15T17:00" }
   ]
 }
