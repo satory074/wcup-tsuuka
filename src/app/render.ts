@@ -360,7 +360,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       })
       .join("");
 
-    // 2026: 「勝者 vs 3位」枠の暫定通過3位を凡例として併記（どの枠に入るかは未割当）。
+    // 2026: 「勝者 vs 3位」枠の通過3位を凡例として併記（どの枠に入るかは未割当）。
     let pool = "";
     const bt = view.bestThirds;
     if (bt && bt.slots > 0) {
@@ -372,7 +372,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
               `<span class="ko-pool-chip" data-team="${e.teamId}"><span class="ko-flag">${team(e.teamId).flag}</span>${tc(e.teamId)}<span class="ko-pool-grp">${e.group}</span></span>`,
           )
           .join("");
-        pool = `<div class="ko-pool"><span class="ko-pool-label">暫定通過の3位（${bt.slots}枠）:</span>${chips}<span class="ko-pool-note">※ どの3位がどの「3位枠」に入るかは未割当（進行中）</span></div>`;
+        const poolLabel = bt.undecided ? `暫定通過の3位（${bt.slots}枠）:` : `通過する3位（${bt.slots}組）:`;
+        pool = `<div class="ko-pool"><span class="ko-pool-label">${poolLabel}</span>${chips}<span class="ko-pool-note">※ どの3位がどの「3位枠」に入るかは未割当</span></div>`;
       }
     }
 
@@ -667,7 +668,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     let cut = Math.min(top, scorers.length);
     while (cut < scorers.length && scorers[cut].goals === scorers[cut - 1].goals) cut++;
     const shown = scorers.slice(0, cut);
-    const partial = (ct.meta.advanceBestThirds ?? 0) > 0; // 2026 は進行中＝暫定
+    // 未消化試合が残るうちは暫定（全消化＝グループステージ確定なら注記を出さない）。
+    const partial = ct.groups.some((g) => ct.matchesByGroup.get(g)!.some((m) => m.score == null));
     const rows = shown
       .map(
         (e) =>

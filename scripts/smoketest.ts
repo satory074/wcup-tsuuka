@@ -462,7 +462,7 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   }
   console.log("[data] worldcup2026.json OK（チーム48 / 組12 / 試合72）");
 
-  // 進行中の部分タイムライン: 消化済み試合の全ゴール＋完全消化した節の節末スナップ
+  // 全消化タイムライン: 全ゴール＋完全消化した節の節末スナップ（2026は全12組消化済み）
   const liveI = buildTimeline(ct26, "I");
   assert(liveI !== null, "2026: 組I は goals がありタイムライン生成");
   const iGoals = ct26.matchesByGroup.get("I")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
@@ -476,15 +476,15 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   assert(liveA !== null, "2026: 組A も goals がありタイムライン生成");
   const aGoals = ct26.matchesByGroup.get("A")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
   assert(liveA!.length === aGoals + playedRounds(ct26, "A"), `2026: 組A は 全ゴール(${aGoals})＋節末(${playedRounds(ct26, "A")})`);
-  // 組K（第1〜2節消化・goals 投入済み）。節末は2つ。
+  // 組K（全3節消化・goals 投入済み）。節末は3つ。
   const liveK = buildTimeline(ct26, "K");
   assert(liveK !== null, "2026: 組K も消化済み試合＋goals でタイムライン生成");
   const kGoals = ct26.matchesByGroup.get("K")!.reduce((n, m) => n + (m.goals?.length ?? 0), 0);
-  assert(playedRounds(ct26, "K") === 2, "2026: 組K は第1〜2節消化");
+  assert(playedRounds(ct26, "K") === 3, "2026: 組K は全3節消化");
   assert(liveK!.length === kGoals + playedRounds(ct26, "K"), `2026: 組K は 全ゴール(${kGoals})＋節末(${playedRounds(ct26, "K")})`);
 
-  // 実データ best-thirds: グループステージ進行中（一部の組が消化完了）。
-  // 完了した組の3位は groupComplete、未完の組は contention。未完組がある限り全体は未確定。
+  // 実データ best-thirds: グループステージ全消化（全12組決着）。
+  // 全組 groupComplete、3位上位8が確定（undecided=false）。
   const sbg = new Map<GroupId, Standings>();
   for (const gid of ct26.groups) {
     const ms = ct26.matchesByGroup.get(gid)!;
@@ -493,12 +493,12 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   }
   const bt = computeBestThirds(ct26, sbg);
   assert(bt.slots === 8, "2026: best-thirds slots=8");
-  assert(bt.entries.length >= 1 && bt.entries.length <= 12, "2026: 3位エントリは1..12組");
+  assert(bt.entries.length === 12, "2026: 3位エントリは全12組");
   const complete26 = ct26.groups.filter((g) => ct26.matchesByGroup.get(g)!.every((m) => m.score != null));
-  assert(complete26.length >= 1, "2026: 1組以上が全消化");
-  assert(bt.entries.every((e) => e.groupComplete === complete26.includes(e.group)), "2026: groupComplete はデータと一致");
-  assert(bt.entries.filter((e) => !e.groupComplete).every((e) => e.state === "contention"), "2026: 未完の組の3位は contention");
-  assert(bt.undecided, "2026: 未完の組が残る間は未確定");
+  assert(complete26.length === 12, "2026: 全12組が全消化");
+  assert(bt.entries.every((e) => e.groupComplete && e.state === "confirmed"), "2026: 全組消化＝各3位は confirmed");
+  assert(bt.entries.filter((e) => e.advances).length === 8, "2026: 通過する3位はちょうど8組");
+  assert(!bt.undecided, "2026: 全12組消化＝3位上位8が確定（undecided=false）");
   assert(JSON.stringify(computeBestThirds(ct26, sbg)) === JSON.stringify(computeBestThirds(ct26, sbg)), "2026: best-thirds 決定的");
 
   // 2022（advanceBestThirds 未指定）は空を返す（no-regression 契約）
@@ -506,7 +506,7 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   for (const gid of CT.groups) sbg22.set(gid, standingsFor(gid));
   const bt22 = computeBestThirds(CT, sbg22);
   assert(bt22.slots === 0 && bt22.entries.length === 0 && !bt22.undecided, "2022: best-thirds は空（slots=0）");
-  console.log("[thirds] 2026 実データ best-thirds OK（進行中=一部完了・全体は暫定）＋ 2022 空");
+  console.log("[thirds] 2026 実データ best-thirds OK（全12組消化＝3位上位8確定）＋ 2022 空");
 }
 
 // ---- 8.5) 決勝トーナメント（ブラケット） knockout.ts ----
@@ -521,7 +521,7 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
     return m;
   };
 
-  // 2026 = R32（48カ国・3位上位8）。進行中＝確定組(A〜I＋L)由来は実チーム、未確定組(J・K)/3位枠はラベル。
+  // 2026 = R32（48カ国・3位上位8）。グループステージ全消化＝winner/runnerup 枠(24)は全て実チーム、3位枠(8)のみラベル。
   const ct26 = compileTournament(worldcup2026Json);
   const sbg = sbgOf(ct26);
   const ko = computeKnockout(ct26, sbg);
@@ -536,12 +536,11 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   // 確定組: M73=2A vs 2B（両確定）、M75 の W-F=ned（組F1位）。
   assert(!!byId.get("73")!.side1.teamId && !!byId.get("73")!.side2.teamId, "KO 2026: M73(2A,2B)は両方確定");
   assert(byId.get("75")!.side1.teamId === "ned", "KO 2026: M75 の組F1位は ned");
-  // 残る未消化組 J・K 由来の枠は未確定 / 消化済み組由来は確定。
-  // M83=2K vs 2L → 2K(組K未消化)は未確定・2L(組L消化済み)は確定。
-  assert(byId.get("83")!.side1.undecided && !byId.get("83")!.side1.teamId, "KO 2026: M83 の 2K(組K未消化)は未確定");
-  assert(!byId.get("83")!.side2.undecided && !!byId.get("83")!.side2.teamId, "KO 2026: M83 の 2L(組L消化済み)は確定");
-  // M84=1H vs 2J → 2J(組J未消化)は未確定。
-  assert(byId.get("84")!.side2.undecided && !byId.get("84")!.side2.teamId, "KO 2026: M84 の 2J(組J未消化)は未確定");
+  // 全12組消化＝R32 の winner/runnerup 枠は全て実チーム（M83=2K vs 2L も両方確定）。
+  assert(!byId.get("83")!.side1.undecided && !byId.get("83")!.side2.undecided, "KO 2026: M83(2K,2L)は両方確定");
+  const r32sides = ko.matches.filter((m) => m.round === "R32").flatMap((m) => [m.side1, m.side2]);
+  assert(r32sides.filter((s) => s.teamId).length === 24, "KO 2026: R32 の winner/runnerup 24枠は全て実チーム");
+  assert(r32sides.filter((s) => s.label.startsWith("3位")).length === 8, "KO 2026: R32 の3位枠は8つ");
   // 3位枠8つは集合ラベルのまま（割当しない方針）。
   for (const id of ["74", "77", "79", "80", "81", "82", "85", "87"]) {
     const s = byId.get(id)!.side2;

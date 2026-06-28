@@ -191,27 +191,27 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".group-tab").length === 12, `8: 2026 はグループタブ12（実際: ${root.querySelectorAll(".group-tab").length}）`);
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "8: 既定はグループA");
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "8: 順位表4行（単一組）");
-  // 日程カルーセル: 2026 は全72試合。組Aの6試合を強調、進行中なので未消化(is-upcoming)あり。
+  // 日程カルーセル: 2026 は全72試合。組Aの6試合を強調。グループステージ全消化＝未消化(is-upcoming)なし。
   assert(root.querySelectorAll("#schedule .sched-card").length === 72, `8: 2026 は全72カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
   assert(root.querySelectorAll("#schedule .sched-card.is-current").length === 6, "8: 該当グループAの6試合を強調");
-  assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length >= 1, "8: 進行中は未消化カードがある");
+  assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "8: 全消化＝未消化カードなし");
   assert(!!root.querySelector("#best-thirds .bt-table"), "8: 3位比較パネルがある");
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
-  assert(!!root.querySelector("#best-thirds .bt-note"), "8: 進行中は『全行が暫定』注記を1か所に集約");
-  // 決勝トーナメント（ブラケット）: 2026=R32 全32試合・R32は16・確定枠は実チーム・3位枠はラベル・暫定3位プール。
+  assert(!root.querySelector("#best-thirds .bt-note"), "8: 全消化＝『暫定』注記は出さない");
+  // 決勝トーナメント（ブラケット）: 2026=R32 全32試合・R32は16・確定枠は実チーム・3位枠はラベル・通過3位プール。
   assert(!!root.querySelector("#knockout .ko-bracket"), "8: 決勝トーナメント ブラケットがある");
   assert(root.querySelectorAll("#knockout .ko-match").length === 32, `8: KO 全32試合（実際: ${root.querySelectorAll("#knockout .ko-match").length}）`);
   assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-match").length === 16, "8: KO R32=16試合");
   assert(root.querySelectorAll("#knockout .ko-side.is-team[data-team]").length >= 6, "8: 確定組由来の枠は実チーム（data-team）");
   assert([...root.querySelectorAll("#knockout .ko-side.is-undecided")].some((e) => (e.textContent ?? "").startsWith("3位")), "8: 3位枠は集合ラベル表示");
-  assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "8: 暫定通過の3位プールを併記");
+  assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "8: 通過する3位プールを併記");
   // 2026 組A は全3節消化＝decided＝シナリオパネルに「決着の分かれ目」を表示
   assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 decided(組A)はシナリオパネル表示");
   assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "8: 2026 decided は決着の分かれ目を表示");
-  // 最終節のみ未消化の組（K＝第1〜2節消化）は final-round＝最終節チーム条件カードを表示
+  // 全12組消化＝どの組も decided。組K に切替えても「決着の分かれ目」を表示。
   click(dom, root.querySelector<HTMLElement>('.group-tab[data-group="K"]')!);
-  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 final-round(組K)はシナリオパネル表示");
-  assert(!!root.querySelector("#scenario .scenario-teams"), "8: 2026 final-round は最終節チーム条件カード");
+  assert((root.querySelector("details#scenario-details") as HTMLElement)?.hidden === false, "8: 2026 decided(組K)はシナリオパネル表示");
+  assert(!!root.querySelector("#scenario-details .scenario-boundaries"), "8: 2026 decided(組K)は決着の分かれ目を表示");
   console.log("[dom] 大会切替 ?cup=2026（12組・3位比較パネル）OK");
 }
 
@@ -289,10 +289,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelector('.scope-toggle [data-scope="overview"]')?.classList.contains("seg-on") === true, "9b: 一覧トグルが選択状態で復元");
   assert(root.querySelectorAll(".overview-grid .mini-group").length === 12, `9b: 2026 はカード12（実際: ${root.querySelectorAll(".overview-grid .mini-group").length}）`);
   assert(!!root.querySelector(".overview-bt .bt-table"), "9b: 一覧にベスト3位表がある");
-  assert(!!root.querySelector(".overview-bt .bt-note"), "9b: 一覧の3位比較に暫定注記がある");
-  // 決勝トーナメントは一覧でも全幅表示。2026=R32 全32試合＋暫定3位プール。
+  assert(!root.querySelector(".overview-bt .bt-note"), "9b: 全消化＝一覧の3位比較も暫定注記なし");
+  // 決勝トーナメントは一覧でも全幅表示。2026=R32 全32試合＋通過3位プール。
   assert(root.querySelectorAll("#knockout .ko-match").length === 32, "9b: 一覧でも決勝トーナメント（2026 R32=32）が表示");
-  assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "9b: 一覧でも暫定3位プールを併記");
+  assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "9b: 一覧でも通過3位プールを併記");
   console.log("[dom] 一覧 2026（12カード・ベスト3位表）OK");
 }
 
