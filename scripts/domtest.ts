@@ -112,8 +112,12 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   // 順位表に FIFA順位を併記（組A=ned8/sen18/ecu44/qat50）。
   assert(root.querySelectorAll(".standings-table .team-fifa").length === 4, "1: 順位表に FIFA順位を4チーム併記");
   assert((root.querySelector(".standings-table .team-fifa")?.textContent ?? "").includes("FIFA"), "1: 併記は『FIFA ◯位』");
-  // FIFAランキングは一覧・詳細で共通の #rankings セクション内（scope 非依存）。
-  assert(!!root.querySelector("#rankings #fifa-ranking .fr-table"), "1: FIFAランキングは共通 #rankings 内");
+  // 2カラム共通シェル: ランキングは右レール(.layout-side)、決勝トーナメントは左カラム(.layout-main)。
+  assert(!!root.querySelector(".layout-grid .layout-side #rankings"), "1: ランキングは右レール(.layout-side)内");
+  assert(!!root.querySelector(".layout-grid .layout-main #knockout"), "1: 決勝トーナメントは左カラム(.layout-main)内");
+  assert(!root.querySelector(".layout-side #knockout"), "1: 決勝トーナメントは右レールに無い");
+  // FIFAランキングは一覧・詳細で共通の #rankings セクション内（scope 非依存・縦積み）。
+  assert(!!root.querySelector("#rankings .rankings-stack #fifa-ranking .fr-table"), "1: FIFAランキングは共通 #rankings 内（縦積み）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 211, `1: FIFAランキングは世界全211カ国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
   // 常時表示は出場最下位（2022=ガーナ61位）まで＝61行・以降は details.fr-more に折りたたみ。
   assert(root.querySelectorAll("#fifa-ranking .fr-card > .fr-table tbody tr").length === 61, `1: 常時表示は出場最下位61位まで=61行（実際: ${root.querySelectorAll("#fifa-ranking .fr-card > .fr-table tbody tr").length}）`);
@@ -311,9 +315,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".overview-grid .mini-group .mini-fifa").length === 32, "9: 一覧カードに FIFA順位を併記（8組×4）");
   assert(!root.querySelector(".overview-bt"), "9: 2022 はベスト3位表なし");
   // R1: サイドのコンテンツ（得点ランキング＋FIFAランキング）を一覧でも表示。
-  assert(!!root.querySelector(".overview-rankings .ts-table"), "9: 一覧に得点ランキング");
-  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr").length === 211, "9: 一覧のFIFAランキングも世界全211カ国");
-  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr.is-team").length === 32, "9: 一覧でも出場32カ国を強調");
+  assert(!!root.querySelector("#rankings .ts-table"), "9: 一覧に得点ランキング");
+  assert(root.querySelectorAll("#rankings .fr-table tbody tr").length === 211, "9: 一覧のFIFAランキングも世界全211カ国");
+  assert(root.querySelectorAll("#rankings .fr-table tbody tr.is-team").length === 32, "9: 一覧でも出場32カ国を強調");
   // 決勝トーナメントは一覧でも全幅表示（両スコープ要件）。2022=R16 全16試合。
   assert(root.querySelectorAll("#knockout .ko-match").length === 16, "9: 一覧でも決勝トーナメント（2022 R16=16）が表示");
   // カード E をクリック → 詳細（E）へドリルイン。新スキームでは scope=detail が明示される。
@@ -337,9 +341,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!!root.querySelector(".overview-bt .bt-table"), "9b: 一覧にベスト3位表がある");
   assert(!root.querySelector(".overview-bt .bt-note"), "9b: 全消化＝一覧の3位比較も暫定注記なし");
   // R1: サイドのコンテンツを一覧でも表示（2026=48出場国）。
-  assert(!!root.querySelector(".overview-rankings .ts-table"), "9b: 一覧に得点ランキング");
-  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr").length === 211, "9b: 一覧のFIFAランキングも世界全211カ国");
-  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr.is-team").length === 48, "9b: 一覧でも出場48カ国を強調");
+  assert(!!root.querySelector("#rankings .ts-table"), "9b: 一覧に得点ランキング");
+  assert(root.querySelectorAll("#rankings .fr-table tbody tr").length === 211, "9b: 一覧のFIFAランキングも世界全211カ国");
+  assert(root.querySelectorAll("#rankings .fr-table tbody tr.is-team").length === 48, "9b: 一覧でも出場48カ国を強調");
   // 決勝トーナメントは一覧でも全幅表示。2026=R32 全32試合＋通過3位プール。
   assert(root.querySelectorAll("#knockout .ko-match").length === 32, "9b: 一覧でも決勝トーナメント（2026 R32=32）が表示");
   assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "9b: 一覧でも通過3位プールを併記");

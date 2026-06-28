@@ -105,6 +105,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         <button type="button" class="seg-btn" data-action="set-scope" data-scope="detail">詳細</button>
       </div>
 
+      <div class="layout-grid">
+        <div class="layout-main">
       <div id="overview" hidden></div>
 
       <div id="detail-view">
@@ -131,10 +133,14 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         </div>
       </div>
 
-      <!-- ランキング（得点＋FIFA）は一覧・詳細で共通＝scope 非依存の全幅セクション（#knockout と同じ思想）。 -->
-      <section id="rankings"></section>
-
-      <section id="knockout"></section>
+          <!-- 決勝トーナメントは左カラム（主筋）に収める（両 scope）。 -->
+          <section id="knockout"></section>
+        </div>
+        <aside class="layout-side">
+          <!-- 得点＋FIFAランキング＝右レール（補足情報）。一覧・詳細で共通。 -->
+          <section id="rankings"></section>
+        </aside>
+      </div>
 
       <footer class="site-footer">
         <p class="disclaimer">⚠️ ${esc(ct.meta.disclaimer)}</p>
@@ -452,12 +458,11 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       ${bt}`;
   }
 
-  // ---- ランキング（得点＋FIFA）= 一覧・詳細で共通の全幅2カラム（#rankings へ描画） ----
-  // 各ビルダーは「見出し＋カード」の2要素を返すので、列ラッパ（#top-scorers / #fifa-ranking）で1グリッドセルに収める。
+  // ---- ランキング（得点＋FIFA）= 右レール（#rankings）。一覧・詳細で共通＝縦積み（得点→FIFA） ----
   function rankingsHTML(view: RenderView): string {
-    return `<div class="overview-rankings">`
-      + `<div class="overview-rank-col" id="top-scorers">${topScorersHTML(view.scorers ?? [])}</div>`
-      + `<div class="overview-rank-col" id="fifa-ranking">${fifaRankingHTML(view.group)}</div>`
+    return `<div class="rankings-stack">`
+      + `<div class="rankings-panel" id="top-scorers">${topScorersHTML(view.scorers ?? [])}</div>`
+      + `<div class="rankings-panel" id="fifa-ranking">${fifaRankingHTML(view.group)}</div>`
       + `</div>`;
   }
 

@@ -118,15 +118,36 @@ body {
 }
 
 .wrap {
-  /* detail は本文(≈820)＋右サイドバー(得点ランキング)の2カラムぶん確保。overview は 1200 に上書き。 */
-  max-width: 1140px;
+  /* 一覧・詳細とも 2カラム共通シェル（左=主筋＋ブラケット／右=ランキングのレール）。幅は両 scope 統一。 */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1.25rem 1rem 3.5rem;
 }
 
-/* detail（1グループ）= 主役チャート（全幅）→ 本文（順位表/日程/シナリオ）の縦積み。
-   ランキング（得点＋FIFA）は scope 非依存の #rankings（一覧・詳細共通）へ分離した。
-   :not([hidden]) で overview 時の非表示（[hidden]）を壊さない。 */
+/* ===== 2カラム共通シェル: 左=主筋（scope 内容＋決勝トーナメント）／右=ランキングのレール ===== */
+.layout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--sp-6);
+  align-items: start;
+}
+.layout-main {
+  min-width: 0; /* グリッド子の overflow 防止（チャート/ブラケットが列幅に収まる） */
+}
+.layout-side {
+  min-width: 0;
+}
+@media (max-width: 980px) {
+  /* 狭幅では1カラムに縦積み（主筋 → ランキングのレール）。 */
+  .layout-grid {
+    display: block;
+  }
+  .layout-side {
+    margin-top: var(--sp-6);
+  }
+}
+
+/* detail（1グループ）= 主役チャート → 本文（順位表/日程/シナリオ）の縦積み（左カラム内）。 */
 #detail-view:not([hidden]) {
   display: block;
 }
@@ -144,10 +165,6 @@ body {
 #detail-timeline > .section-title:first-child,
 #detail-main > .section-title:first-child {
   margin-top: 0;
-}
-/* ランキング（得点＋FIFA）＝一覧・詳細共通の全幅セクション（#knockout と同じ位置づけ）。 */
-#rankings {
-  margin-top: var(--sp-8);
 }
 #rankings:empty {
   display: none;
@@ -794,9 +811,9 @@ table.bt-table {
   align-items: start;
 }
 @media (min-width: 1100px) {
-  /* 8組→4×2, 12組→4×3 で整然と並べる */
+  /* 左カラム（≈820px）に収まる3列で整然と（8組→3+3+2, 12組→3×4）。 */
   .overview-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 @media (max-width: 700px) {
@@ -922,21 +939,15 @@ table.bt-table {
   max-width: 760px;
   margin-inline: auto;
 }
-/* 得点ランキング＋FIFAランキング（#rankings 内・一覧/詳細共通の全幅2カラム。狭幅で1カラム）。 */
-.overview-rankings {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+/* 得点ランキング＋FIFAランキング（右レール #rankings 内・縦積み＝得点→FIFA。一覧/詳細共通）。 */
+.rankings-stack {
+  display: flex;
+  flex-direction: column;
   gap: var(--sp-6);
-  align-items: start;
 }
-/* 各列ラッパ（見出し＋カード）。見出しは上マージンを消してカラム頭を揃える。 */
-.overview-rank-col > .section-title:first-child {
+/* 各パネル（見出し＋カード）。先頭見出しは上マージンを消す。 */
+.rankings-panel > .section-title:first-child {
   margin-top: 0;
-}
-@media (max-width: 760px) {
-  .overview-rankings {
-    grid-template-columns: 1fr;
-  }
 }
 .tl-legend-note {
   font-size: var(--ts-sm);
