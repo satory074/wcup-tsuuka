@@ -101,6 +101,18 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   // チャート上に節結果スコア（各レーン上＝両参加チームに紐づく）= 3節×4チーム=12（組A 全消化）
   assert(root.querySelectorAll(".tl-chart .tl-round-score").length === 12, `1: チャートに節結果スコア12（実際: ${root.querySelectorAll(".tl-chart .tl-round-score").length}）`);
   assert([...root.querySelectorAll(".tl-chart .tl-round-score")].some((e) => /\d-\d/.test(e.textContent ?? "")), "1: 節結果スコアにスコア表記");
+  // --- a11y / モバイル強化 ---
+  assert(!!root.querySelector('a.skip-link[href="#main-content"]'), "1: スキップリンク（本文へ）がある");
+  assert(!!root.querySelector("#main-content"), "1: スキップ先 #main-content がある");
+  assert(!!root.querySelector("#detail-timeline .tl-readout"), "1: 得点者の読み取り行(.tl-readout)がある＝ホバー専用情報をタッチ/キーボードでも");
+  assert(root.querySelectorAll('.tl-chart .tl-dot.is-scorer[tabindex="0"]').length === 15, "1: 得点点はキーボード/タッチで到達可能(tabindex)");
+  assert(root.querySelectorAll('.tl-chart .tl-dot.is-roundend[tabindex="0"]').length === 12, "1: 節末点もキーボード/タッチで到達可能(tabindex)");
+  assert(root.querySelectorAll(".tl-chart .tl-dot.is-scorer[aria-label]").length === 15, "1: 得点点に aria-label（得点者・SR用）");
+  assert(root.querySelectorAll('.tl-legend .tl-leg-item[tabindex="0"]').length === 4, "1: 凡例はキーボードでフォーカス可能");
+  assert(root.querySelectorAll('.standings-table thead th[scope="col"]').length === 10, "1: 順位表ヘッダに scope=col（SR）");
+  // 線種（色覚非依存の冗長化）: 4本中3本に stroke-dasharray＝色以外でも識別可能。
+  const dashed = [...root.querySelectorAll(".tl-chart .tl-line")].filter((el) => (el.getAttribute("style") ?? "").includes("stroke-dasharray")).length;
+  assert(dashed === 3, `1: 4本中3本に線種(dasharray)＝色覚非依存の識別（実際: ${dashed}）`);
   // 得点タイムライン（チャート下）: 試合別カラム＝1節2カラム。組A=3節×2試合=6カラム・節見出し3・対戦見出し6。
   assert(root.querySelectorAll(".tl-log .tlog-goal:not(.tlog-noscore)").length === 15, `1: 得点行=全15ゴール（実際: ${root.querySelectorAll(".tl-log .tlog-goal:not(.tlog-noscore)").length}）`);
   assert(root.querySelectorAll(".tl-log .tlog-cols .tlog-md-group").length === 3, "1: 節グループ3（第1〜3節）");

@@ -31,7 +31,7 @@
   --border-strong: #c2cedd;
   --ink: #0f1b2d;
   --ink-soft: #46546a; /* AA 確保のため従来より濃く */
-  --ink-faint: #6a778a;
+  --ink-faint: #586478; /* WCAG AA(4.5:1) を満たす濃さ（旧 #6a778a は約3.9:1で不足） */
   --accent: var(--pitch-deep);
   --link: #1c5fb0;
 
@@ -106,6 +106,30 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* キーボード/SR 用スキップリンク: 通常は画面外、フォーカスで左上に出現＝ナビをとばして本文へ。 */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  background: var(--surface);
+  color: var(--link);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  left: 0.5rem;
+  top: 0.5rem;
+  box-shadow: var(--ring);
+}
+#main-content:focus {
+  outline: none;
+}
+
 /* 数字・時刻・スコア・トリコードを等幅化（和文は含まれないので安全） */
 .tl-th-time,
 .tl-ch-time,
@@ -137,12 +161,38 @@ body {
   min-width: 0;
 }
 @media (max-width: 980px) {
-  /* 狭幅では1カラムに縦積み（主筋 → ランキングのレール）。 */
+  /* 狭幅（スマホ/タブレット縦）では1カラムに縦積みし、順序を「結論優先」に再構成する。
+     display:contents で left/right ラッパを畳み、子セクションを直接 flex アイテム化＝order で並べ替え。
+     視覚順: 内容（最終順位→チャート→得点ログ）→ ランキング → 決勝T → 日程（最重要を先・補助を後）。
+     ※DOM 順は不変なのでテスト/共有URL/SEO に影響しない。 */
   .layout-grid {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
   }
+  .layout-main,
   .layout-side {
-    margin-top: var(--sp-6);
+    display: contents;
+  }
+  #overview,
+  #detail-view,
+  #rankings,
+  #knockout,
+  #schedule {
+    min-width: 0; /* flex アイテムの overflow 防止（横スクロール暴発を抑える） */
+  }
+  #overview,
+  #detail-view {
+    order: 1;
+  }
+  #rankings {
+    order: 2;
+  }
+  #knockout {
+    order: 3;
+  }
+  #schedule {
+    order: 4;
   }
 }
 
@@ -760,7 +810,7 @@ table.bt-table {
 .mini-fifa {
   margin-left: 0.3rem;
   font-family: var(--font-num);
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--ink-soft);
   letter-spacing: -0.02em;
@@ -996,19 +1046,20 @@ table.bt-table {
 /* F-3: 最終的に圏外の国は淡く＝通過する2本（主役）に注目を集める（selective highlighting）。 */
 .tl-line.is-out {
   stroke-width: 3;
-  opacity: 0.66;
+  opacity: 0.74;
 }
 .tl-dot.is-out {
-  opacity: 0.66;
+  opacity: 0.74;
 }
 .tl-endlabel.is-out {
-  opacity: 0.72;
+  opacity: 0.78;
 }
-/* F-6: ホバー連動。1国を選ぶと他を強く減光し、その線を太く＝軌跡を追いやすく。 */
+/* F-6: ホバー連動。1国を選ぶと他を減光し、その線を太く＝軌跡を追いやすく。
+   減光しすぎると他チームの推移が読めなくなる（ロービジョン）ので 0.3 に留める。 */
 .tl-chart.is-hovering .tl-line,
 .tl-chart.is-hovering .tl-dot,
 .tl-chart.is-hovering .tl-endlabel {
-  opacity: 0.16;
+  opacity: 0.3;
 }
 .tl-chart.is-hovering .tl-line.is-hl {
   opacity: 1;
@@ -1062,9 +1113,11 @@ table.bt-table {
   gap: 0.32rem;
 }
 .tl-leg-swatch {
-  width: 0.9rem;
-  height: 0.28rem;
-  border-radius: 999px;
+  display: inline-block;
+  width: 24px;
+  height: 8px;
+  flex: 0 0 auto;
+  vertical-align: middle;
 }
 .tl-leg-name {
   font-weight: 700;
@@ -1075,9 +1128,14 @@ table.bt-table {
 }
 /* F-6: 凡例・順位表行はホバー対象。チャートの線と同期して下線で示す（チャート外なので減光はしない）。 */
 .tl-leg-item {
-  cursor: default;
+  cursor: pointer;
   border-radius: 999px;
+  padding: 0.1rem 0.35rem;
   transition: background 0.12s ease;
+}
+.tl-leg-item:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
 }
 .tl-leg-item.is-hl {
   background: var(--surface-2);
@@ -1098,6 +1156,19 @@ table.bt-table {
   font-size: 12px;
   font-weight: 700;
   fill: var(--ink-soft);
+}
+/* 得点者・試合結果の読み取り行（点をタップ/フォーカスで更新）＝ホバー専用だった情報をタッチ/キーボードでも。 */
+.tl-readout {
+  margin: 0.4rem 0.15rem 0;
+  min-height: 1.4em;
+  font-size: var(--ts-sm);
+  color: var(--ink-soft);
+  text-align: center;
+}
+/* チャート上のフォーカス可能な点（得点/節末）のフォーカスリング（SVG なので box-shadow ではなく outline）。 */
+.tl-dot[tabindex]:focus-visible {
+  outline: 2px solid var(--pitch);
+  outline-offset: 1px;
 }
 /* 得点ログ（live=ゴール時系列／stage=試合結果）= チャートで失われた誰が・何分にを復活 */
 /* 常設（折りたたみ廃止）。節カラムで全幅を使う。 */
@@ -1339,7 +1410,7 @@ table.bt-table {
   color: var(--ink-faint);
 }
 .fr-table tbody tr.is-out .team-flag {
-  opacity: 0.55;
+  opacity: 0.7;
 }
 .fr-table tbody tr.is-out .team-name,
 .fr-table tbody tr.is-out .fr-rank {
@@ -1501,7 +1572,7 @@ table.bt-table {
 }
 .ko-no {
   font-family: var(--font-num);
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   color: var(--ink-faint);
   line-height: 1;
 }
@@ -1513,7 +1584,7 @@ table.bt-table {
   gap: 0.3rem;
   white-space: nowrap;
   font-family: var(--font-num);
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   color: var(--ink-faint);
   line-height: 1;
 }
@@ -1580,7 +1651,7 @@ table.bt-table {
   display: block;
   margin-top: 0.15rem;
   font-family: var(--font-num);
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   color: var(--ink-soft);
   text-align: center;
 }
@@ -1637,6 +1708,52 @@ table.bt-table {
   }
 }
 
+/* ---- モバイル（〜640px）: 主役チャートを画面幅に収め、横スクロールを排する ---- */
+@media (max-width: 640px) {
+  /* チャートを幅フィット＝右端の最終順位（結論）が横スクロール無しで見える。 */
+  .tl-chart-wrap {
+    min-width: 0;
+  }
+  /* 節末スコアチップは狭幅で潰れる＋下の得点ログと重複するので隠す（情報は失われない）。 */
+  .tl-round-score,
+  .tl-round-chip {
+    display: none;
+  }
+  /* 省スペース: 節ラベルの日付は隠す（節番号は残す）。 */
+  .tl-md-date {
+    display: none;
+  }
+  /* 点を大きくしてタップしやすく（CSS geometry の r は現行ブラウザで有効）。 */
+  .tl-dot.is-scorer {
+    r: 7;
+  }
+  .tl-dot.is-roundend {
+    r: 6;
+  }
+  /* 決勝トーナメントは横スクロールせず、ラウンドを縦積みのリストにする。 */
+  .ko-scroll {
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+  .ko-bracket {
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+  .ko-round {
+    min-width: 0;
+  }
+  /* 日程カルーセルは最下部に並ぶので、見出しの上マージンで区切りを付ける。 */
+  #schedule .section-title {
+    margin-top: var(--sp-4);
+  }
+  /* FIFA 全211カ国テーブルは縦に長く、モバイルでは KO/日程への到達を妨げる＝
+     高さを抑えて内部スクロールにし、上に繰り上げつつ場所を取りすぎないようにする。 */
+  #fifa-ranking .fr-card {
+    max-height: 65vh;
+    overflow-y: auto;
+  }
+}
+
 @media (max-width: 480px) {
   .wrap {
     padding: 1rem 0.75rem 3rem;
@@ -1653,12 +1770,10 @@ table.bt-table {
   }
   .group-tab {
     flex: 0 0 auto;
-    min-width: 2.5rem;
+    min-width: 2.75rem;
+    min-height: 40px; /* タッチ目安（快適 44px に寄せる） */
     font-size: var(--ts-base);
-    padding: 0.4rem 0.5rem;
-  }
-  .tl-chart-wrap {
-    min-width: 520px;
+    padding: 0.5rem 0.6rem;
   }
   .section-title {
     font-size: 1.08rem;

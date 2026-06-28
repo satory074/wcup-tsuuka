@@ -95,6 +95,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const btNote = btSlots > 0 ? ` ＋ 各組3位の上位${btSlots}` : "";
 
   root.innerHTML = `
+    <a class="skip-link" href="#main-content">本文へスキップ</a>
     <header class="site-header">
       <div class="hero-inner">
         <h1><span class="hero-mark">⚽</span><span class="hero-title">WCUP <span class="hero-em">通過タイムライン</span></span></h1>
@@ -111,7 +112,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       </div>
 
       <div class="layout-grid">
-        <div class="layout-main">
+        <div class="layout-main" id="main-content" tabindex="-1">
       <!-- 日程・結果＝一覧・詳細共通・左カラム最上部。カードクリックでそのグループ詳細へドリル。 -->
       <div id="schedule"></div>
 
@@ -194,10 +195,24 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const el = (ev.target as HTMLElement).closest("[data-team]") as HTMLElement | null;
     highlight(el ? el.dataset.team ?? null : null);
   };
+  // チャートの点（●得点／◇節末）をタップ/フォーカスすると、ホバー専用だった得点者・試合結果を
+  // 可視の読み取り行（#tl-readout）に出す＝タッチ端末・キーボードでも情報が取れる（モバイルの情報欠落を解消）。
+  const showDotInfo = (target: EventTarget | null): void => {
+    const dot = (target as HTMLElement | null)?.closest?.(".tl-dot") as HTMLElement | null;
+    if (!dot) return;
+    const tip = dot.querySelector("title")?.textContent ?? "";
+    const out = elTimeline.querySelector(".tl-readout");
+    if (out && tip) out.textContent = tip;
+  };
   for (const r of hlRoots) {
     r.addEventListener("pointerover", onHover);
     r.addEventListener("pointerleave", () => highlight(null));
+    // キーボード経路: 凡例・点・FIFA行などにフォーカスが当たったら同じく連動ハイライト。
+    r.addEventListener("focusin", onHover);
   }
+  // タップ（クリック）でも得点者を読み取り行へ。フォーカス時にも出す（キーボード）。
+  elDetail.addEventListener("click", (ev) => showDotInfo(ev.target));
+  elDetail.addEventListener("focusin", (ev) => showDotInfo(ev.target));
 
   // ブラケットは elDetail の外（一覧でも表示）なので、自前のホバー連動を持つ。
   // 同チームの全セル（R32 と R16+ のプレースホルダは teamId が無いので R32 のみ）を .is-hl 同期。
@@ -290,11 +305,11 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       <div class="card standings tnum">
         <table class="standings-table">
           <thead><tr>
-            <th class="col-rank">順位</th><th class="col-team">チーム</th>
-            <th>試</th><th>勝</th><th>分</th><th>敗</th>
-            <th title="優先③: 総得点">得<sup class="th-pri">③</sup></th><th>失</th>
-            <th title="優先②: 総得失点差">差<sup class="th-pri">②</sup></th>
-            <th title="優先①: 総勝点">点<sup class="th-pri">①</sup></th>
+            <th scope="col" class="col-rank">順位</th><th scope="col" class="col-team">チーム</th>
+            <th scope="col" title="試合数">試</th><th scope="col" title="勝">勝</th><th scope="col" title="分">分</th><th scope="col" title="敗">敗</th>
+            <th scope="col" title="優先③: 総得点">得<sup class="th-pri">③</sup></th><th scope="col" title="総失点">失</th>
+            <th scope="col" title="優先②: 総得失点差">差<sup class="th-pri">②</sup></th>
+            <th scope="col" title="優先①: 総勝点">点<sup class="th-pri">①</sup></th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -356,8 +371,8 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       <div class="card bt-card tnum">
         <table class="bt-table">
           <thead><tr>
-            <th class="col-rank">順</th><th class="bt-group">組</th><th class="col-team">チーム</th>
-            <th>点</th><th>差</th><th>得</th>
+            <th scope="col" class="col-rank">順</th><th scope="col" class="bt-group">組</th><th scope="col" class="col-team">チーム</th>
+            <th scope="col" title="勝点">点</th><th scope="col" title="総得失点差">差</th><th scope="col" title="総得点">得</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -607,14 +622,21 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       bi += span;
     }
 
+    // 色覚非依存の冗長化: レーン（最終順位順）ごとに線種を割り当て＝色が近い/見分けにくくても
+    // 実線/破線/点線/一点鎖線で識別できる（凡例の見本にも同じ線種を反映）。決定的。
+    const DASH = ["", "8 5", "1.5 5", "10 4 1.5 4"];
+
     // 各国の折れ線＋頂点＋右端ラベル（最終順位の位置に flag + code）
     let lines = "";
+    let di = -1;
     for (const tid of finalOrder) {
+      di++;
       const color = colorOf.get(tid)!;
+      const dash = DASH[di % DASH.length];
       const out = !advancingSet.has(tid); // 圏外＝淡く（主役を際立たせる）
       const oc = out ? " is-out" : "";
       const pts = posByCol.map((_, ci) => `${f1(xAt(ci))},${f1(yAt(idxByCol[ci].get(tid)!))}`).join(" ");
-      lines += `<polyline class="tl-line${oc}" data-team="${tid}" points="${pts}" style="stroke:${color}" />`;
+      lines += `<polyline class="tl-line${oc}" data-team="${tid}" points="${pts}" style="stroke:${color}${dash ? `;stroke-dasharray:${dash}` : ""}" />`;
       for (let ci = 0; ci < cols; ci++) {
         const snap = snaps[ci];
         const e = snap.event;
@@ -626,7 +648,11 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         const r = scoring ? 5 : isRE ? 4 : 3;
         // 節末は色付きの中空リング（チェックポイント）、ゴールは塗りつぶし。
         const dotStyle = isRE ? `fill:var(--surface);stroke:${color}` : `fill:${color}`;
-        lines += `<circle class="${cls}" data-team="${tid}" cx="${f1(xAt(ci))}" cy="${f1(yAt(idxByCol[ci].get(tid)!))}" r="${r}" style="${dotStyle}"><title>${tipText(tid, snap, scoring)}</title></circle>`;
+        const tip = tipText(tid, snap, scoring);
+        // 情報を持つ点（得点・節末）はキーボード/タッチで到達可能に＝focus/tap で得点者を読み取り行に出す。
+        // フォーカスするだけで情報が出る（Enter 不要）ので button ではなく「ラベル付き図形」として公開。
+        const a11y = scoring || isRE ? ` tabindex="0" role="img" aria-label="${tip}"` : "";
+        lines += `<circle class="${cls}" data-team="${tid}"${a11y} cx="${f1(xAt(ci))}" cy="${f1(yAt(idxByCol[ci].get(tid)!))}" r="${r}" style="${dotStyle}"><title>${tip}</title></circle>`;
       }
       const fy = yAt(idxByCol[cols - 1].get(tid)!);
       lines += `<text class="tl-endlabel${oc}" data-team="${tid}" x="${f1(plotR + 12)}" y="${f1(fy)}" dominant-baseline="middle"><tspan class="tl-end-flag">${team(tid).flag}</tspan><tspan class="tl-end-code" dx="4" style="fill:${color}">${tn(tid)}</tspan></text>`;
@@ -668,12 +694,16 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const aria = `グループ${view.group}の順位推移。縦軸=順位（上が1位・上位${adv}が通過圏）、横軸=時系列。色付きの線が各国の順位の動き。節末に各試合の結果。`;
     const svg = `<svg class="tl-chart" viewBox="0 0 ${VBW} ${VBH}" role="img" aria-label="${esc(aria)}" preserveAspectRatio="xMidYMid meet">${band}${lanes}${mdBands}${lines}${roundScores}</svg>`;
 
-    // 凡例（色→国旗→和名→最終順位）= チャートの色対応＆名前を補う
+    // 凡例（線種＋色→国旗→和名→最終順位）= チャートの線対応＆名前を補う。
+    // 見本は実際の線種（dasharray）を反映＝色だけでなく線種でも対応づく。フォーカス可能でキーボード連動。
     const legend = finalOrder
-      .map(
-        (tid, i) =>
-          `<span class="tl-leg-item" data-team="${tid}"><span class="tl-leg-swatch" style="background:${colorOf.get(tid)}"></span>${team(tid).flag}<span class="tl-leg-name">${esc(team(tid).name)}</span><span class="tl-leg-rank">${i + 1}位</span></span>`,
-      )
+      .map((tid, i) => {
+        const dash = DASH[i % DASH.length];
+        const swatch =
+          `<svg class="tl-leg-swatch" width="24" height="8" viewBox="0 0 24 8" aria-hidden="true">` +
+          `<line x1="1" y1="4" x2="23" y2="4" stroke="${colorOf.get(tid)}" stroke-width="3.5" stroke-linecap="round"${dash ? ` stroke-dasharray="${dash}"` : ""} /></svg>`;
+        return `<span class="tl-leg-item" data-team="${tid}" tabindex="0" aria-label="${esc(team(tid).name)}（${i + 1}位）の軌跡を強調">${swatch}${team(tid).flag}<span class="tl-leg-name">${esc(team(tid).name)}</span><span class="tl-leg-rank">${i + 1}位</span></span>`;
+      })
       .join("");
 
     // 得点タイムラインを「節カラム」に: 節ごとに1列（見出し→ゴール→第n節結果）を横並び＝全幅を使い高さを圧縮。
@@ -743,6 +773,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
     return `
       <div class="timeline-scroll"><div class="tl-chart-wrap">${svg}</div></div>
+      <p class="tl-readout" role="status" aria-live="polite">●（得点）・◇（節末）をタップ／フォーカスすると、得点者・試合結果を表示します。</p>
       <div class="tl-legend">${legend}</div>
       ${log}`;
   }
@@ -775,7 +806,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       ${note}
       <div class="card ts-card tnum">
         <table class="ts-table">
-          <thead><tr><th class="col-rank">順</th><th class="col-team">選手</th><th class="ts-goals">得点</th></tr></thead>
+          <thead><tr><th scope="col" class="col-rank">順</th><th scope="col" class="col-team">選手</th><th scope="col" class="ts-goals">得点</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>`;
@@ -819,7 +850,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       <h2 class="section-title">FIFAランキング <span class="hint">${FIFA_AS_OF[cup]}時点の世界ランキング（<b>出場${partCount}カ国を強調</b>・最下位${lastPartRank}位まで表示／以降は折りたたみ）</span></h2>
       <div class="card fr-card tnum">
         <table class="fr-table">
-          <thead><tr><th class="fr-rank">順</th><th class="col-team">国</th><th class="fr-grp">組</th></tr></thead>
+          <thead><tr><th scope="col" class="fr-rank">順</th><th scope="col" class="col-team">国</th><th scope="col" class="fr-grp">組</th></tr></thead>
           <tbody>${shown.map(rowHTML).join("")}</tbody>
         </table>
         ${more}
@@ -846,9 +877,15 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     elSchedule.innerHTML = scheduleHTML(view);
     // 日程カルーセルを該当グループの最初の試合まで横スクロール（rect 差分＝ページ縦には影響しない）。
     // レイアウト確定後に測るため rAF 経由（jsdom では no-op＝テストに影響なし）。
+    // 日程カルーセルの自動横スクロールは、カルーセルが上部にある広幅（>980px）のときだけ。
+    // モバイルでは日程は最下部へ並べ替わる＝勝手なスクロール移動はユーザーの読み位置を奪うので抑制。
     const car = elSchedule.querySelector<HTMLElement>(".sched-carousel");
     const curCard = elSchedule.querySelector<HTMLElement>(".sched-card[data-current]");
-    if (car && curCard) {
+    const wideView =
+      typeof window !== "undefined" && typeof window.matchMedia === "function"
+        ? window.matchMedia("(min-width: 981px)").matches
+        : false;
+    if (car && curCard && wideView) {
       requestAnimationFrame(() => {
         car.scrollLeft += curCard.getBoundingClientRect().left - car.getBoundingClientRect().left - 16;
       });
