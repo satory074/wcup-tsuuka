@@ -137,6 +137,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         <p class="disclaimer">⚠️ ${esc(ct.meta.disclaimer)}</p>
         <p class="tnum">データ最終更新: ${esc(ct.meta.dataLastUpdated)}（${esc(ct.meta.edition)}）</p>
         <p><a href="${esc(ct.meta.source)}" target="_blank" rel="noopener">データ出典</a></p>
+        <p><a href="https://satory074.com/apps/" target="_blank" rel="noopener">アプリ一覧へ</a></p>
       </footer>
     </div>
   `;
