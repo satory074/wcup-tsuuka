@@ -1491,23 +1491,34 @@ table.bt-table {
   box-shadow: var(--shadow-card);
   padding: 0.25rem 0.3rem 0.3rem;
 }
-.ko-no {
-  display: block;
-  font-family: var(--font-num);
-  font-size: 0.62rem;
-  color: var(--ink-faint);
-  line-height: 1;
-  margin-bottom: 0.15rem;
+/* 見出し行＝左に試合番号(M73)・右に日付(曜日)＋時刻。 */
+.ko-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.2rem;
 }
-/* キックオフ日（M/D）＝試合カード右上に小さく。 */
-.ko-date {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.35rem;
+.ko-no {
   font-family: var(--font-num);
   font-size: 0.62rem;
   color: var(--ink-faint);
   line-height: 1;
+}
+/* キックオフ日時（M/D(曜) HH:MM）＝見出し行の右端。M番号が無くても右寄せ。 */
+.ko-when {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  white-space: nowrap;
+  font-family: var(--font-num);
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  line-height: 1;
+}
+.ko-time {
+  font-weight: 600;
 }
 .ko-sides {
   display: flex;

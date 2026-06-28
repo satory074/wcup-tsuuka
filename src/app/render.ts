@@ -70,11 +70,18 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const r = team(id).fifaRank;
     return r ? `<span class="team-fifa" title="FIFA世界ランキング">FIFA ${r}位</span>` : "";
   };
-  /** kickoff "YYYY-MM-DDThh:mm" → 表示用の M/D と HH:MM（Date 不使用・slice）。 */
-  const fmtKickoff = (iso: string): { date: string; time: string } =>
-    iso.length >= 16
-      ? { date: `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`, time: iso.slice(11, 16) }
-      : { date: "", time: "" };
+  /** kickoff "YYYY-MM-DDThh:mm" → 表示用の M/D・HH:MM・曜日（Date 不使用・slice＋Sakamoto）。 */
+  const fmtKickoff = (iso: string): { date: string; time: string; dow: string } => {
+    if (iso.length < 16) return { date: "", time: "", dow: "" };
+    const y = Number(iso.slice(0, 4)),
+      mo = Number(iso.slice(5, 7)),
+      d = Number(iso.slice(8, 10));
+    // Sakamoto のアルゴリズム（Date 不使用で曜日を算出）。w: 0=日 .. 6=土。
+    const t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+    const yy = mo < 3 ? y - 1 : y;
+    const w = (yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) + t[mo - 1] + d) % 7;
+    return { date: `${mo}/${d}`, time: iso.slice(11, 16), dow: "日月火水木金土"[w] };
+  };
 
   const cupTabs = CUPS
     .map((c) => `<button type="button" class="cup-tab seg-btn${c.id === cup ? " seg-on" : ""}" data-action="set-cup" data-cup="${c.id}">${esc(c.label)}</button>`)
@@ -378,13 +385,17 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
   function koMatchHTML(m: KoResolvedMatch): string {
     const no = m.no ? `<span class="ko-no">M${esc(m.no)}</span>` : "";
-    const dt = m.kickoff ? `<span class="ko-date">${esc(fmtKickoff(m.kickoff).date)}</span>` : "";
+    const k = m.kickoff ? fmtKickoff(m.kickoff) : null;
+    const when = k
+      ? `<span class="ko-when"><span class="ko-date">${esc(k.date)}(${esc(k.dow)})</span><span class="ko-time">${esc(k.time)}</span></span>`
+      : "";
+    const head = no || when ? `<div class="ko-head">${no}${when}</div>` : "";
     const r = m.result;
     // PK戦は勝者側のスコアを先に「PK 4-2」表記（勝者視点）。
     const so = r?.shootout
       ? `<span class="ko-so">PK ${r.winnerSide === 1 ? `${r.shootout.side1}-${r.shootout.side2}` : `${r.shootout.side2}-${r.shootout.side1}`}</span>`
       : "";
-    return `<div class="ko-match${r ? " is-played" : ""}">${no}${dt}<div class="ko-sides">${koSideHTML(m.side1, r?.side1Score, r?.winnerSide === 1)}${koSideHTML(m.side2, r?.side2Score, r?.winnerSide === 2)}</div>${so}</div>`;
+    return `<div class="ko-match${r ? " is-played" : ""}">${head}<div class="ko-sides">${koSideHTML(m.side1, r?.side1Score, r?.winnerSide === 1)}${koSideHTML(m.side2, r?.side2Score, r?.winnerSide === 2)}</div>${so}</div>`;
   }
 
   function knockoutHTML(view: RenderView): string {
