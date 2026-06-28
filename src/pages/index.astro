@@ -50,6 +50,15 @@ const ogDescription =
     <main id="app">
       <noscript>このアプリの利用には JavaScript が必要です。</noscript>
     </main>
+    <nav class="app-backlink-bar" aria-label="サイト間ナビゲーション">
+      <a
+        href="https://satory074.com/apps/"
+        target="_blank"
+        rel="noopener"
+        aria-label="satory074 のほかのアプリ一覧を新しいタブで開く"
+        >satory074 のほかのアプリ <span aria-hidden="true">↗</span></a
+      >
+    </nav>
     <script>
       import { boot } from "../app/main";
       boot(document.getElementById("app")!);
