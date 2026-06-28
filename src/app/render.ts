@@ -340,16 +340,22 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     F: "決勝",
   };
 
-  function koSideHTML(side: KoSide): string {
+  function koSideHTML(side: KoSide, score?: number, isWinner?: boolean): string {
+    const sc = score != null ? `<span class="ko-score">${score}</span>` : "";
     if (side.teamId) {
-      return `<span class="ko-side is-team" data-team="${side.teamId}"><span class="ko-flag">${team(side.teamId).flag}</span><span class="ko-code">${tc(side.teamId)}</span></span>`;
+      return `<span class="ko-side is-team${isWinner ? " is-winner" : ""}" data-team="${side.teamId}"><span class="ko-flag">${team(side.teamId).flag}</span><span class="ko-code">${tc(side.teamId)}</span>${sc}</span>`;
     }
     return `<span class="ko-side is-undecided">${esc(side.label)}</span>`;
   }
 
   function koMatchHTML(m: KoResolvedMatch): string {
     const no = m.no ? `<span class="ko-no">M${esc(m.no)}</span>` : "";
-    return `<div class="ko-match">${no}<div class="ko-sides">${koSideHTML(m.side1)}${koSideHTML(m.side2)}</div></div>`;
+    const r = m.result;
+    // PK戦は勝者側のスコアを先に「PK 4-2」表記（勝者視点）。
+    const so = r?.shootout
+      ? `<span class="ko-so">PK ${r.winnerSide === 1 ? `${r.shootout.side1}-${r.shootout.side2}` : `${r.shootout.side2}-${r.shootout.side1}`}</span>`
+      : "";
+    return `<div class="ko-match${r ? " is-played" : ""}">${no}<div class="ko-sides">${koSideHTML(m.side1, r?.side1Score, r?.winnerSide === 1)}${koSideHTML(m.side2, r?.side2Score, r?.winnerSide === 2)}</div>${so}</div>`;
   }
 
   function knockoutHTML(view: RenderView): string {
@@ -380,7 +386,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     }
 
     return `
-      <h2 class="section-title">決勝トーナメント 組み合わせ <span class="hint">確定枠は実チーム／未確定はスロット（1A=A組1位・2B=B組2位・3位=対象組の最良3位）</span></h2>
+      <h2 class="section-title">決勝トーナメント 組み合わせ <span class="hint">確定枠は実チーム（消化済みは勝者を強調＋スコア併記・PK戦は「PK 4-2」）／未確定はスロット（1A=A組1位・2B=B組2位・3位=対象組の最良3位）</span></h2>
       ${pool}
       <div class="ko-scroll"><div class="ko-bracket">${cols}</div></div>`;
   }
@@ -692,8 +698,10 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const note = partial
       ? `<p class="site-sub bt-note">⚠️ グループステージ進行中のため<b>暫定</b>（消化済み試合のみ）。</p>`
       : "";
+    // KO結果が入っている大会は「グループ＋決勝T」、無ければ従来表記。
+    const scopeLabel = ct.knockout.length > 0 ? "グループ＋決勝トーナメント" : "グループステージ";
     return `
-      <h2 class="section-title">得点ランキング <span class="hint">大会全体（グループステージ）の得点者</span></h2>
+      <h2 class="section-title">得点ランキング <span class="hint">大会全体（${scopeLabel}）の得点者</span></h2>
       ${note}
       <div class="card ts-card tnum">
         <table class="ts-table">

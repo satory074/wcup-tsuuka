@@ -94,7 +94,15 @@ function assert(cond: boolean, msg: string): void {
       assert(typeof g.player === "string" && g.player.length > 0, "全ゴールに選手名");
     }
   }
-  console.log("[data] 不正データ検出 + goals 本数==score + 選手名 OK");
+  // knockout（2022 にKO結果あり）: ゴール本数!=score / 不正 winner を弾く。
+  assert(Array.isArray((worldcupJson as { knockout?: unknown }).knockout), "2022 に knockout 配列がある");
+  const bk = clone();
+  (bk.knockout as { goals: unknown[] }[])[0].goals = []; // score!=0 なので本数不一致
+  assert(!validateTournament(bk).ok, "KO ゴール本数と score の不一致を弾く");
+  const bk2 = clone();
+  (bk2.knockout as { winner: string }[])[0].winner = "draw";
+  assert(!validateTournament(bk2).ok, "KO の不正 winner を弾く");
+  console.log("[data] 不正データ検出 + goals/KO 本数==score + winner + 選手名 OK");
 }
 
 // ---- 2) 2022 実順位の再現 ----
@@ -233,6 +241,7 @@ function synthCt(teamIds: string[], matches: Match[]): CompiledTournament {
     groups: ["A"],
     teamsByGroup: new Map([["A", teamIds.map(team)]]),
     matchesByGroup: new Map([["A", matches]]),
+    knockout: [],
   };
 }
 
@@ -553,21 +562,35 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   );
   assert(JSON.stringify(computeKnockout(ct26, sbg)) === JSON.stringify(ko), "KO 2026: 決定的");
 
-  // 2022 / 2018 = R16（全消化＝R16の全枠が実チーム、QF以降は未確定）。組H フェアプレー解決も実チームに。
-  for (const [label, json] of [["2022", worldcupJson], ["2018", worldcup2018Json]] as const) {
+  // 2022 / 2018 = R16（KO結果データ入り＝QF以降も勝者が解決し全16枠が実チーム）。組H フェアプレー解決も実チームに。
+  for (const [label, json, champ, third] of [
+    ["2022", worldcupJson, "arg", "cro"],
+    ["2018", worldcup2018Json, "fra", "bel"],
+  ] as const) {
     const ct = compileTournament(json);
     const ko2 = computeKnockout(ct, sbgOf(ct));
     assert(ko2.matches.length === 16, `KO ${label}: 全16試合`);
     assert(ko2.matches.filter((m) => m.round === "R16").length === 8, `KO ${label}: R16=8試合`);
     assert(JSON.stringify(ko2.rounds) === JSON.stringify(["R16", "QF", "SF", "3P", "F"]), `KO ${label}: 5ラウンド`);
-    const r16 = ko2.matches.filter((m) => m.round === "R16");
-    assert(r16.every((m) => !!m.side1.teamId && !!m.side2.teamId), `KO ${label}: R16は全枠が実チーム（全消化）`);
-    assert(
-      ko2.matches.filter((m) => m.round !== "R16").every((m) => !m.side1.teamId && !m.side2.teamId),
-      `KO ${label}: QF以降は未確定`,
-    );
+    // KO結果解決＝全16枠が実チーム＋全試合に result（スコア・勝者）。
+    assert(ko2.matches.every((m) => !!m.side1.teamId && !!m.side2.teamId), `KO ${label}: 全16枠が実チーム（KO結果解決）`);
+    assert(ko2.matches.every((m) => !!m.result), `KO ${label}: 全試合に result`);
+    // 決勝・3位決定戦の勝者が実史と一致（捏造でなく KO結果データから解決）。
+    const final = ko2.matches.find((m) => m.round === "F")!;
+    const champion = final.result!.winnerSide === 1 ? final.side1.teamId : final.side2.teamId;
+    assert(champion === champ, `KO ${label}: 優勝は ${champ}（実際 ${String(champion)}）`);
+    const tp = ko2.matches.find((m) => m.round === "3P")!;
+    const thirdId = tp.result!.winnerSide === 1 ? tp.side1.teamId : tp.side2.teamId;
+    assert(thirdId === third, `KO ${label}: 3位は ${third}（実際 ${String(thirdId)}）`);
+    assert(JSON.stringify(computeKnockout(ct, sbgOf(ct))) === JSON.stringify(ko2), `KO ${label}: 決定的`);
   }
-  console.log("[knockout] ブラケット OK（2026 R32=32試合・確定枠解決・3位ラベル・整合／2018-2022 R16 全枠解決）");
+  // 2022 決勝は PK 戦（アルゼンチン 4-2 フランス）。
+  {
+    const ko22 = computeKnockout(compileTournament(worldcupJson), sbgOf(compileTournament(worldcupJson)));
+    const f22 = ko22.matches.find((m) => m.round === "F")!;
+    assert(!!f22.result!.shootout && f22.result!.shootout.side1 === 4 && f22.result!.shootout.side2 === 2, "KO 2022: 決勝は PK 4-2");
+  }
+  console.log("[knockout] ブラケット OK（2026 R32=32・3位ラベル／2018-2022 全16枠＋勝者解決＝優勝fra/arg・3位bel/cro・PK）");
 }
 
 // ---- 9) ベスト3位の単体（合成12組フィクスチャ） ----
@@ -596,6 +619,7 @@ function mkCt12(slots: number): CompiledTournament {
     groups: [...GROUPS12],
     teamsByGroup: new Map(),
     matchesByGroup: new Map(GROUPS12.map((g) => [g, [] as Match[]])),
+    knockout: [],
   };
 }
 {
@@ -649,18 +673,25 @@ function mkCt12(slots: number): CompiledTournament {
   assert(scorers.every((e, i) => i === 0 || (scorers[i - 1].goals === e.goals ? e.rank === scorers[i - 1].rank : e.rank > scorers[i - 1].rank)), "10: 同点は rank 共有・差があれば飛ぶ");
   // 表示名にマーカーが残らない（PK/OG 除去）
   assert(scorers.every((e) => !/\((?:PK|OG)\)/i.test(e.player)), "10: 表示名に (PK)/(OG) を含まない");
-  // 集計の独立再計算: OG を除いた player 付きゴール総数＝Σgoals、PK 総数＝Σpk
-  const allGoals = [...CT.matchesByGroup.values()].flatMap((ms) => ms.flatMap((m) => m.goals ?? []));
+  // 集計の独立再計算: OG を除いた player 付きゴール総数＝Σgoals、PK 総数＝Σpk（グループ＋決勝T）
+  const allGoals = [
+    ...[...CT.matchesByGroup.values()].flatMap((ms) => ms.flatMap((m) => m.goals ?? [])),
+    ...CT.knockout.flatMap((k) => k.goals ?? []),
+  ];
   const expCounted = allGoals.filter((g) => g.player && !/\(OG\)/i.test(g.player)).length;
   const expPk = allGoals.filter((g) => g.player && !/\(OG\)/i.test(g.player) && /\(PK\)/i.test(g.player)).length;
-  assert(scorers.reduce((n, e) => n + e.goals, 0) === expCounted, "10: 集計総数=OG以外のplayer付きゴール数");
+  assert(scorers.reduce((n, e) => n + e.goals, 0) === expCounted, "10: 集計総数=OG以外のplayer付きゴール数（グループ+KO）");
   assert(scorers.reduce((n, e) => n + e.pk, 0) === expPk, "10: PK総数一致");
   // 大会全体＝全グループ横断（複数グループの選手が混在）
   assert(new Set(scorers.map((e) => CT.teamsById.get(e.teamId)!.group)).size > 1, "10: 複数グループの得点者を含む");
   // 決定性
   assert(JSON.stringify(computeScorers(CT)) === JSON.stringify(computeScorers(CT)), "10: 決定的");
   const top = scorers[0];
-  console.log(`[scorers] 2022 得点王=${CT.teamsById.get(top.teamId)!.name} ${top.player} ${top.goals}点 / 得点者${scorers.length}人・OK`);
+  // KO 込みで 2022 得点王＝ムバッペ8点（グループ3＋KO5）。メッシ7点。
+  assert(top.player === "ムバッペ" && top.goals === 8, `10: 2022 得点王はムバッペ8点（実際: ${top.player} ${top.goals}）`);
+  const messi = scorers.find((e) => e.player === "メッシ");
+  assert(!!messi && messi.goals === 7, `10: 2022 メッシは7点（実際: ${messi?.goals}）`);
+  console.log(`[scorers] 2022 得点王=${CT.teamsById.get(top.teamId)!.name} ${top.player} ${top.goals}点（グループ+KO） / 得点者${scorers.length}人・OK`);
 }
 
 // ---- 11) FIFA順位フィールド（validate.ts） ----
@@ -814,11 +845,11 @@ function mkCt12(slots: number): CompiledTournament {
   assert(tlA![tlA!.length - 1].standings.rows[0].teamId === "uru", "2018: 組A 最終1位は uru");
   assert(playedRounds(ct18, "A") === 3, "2018: 組A 全3節消化");
 
-  // 得点ランキング: グループステージ得点王はケイン5点（PK2）。OG除外・PK計上。
+  // 得点ランキング: KO 込み得点王はケイン6点（グループ5＋R16のPK1）。OG除外・PK計上。
   const top = computeScorers(ct18)[0];
-  assert(top.player === "ケイン" && top.goals === 5, "2018: 得点王はケイン5点");
+  assert(top.player === "ケイン" && top.goals === 6, `2018: 得点王はケイン6点（実際: ${top.player} ${top.goals}）`);
   assert(JSON.stringify(computeScorers(ct18)) === JSON.stringify(computeScorers(ct18)), "2018: 得点ランキング決定的");
-  console.log("[2018] タイムライン＋得点ランキング OK（組A=20スナップ・得点王ケイン5）");
+  console.log("[2018] タイムライン＋得点ランキング OK（組A=20スナップ・得点王ケイン6＝グループ5+KO1）");
 }
 
 console.log("✅ smoketest（P1-P5 + 2026/thirds + scorers/fifa + colors + 2018/fairplay）通過");

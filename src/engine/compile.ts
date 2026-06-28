@@ -39,5 +39,6 @@ export function compileTournament(raw: unknown): CompiledTournament {
     groups,
     teamsByGroup,
     matchesByGroup,
+    knockout: t.knockout ?? [],
   };
 }

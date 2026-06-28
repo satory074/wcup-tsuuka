@@ -1642,6 +1642,32 @@ table.bt-table {
   font-family: var(--font-num);
   font-weight: 700;
 }
+/* スコア（消化済みKOのみ）＝右端・等幅。 */
+.ko-score {
+  margin-left: auto;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+/* 消化済み: 勝者を緑で強調・敗者を淡く（どちらが勝ち上がったか一目で分かる）。 */
+.ko-side.is-team.is-winner {
+  background: var(--advance);
+  color: #fff;
+}
+.ko-side.is-team.is-winner .ko-code {
+  color: #fff;
+}
+.ko-match.is-played .ko-side.is-team:not(.is-winner) {
+  opacity: 0.62;
+}
+.ko-so {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: var(--font-num);
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+  text-align: center;
+}
 /* ホバー連動（同チームの全セル）。既存 .is-hl と同じ思想。 */
 .ko-side.is-hl,
 .ko-pool-chip.is-hl {

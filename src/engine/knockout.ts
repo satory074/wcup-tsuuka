@@ -12,6 +12,7 @@ import type {
   CompiledTournament,
   GroupId,
   KnockoutBracket,
+  KnockoutResult,
   KoMatch,
   KoResolvedMatch,
   KoRound,
@@ -129,10 +130,17 @@ function noOf(matchId: string, template: KoMatch[]): string {
   return template.find((m) => m.id === matchId)?.no ?? "";
 }
 
+/** 4チーム総当りと同じ無向ペアキー（KO結果データをスロット解決後のチームと突き合わせる）。 */
+function pairKey(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
 function resolveSlot(
   slot: KoSlot,
   standingsByGroup: Map<GroupId, Standings>,
   template: KoMatch[],
+  winnerById: Map<string, string>,
+  loserById: Map<string, string>,
 ): KoSide {
   switch (slot.kind) {
     case "winner":
@@ -144,17 +152,25 @@ function resolveSlot(
       return { label: `3位 ${slot.groups.join("/")}`, undecided: true };
     case "winnerOf": {
       const no = noOf(slot.matchId, template);
+      const tid = winnerById.get(slot.matchId);
+      // KO結果がある（完了大会）なら勝者を実チームに解決。無ければ未確定ラベル。
+      if (tid) return { teamId: tid, label: no ? `M${no} 勝者` : "勝者", undecided: false };
       return { label: no ? `M${no} 勝者` : "勝者", undecided: true };
     }
     case "loserOf": {
       const no = noOf(slot.matchId, template);
+      const tid = loserById.get(slot.matchId);
+      if (tid) return { teamId: tid, label: no ? `M${no} 敗者` : "敗者", undecided: false };
       return { label: no ? `M${no} 敗者` : "敗者", undecided: true };
     }
   }
 }
 
 /**
- * standings から決勝トーナメントのブラケットを解決する。
+ * standings＋KO結果データから決勝トーナメントのブラケットを解決する。
+ * テンプレートを依存順（R32→R16→…）に1パスで処理し、各試合の勝者/敗者を winnerById/loserById に
+ * 蓄積して winnerOf/loserOf を解決する。KO結果（ct.knockout）はスロット解決後のチームペアで突き合わせる。
+ * KO結果が無い大会（2026）は winnerOf/loserOf が常に未確定＝従来どおり（不変）。
  * best-thirds の暫定通過プールは描画側が view.bestThirds から流用する（ここでは割当しない）。
  */
 export function computeKnockout(
@@ -162,13 +178,41 @@ export function computeKnockout(
   standingsByGroup: Map<GroupId, Standings>,
 ): KnockoutBracket {
   const template = bracketTemplate(ct);
-  const matches: KoResolvedMatch[] = template.map((m) => ({
-    id: m.id,
-    round: m.round,
-    no: m.no,
-    side1: resolveSlot(m.slot1, standingsByGroup, template),
-    side2: resolveSlot(m.slot2, standingsByGroup, template),
-  }));
+  const resultByPair = new Map<string, KnockoutResult>();
+  for (const r of ct.knockout) resultByPair.set(pairKey(r.home, r.away), r);
+
+  const winnerById = new Map<string, string>();
+  const loserById = new Map<string, string>();
+
+  // template は依存順（前ラウンドが先）なので map の逐次実行で winnerById が間に合う。
+  const matches: KoResolvedMatch[] = template.map((m) => {
+    const side1 = resolveSlot(m.slot1, standingsByGroup, template, winnerById, loserById);
+    const side2 = resolveSlot(m.slot2, standingsByGroup, template, winnerById, loserById);
+    let result: KoResolvedMatch["result"] | undefined;
+    if (side1.teamId && side2.teamId) {
+      const r = resultByPair.get(pairKey(side1.teamId, side2.teamId));
+      if (r) {
+        const s1IsHome = side1.teamId === r.home;
+        const winnerId = r.winner === "home" ? r.home : r.away;
+        const loserId = r.winner === "home" ? r.away : r.home;
+        winnerById.set(m.id, winnerId);
+        loserById.set(m.id, loserId);
+        result = {
+          side1Score: s1IsHome ? r.score.home : r.score.away,
+          side2Score: s1IsHome ? r.score.away : r.score.home,
+          winnerSide: winnerId === side1.teamId ? 1 : 2,
+          shootout: r.shootout
+            ? {
+                side1: s1IsHome ? r.shootout.home : r.shootout.away,
+                side2: s1IsHome ? r.shootout.away : r.shootout.home,
+              }
+            : undefined,
+        };
+      }
+    }
+    return { id: m.id, round: m.round, no: m.no, side1, side2, result };
+  });
+
   const present = new Set(template.map((m) => m.round));
   const rounds = ROUND_ORDER.filter((r) => present.has(r));
   return { rounds, matches };

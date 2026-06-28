@@ -249,7 +249,16 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#knockout .ko-round-R16 .ko-match").length === 8, "8b: 2022 KO R16=8試合");
   assert(root.querySelectorAll("#knockout .ko-round-R16 .ko-side.is-team[data-team]").length === 16, "8b: 2022 R16は全16枠が実チーム");
   assert(!root.querySelector("#knockout .ko-pool"), "8b: 2022 は3位プールなし");
-  console.log("[dom] 2022 は best-thirds 非表示 OK");
+  // R5: KO結果入り＝QF以降も実チームに解決し、各試合に勝者ハイライト＋スコア。優勝はアルゼンチン。
+  assert(root.querySelectorAll("#knockout .ko-side.is-team[data-team]").length === 32, "8b: 2022 KO 全16試合×2=32枠が実チーム（QF以降も解決）");
+  assert(root.querySelectorAll("#knockout .ko-side.is-winner").length === 16, "8b: 2022 KO 各試合に勝者ハイライト16");
+  assert(root.querySelectorAll("#knockout .ko-score").length === 32, "8b: 2022 KO スコア併記32");
+  assert(root.querySelector('#knockout .ko-round-F .ko-side.is-winner')?.getAttribute("data-team") === "arg", "8b: 2022 優勝はアルゼンチン");
+  assert(!!root.querySelector("#knockout .ko-so"), "8b: 2022 決勝はPK戦表記あり");
+  // R6: 得点ランキングは大会全体（グループ＋決勝T）＝得点王ムバッペ8点。
+  assert((root.querySelector("#top-scorers")?.textContent ?? "").includes("決勝トーナメント"), "8b: 得点ランキング見出しが大会全体（グループ＋決勝T）");
+  assert((root.querySelector("#top-scorers .ts-table tbody tr .team-name")?.textContent ?? "") === "ムバッペ", "8b: 2022 得点王はムバッペ（KO込み）");
+  console.log("[dom] 2022 best-thirds非表示＋KO勝者解決＋得点ランキングKO込み OK");
 }
 
 // ---- 8c) 大会切替（?cup=2018: 8組・全消化・組H フェアプレーで日本2位。詳細を明示） ----
@@ -265,6 +274,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#schedule .sched-card.is-upcoming").length === 0, "8c: 2018 は全消化（未消化カードなし）");
   // 2018 は advanceBestThirds 無し＝best-thirds 空（2022 と同じ DOM 不変契約）
   assert((root.querySelector("#best-thirds")?.innerHTML ?? "").trim() === "", "8c: 2018 は best-thirds 空");
+  // R5: KO結果入り＝優勝フランス・勝者ハイライト。R6: 得点王ケイン6点（グループ5+KO1）。
+  assert(root.querySelector('#knockout .ko-round-F .ko-side.is-winner')?.getAttribute("data-team") === "fra", "8c: 2018 優勝はフランス");
+  assert(root.querySelectorAll("#knockout .ko-side.is-winner").length === 16, "8c: 2018 KO 各試合に勝者ハイライト16");
+  assert((root.querySelector("#top-scorers .ts-table tbody tr .team-name")?.textContent ?? "") === "ケイン", "8c: 2018 得点王はケイン（KO込み6点）");
   // 組H へ切替＝日本が2位（フェアプレー確定・抽選🎲ではない）。順位表2行目が日本。
   click(dom, root.querySelector<HTMLElement>('.group-tab[data-group="H"]')!);
   const rowsH = root.querySelectorAll(".standings-table tbody tr");

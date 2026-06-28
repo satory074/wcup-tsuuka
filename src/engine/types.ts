@@ -89,12 +89,31 @@ export interface Match {
   goals?: Goal[];
 }
 
+/** 決勝トーナメント（ノックアウト）の実結果。完了大会（2018/2022）のみ。2026 は未実施＝省略。 */
+export interface KnockoutResult {
+  /** ラウンド（"R16".."F"）。テンプレートのラウンドと一致。 */
+  round: KoRound;
+  /** 対戦チーム id（順不同。テンプレートのスロット解決とペアで突き合わせる） */
+  home: string;
+  away: string;
+  /** 90分＋延長の得点（PK戦のキックは含めない）。 */
+  score: Score;
+  /** 勝ち上がったのは home か away か（PK戦決着も含めここで確定）。 */
+  winner: GoalSide;
+  /** PK戦の結果（任意。あれば score は引分でも可）。 */
+  shootout?: Score;
+  /** 得点イベント（得点ランキング集計用）。あれば本数は score と一致必須。 */
+  goals?: Goal[];
+}
+
 /** 生 JSON のルート（= worldcup2022.json） */
 export interface Tournament {
   meta: Meta;
   teams: Team[];
   groups: GroupDef[];
   matches: Match[];
+  /** 決勝トーナメントの実結果（任意。完了大会のみ）。 */
+  knockout?: KnockoutResult[];
 }
 
 /** 検証後にインデックス化した実行時表現 */
@@ -104,6 +123,8 @@ export interface CompiledTournament {
   groups: GroupId[];
   teamsByGroup: Map<GroupId, Team[]>;
   matchesByGroup: Map<GroupId, Match[]>;
+  /** 決勝トーナメントの実結果（無ければ空配列）。 */
+  knockout: KnockoutResult[];
 }
 
 /** 仮定スコア・マトリックスのピボットなどで「この試合はこのスコア」を上書きする */
@@ -176,6 +197,15 @@ export interface KoResolvedMatch {
   no?: string;
   side1: KoSide;
   side2: KoSide;
+  /** 実結果（両スロットが実チームに解決でき、KO結果データがある場合のみ）。 */
+  result?: {
+    side1Score: number;
+    side2Score: number;
+    /** 勝ち上がった側（1=side1 / 2=side2）。 */
+    winnerSide: 1 | 2;
+    /** PK戦（あれば）side1/side2 視点の本数。 */
+    shootout?: { side1: number; side2: number };
+  };
 }
 
 export interface KnockoutBracket {

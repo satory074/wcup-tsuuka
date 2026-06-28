@@ -198,6 +198,51 @@ export function validateTournament(raw: unknown): ValidateResult {
     }
   }
 
+  // ---- knockout（任意・完了大会のみ。テンプレート照合は engine 側。ここは構造＋本数==score を担保） ----
+  if (raw.knockout !== undefined && raw.knockout !== null) {
+    if (!Array.isArray(raw.knockout)) err("knockout が配列ではない");
+    else {
+      const KO_ROUNDS = new Set(["R32", "R16", "QF", "SF", "3P", "F"]);
+      for (const [i, k] of raw.knockout.entries()) {
+        const at = `knockout[${i}]`;
+        if (!isRecord(k)) { err(`${at} がオブジェクトではない`); continue; }
+        if (typeof k.round !== "string" || !KO_ROUNDS.has(k.round)) err(`${at}.round が不正: ${String(k.round)}`);
+        for (const [key, v] of [["home", k.home], ["away", k.away]] as const) {
+          if (typeof v !== "string" || !teamIds.has(v)) err(`${at}.${key} "${String(v)}" がチームに無い`);
+        }
+        if (typeof k.home === "string" && k.home === k.away) err(`${at} home と away が同一`);
+        const s = k.score;
+        if (!isRecord(s) || !isNonNegInt(s.home) || !isNonNegInt(s.away)) err(`${at}.score の home/away が不正`);
+        if (k.winner !== "home" && k.winner !== "away") err(`${at}.winner が home/away ではない`);
+        if (k.shootout !== undefined && k.shootout !== null) {
+          const so = k.shootout;
+          if (!isRecord(so) || !isNonNegInt(so.home) || !isNonNegInt(so.away)) err(`${at}.shootout が不正`);
+        }
+        if (k.goals !== undefined && k.goals !== null) {
+          if (!Array.isArray(k.goals)) err(`${at}.goals が配列ではない`);
+          else {
+            let gh = 0;
+            let ga = 0;
+            for (const [gi, g] of k.goals.entries()) {
+              if (!isRecord(g)) { err(`${at}.goals[${gi}] が不正`); continue; }
+              if (!Number.isInteger(g.minute) || (g.minute as number) < 0 || (g.minute as number) > 120)
+                err(`${at}.goals[${gi}].minute が 0..120 の整数ではない`);
+              if (g.plus !== undefined && !isNonNegInt(g.plus)) err(`${at}.goals[${gi}].plus が不正`);
+              if (g.player !== undefined && (typeof g.player !== "string" || !g.player)) err(`${at}.goals[${gi}].player が空文字`);
+              if (g.side !== "home" && g.side !== "away") err(`${at}.goals[${gi}].side が home/away ではない`);
+              else if (g.side === "home") gh++;
+              else ga++;
+            }
+            if (isRecord(s) && isNonNegInt(s.home) && isNonNegInt(s.away)) {
+              if (gh !== s.home) err(`${at}: home のゴール数 ${gh} が score.home ${s.home} と不一致`);
+              if (ga !== s.away) err(`${at}: away のゴール数 ${ga} が score.away ${s.away} と不一致`);
+            }
+          }
+        }
+      }
+    }
+  }
+
   // ---- 組ごとに 4チームの総当り（6対戦・各チーム3試合）になっているか ----
   // 宇宙（GROUP_IDS）ではなく、宣言された組だけを回す（2022=8組 / 2026=12組 に追従）。
   if (errors.length === 0) {
