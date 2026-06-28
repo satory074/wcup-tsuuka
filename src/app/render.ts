@@ -11,6 +11,16 @@ import type { BestThirdsResult, ThirdEntry } from "../engine/thirds";
 import type { Cup, Scope } from "./url";
 import { assignGroupColors, type FlagPalette } from "./flagColors";
 import flagColors from "../data/flag-colors.json";
+import fifaRankings from "../data/fifa-rankings.json";
+
+/** fifa-rankings.json の1エントリ（世界ランキングの1カ国）。 */
+interface FifaRankRow {
+  rank: number;
+  code: string;
+  name: string;
+  flag: string;
+}
+const fifaRankingsByCup = fifaRankings as Record<string, FifaRankRow[]>;
 
 /** 一覧カードの安価な進行フェーズ（消化試合数から導出。列挙ベースの analyzeGroup とは別物）。 */
 export type OverviewPhase = "early" | "final-round" | "decided";
@@ -711,27 +721,34 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
       </div>`;
   }
 
-  // ---- FIFAランキング（大会全体・全出場国を FIFA順位順） ----
-  // ランキング値の「時点」ラベル（大会直前のスナップショット。データは worldcup<year>.json に投入済み）。
+  // ---- FIFAランキング（その大会時点の世界ランキング全カ国・出場国を強調） ----
+  // ランキング値の「時点」ラベル（大会直前のスナップショット。データは fifa-rankings.json）。
   const FIFA_AS_OF: Record<Cup, string> = { "2018": "2018年6月", "2022": "2022年10月", "2026": "2026年6月" };
   function fifaRankingHTML(currentGroup: GroupId): string {
-    const teams = [...ct.teamsById.values()].filter((t) => t.fifaRank != null);
-    if (teams.length === 0) return "";
-    // FIFA順位 昇順（同値は teamId 昇順で決定的）。
-    teams.sort((a, b) => a.fifaRank! - b.fifaRank! || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    const rows = teams
-      .map((t) => {
-        const cur = t.group === currentGroup;
-        // data-team で既存のホバー連動（.is-hl）に乗る。現在表示中グループは .is-current で強調。
-        return `<tr class="fr-row${cur ? " is-current" : ""}" data-team="${t.id}">
-            <td class="fr-rank">${t.fifaRank}</td>
-            <td class="col-team"><span class="team-cell"><span class="team-flag">${t.flag}</span><span class="team-name">${esc(t.name)}</span><span class="fr-code">${tc(t.id)}</span></span></td>
-            <td class="fr-grp"><span class="fr-grp-badge">${t.group}</span></td>
+    const list = fifaRankingsByCup[cup] ?? [];
+    if (list.length === 0) return "";
+    let partCount = 0;
+    const rows = list
+      .map((e) => {
+        const t = ct.teamsById.get(e.code); // 出場国なら team（旗/国名は team データを正とする）
+        const isPart = !!t;
+        if (isPart) partCount++;
+        const cur = isPart && t!.group === currentGroup;
+        const flag = isPart ? t!.flag : e.flag;
+        const name = isPart ? t!.name : e.name;
+        // 出場国は強調(.is-team)＋data-team でホバー連動。非出場国は淡色(.is-out)。現在の組は .is-current。
+        const cls = `fr-row${isPart ? " is-team" : " is-out"}${cur ? " is-current" : ""}`;
+        const dt = isPart ? ` data-team="${e.code}"` : "";
+        const grp = isPart ? `<span class="fr-grp-badge">${t!.group}</span>` : "";
+        return `<tr class="${cls}"${dt}>
+            <td class="fr-rank">${e.rank}</td>
+            <td class="col-team"><span class="team-cell"><span class="team-flag">${flag}</span><span class="team-name">${esc(name)}</span><span class="fr-code">${esc(e.code.toUpperCase())}</span></span></td>
+            <td class="fr-grp">${grp}</td>
           </tr>`;
       })
       .join("");
     return `
-      <h2 class="section-title">FIFAランキング <span class="hint">大会全体・${FIFA_AS_OF[cup]}時点（出場${teams.length}カ国／現在の組を強調）</span></h2>
+      <h2 class="section-title">FIFAランキング <span class="hint">${FIFA_AS_OF[cup]}時点の世界ランキング（全${list.length}カ国／<b>出場${partCount}カ国を強調</b>・他は淡色）</span></h2>
       <div class="card fr-card tnum">
         <table class="fr-table">
           <thead><tr><th class="fr-rank">順</th><th class="col-team">国</th><th class="fr-grp">組</th></tr></thead>

@@ -295,3 +295,36 @@ export function validateFlagColors(raw: unknown, teamIds: string[]): string[] {
   }
   return errors;
 }
+
+/**
+ * FIFA世界ランキング（fifa-rankings.json＝cup→全世界ランキング配列）の検証。手書き。
+ * - ルートがオブジェクト（cup→配列）
+ * - 各エントリ {rank: 正整数, code: 非空, name: 非空, flag: 非空}、cup 内で rank/code が一意
+ * - 各大会の出場国 id がすべて含まれる（カバレッジ＝新規出場国の登録漏れを CI で弾く）
+ * @param participantsByCup 大会ごとの出場 teamId 一覧
+ * @returns エラーメッセージ配列（空＝正常）
+ */
+export function validateFifaRankings(raw: unknown, participantsByCup: Record<string, string[]>): string[] {
+  const errors: string[] = [];
+  if (!isRecord(raw)) return ["fifa-rankings のルートがオブジェクトではない"];
+  for (const [cup, ids] of Object.entries(participantsByCup)) {
+    const list = (raw as Record<string, unknown>)[cup];
+    if (!Array.isArray(list)) { errors.push(`fifa-rankings["${cup}"] が配列ではない`); continue; }
+    const ranks = new Set<number>();
+    const codes = new Set<string>();
+    for (const [i, e] of list.entries()) {
+      const at = `fifa-rankings["${cup}"][${i}]`;
+      if (!isRecord(e)) { errors.push(`${at} がオブジェクトではない`); continue; }
+      if (!Number.isInteger(e.rank) || (e.rank as number) < 1) errors.push(`${at}.rank が正整数でない`);
+      else if (ranks.has(e.rank as number)) errors.push(`${at}.rank ${e.rank} が重複`);
+      else ranks.add(e.rank as number);
+      if (typeof e.code !== "string" || !e.code) errors.push(`${at}.code が無い`);
+      else if (codes.has(e.code)) errors.push(`${at}.code "${e.code}" が重複`);
+      else codes.add(e.code);
+      if (typeof e.name !== "string" || !e.name) errors.push(`${at}.name が無い`);
+      if (typeof e.flag !== "string" || !e.flag) errors.push(`${at}.flag が無い`);
+    }
+    for (const id of ids) if (!codes.has(id)) errors.push(`fifa-rankings["${cup}"] に出場国 "${id}" が無い（カバレッジ不足）`);
+  }
+  return errors;
+}

@@ -1418,7 +1418,7 @@ table.bt-table {
 }
 /* 順位列＝FIFA世界ランキングの数値（最大3桁を見据えて右寄せ・等幅）。 */
 .fr-rank {
-  width: 2.2rem;
+  width: 2.6rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
@@ -1445,6 +1445,21 @@ table.bt-table {
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 0 0.32rem;
+}
+/* 出場国は通常表示・国名を太字で前面に。非出場国は淡色に沈めて出場国を際立たせる。 */
+.fr-table tbody tr.is-team .team-name {
+  font-weight: 800;
+}
+.fr-table tbody tr.is-out {
+  color: var(--ink-faint);
+}
+.fr-table tbody tr.is-out .team-flag {
+  opacity: 0.55;
+}
+.fr-table tbody tr.is-out .team-name,
+.fr-table tbody tr.is-out .fr-rank {
+  color: var(--ink-faint);
+  font-weight: 600;
 }
 /* 現在表示中グループの国を強調（日程カードの is-current と同思想）。 */
 .fr-table tbody tr.is-current {

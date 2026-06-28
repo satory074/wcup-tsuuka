@@ -22,7 +22,7 @@
     { "id": "fra", "name": "フランス", "nameEn": "France", "group": "C", "flag": "🇫🇷", "fifaRank": 7 },
     { "id": "aus", "name": "オーストラリア", "nameEn": "Australia", "group": "C", "flag": "🇦🇺", "fifaRank": 36 },
     { "id": "per", "name": "ペルー", "nameEn": "Peru", "group": "C", "flag": "🇵🇪", "fifaRank": 11 },
-    { "id": "den", "name": "デンマーク", "nameEn": "Denmark", "group": "C", "flag": "🇩🇰", "fifaRank": 12 },
+    { "id": "den", "name": "デンマーク", "nameEn": "Denmark", "group": "C", "flag": "🇩🇰", "fifaRank": 13 },
 
     { "id": "arg", "name": "アルゼンチン", "nameEn": "Argentina", "group": "D", "flag": "🇦🇷", "fifaRank": 5 },
     { "id": "isl", "name": "アイスランド", "nameEn": "Iceland", "group": "D", "flag": "🇮🇸", "fifaRank": 22 },
@@ -42,7 +42,7 @@
     { "id": "bel", "name": "ベルギー", "nameEn": "Belgium", "group": "G", "flag": "🇧🇪", "fifaRank": 3 },
     { "id": "pan", "name": "パナマ", "nameEn": "Panama", "group": "G", "flag": "🇵🇦", "fifaRank": 55 },
     { "id": "tun", "name": "チュニジア", "nameEn": "Tunisia", "group": "G", "flag": "🇹🇳", "fifaRank": 21 },
-    { "id": "eng", "name": "イングランド", "nameEn": "England", "group": "G", "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "fifaRank": 13 },
+    { "id": "eng", "name": "イングランド", "nameEn": "England", "group": "G", "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "fifaRank": 12 },
 
     { "id": "pol", "name": "ポーランド", "nameEn": "Poland", "group": "H", "flag": "🇵🇱", "fifaRank": 8 },
     { "id": "sen", "name": "セネガル", "nameEn": "Senegal", "group": "H", "flag": "🇸🇳", "fifaRank": 27 },

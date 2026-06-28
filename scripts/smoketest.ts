@@ -4,7 +4,8 @@
 import worldcupJson from "../src/data/worldcup2022.json";
 import worldcup2026Json from "../src/data/worldcup2026.json";
 import worldcup2018Json from "../src/data/worldcup2018.json";
-import { validateTournament, validateFlagColors } from "../src/engine/validate";
+import { validateTournament, validateFlagColors, validateFifaRankings } from "../src/engine/validate";
+import fifaRankingsJson from "../src/data/fifa-rankings.json";
 import { compileTournament } from "../src/engine/compile";
 import flagColorsJson from "../src/data/flag-colors.json";
 import {
@@ -774,6 +775,43 @@ function mkCt12(slots: number): CompiledTournament {
   assert(deltaE(rgbToLab(hexToRgb("#000000")), rgbToLab(hexToRgb("#ffffff"))) > 90, "12: 黒白 ΔE 大");
 
   console.log("[colors] 旗色由来の線色 OK（全28組 ΔE分離・コントラストガード・カバレッジ・決定性）");
+}
+
+// ---- 12b) 完全版 FIFAランキング（fifa-rankings.json：全世界ランキング・出場国を内包） ----
+{
+  const idsOf = (j: unknown): string[] => (j as { teams: { id: string }[] }).teams.map((t) => t.id);
+  const cupJson: Record<string, unknown> = { "2018": worldcup2018Json, "2022": worldcupJson, "2026": worldcup2026Json };
+  const partByCup: Record<string, string[]> = {
+    "2018": idsOf(worldcup2018Json),
+    "2022": idsOf(worldcupJson),
+    "2026": idsOf(worldcup2026Json),
+  };
+  // 構造＋カバレッジ検証
+  const errs = validateFifaRankings(fifaRankingsJson, partByCup);
+  assert(errs.length === 0, `12b: fifa-rankings 検証 OK（実際のエラー: ${errs.slice(0, 3).join(" / ")}）`);
+  // 各大会: 211カ国・rank/code 一意・出場国の rank が teams[].fifaRank と一致（強クロスチェック）
+  const fr = fifaRankingsJson as Record<string, { rank: number; code: string; name: string; flag: string }[]>;
+  for (const cup of Object.keys(cupJson)) {
+    const list = fr[cup];
+    assert(list.length === 211, `12b: ${cup} は211カ国（実際: ${list.length}）`);
+    assert(new Set(list.map((e) => e.rank)).size === 211, `12b: ${cup} rank 一意`);
+    assert(new Set(list.map((e) => e.code)).size === 211, `12b: ${cup} code 一意`);
+    const byCode = new Map(list.map((e) => [e.code, e]));
+    for (const t of (cupJson[cup] as { teams: { id: string; fifaRank?: number }[] }).teams) {
+      const e = byCode.get(t.id);
+      assert(!!e && e.rank === t.fifaRank, `12b: ${cup} 出場国 ${t.id} の順位一致（data ${t.fifaRank} / full ${e?.rank}）`);
+    }
+  }
+  // 不正データを弾く（rank 重複 / code 欠落 / カバレッジ不足）
+  const dup = JSON.parse(JSON.stringify(fifaRankingsJson)) as Record<string, { rank: number }[]>;
+  dup["2022"][1].rank = dup["2022"][0].rank;
+  assert(validateFifaRankings(dup, partByCup).length > 0, "12b: rank 重複を弾く");
+  const miss = JSON.parse(JSON.stringify(fifaRankingsJson)) as Record<string, unknown[]>;
+  miss["2022"] = miss["2022"].filter((_, i) => i !== 0); // 1位（bra）を削る→カバレッジ不足
+  assert(validateFifaRankings(miss, partByCup).length > 0, "12b: 出場国カバレッジ不足を弾く");
+  // 決定的（同入力同出力）
+  assert(JSON.stringify(fifaRankingsJson) === JSON.stringify(fifaRankingsJson), "12b: 決定的");
+  console.log("[fifa-full] 完全版ランキング OK（3大会×211カ国・rank/code一意・出場国順位クロスチェック・不正棄却）");
 }
 
 // ---- 13) 2018 データ検証 + 実順位再現 + 組H フェアプレー通過（基準g） ----

@@ -114,8 +114,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert((root.querySelector(".standings-table .team-fifa")?.textContent ?? "").includes("FIFA"), "1: 併記は『FIFA ◯位』");
   // FIFAランキング（大会全体）は右サイドバー(#detail-side)内＝全出場国を FIFA順位順。2022=32カ国。
   assert(!!root.querySelector("#detail-side #fifa-ranking .fr-table"), "1: FIFAランキングは右サイドバー内");
-  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 32, `1: FIFAランキングに全32出場国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
-  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr[data-team]").length === 32, "1: FIFA各行に data-team（ホバー連動）");
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 211, `1: FIFAランキングは世界全211カ国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-team").length === 32, "1: 出場32カ国を強調（.is-team）");
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-out").length === 211 - 32, "1: 非出場179カ国は淡色（.is-out）");
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr[data-team]").length === 32, "1: 出場国のみ data-team（ホバー連動）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-current").length === 4, "1: 現在の組（A）4チームを強調");
   assert((root.querySelector("#fifa-ranking .fr-table tbody tr .fr-rank")?.textContent ?? "") === "1", "1: 先頭はFIFA1位");
   // 得点ランキング（大会全体）は右サイドバー(#detail-side)内。2022 得点王=エクアドルのバレンシア。
@@ -217,7 +219,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#best-thirds .bt-row").length >= 1, "8: 3位比較に行がある");
   assert(!root.querySelector("#best-thirds .bt-note"), "8: 全消化＝『暫定』注記は出さない");
   // FIFAランキング（大会全体）: 2026 は全48出場国を FIFA順位順。組Aの4チームを強調。
-  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 48, `8: FIFAランキングに全48出場国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length === 211, `8: FIFAランキングは世界全211カ国（実際: ${root.querySelectorAll("#fifa-ranking .fr-table tbody tr").length}）`);
+  assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-team").length === 48, "8: 出場48カ国を強調（.is-team）");
   assert(root.querySelectorAll("#fifa-ranking .fr-table tbody tr.is-current").length === 4, "8: 現在の組（A）4チームを強調");
   // 決勝トーナメント（ブラケット）: 2026=R32 全32試合・R32は16・確定枠は実チーム・3位枠はラベル・通過3位プール。
   assert(!!root.querySelector("#knockout .ko-bracket"), "8: 決勝トーナメント ブラケットがある");
@@ -302,7 +305,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!root.querySelector(".overview-bt"), "9: 2022 はベスト3位表なし");
   // R1: サイドのコンテンツ（得点ランキング＋FIFAランキング）を一覧でも表示。
   assert(!!root.querySelector(".overview-rankings .ts-table"), "9: 一覧に得点ランキング");
-  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr").length === 32, "9: 一覧のFIFAランキングに全32出場国");
+  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr").length === 211, "9: 一覧のFIFAランキングも世界全211カ国");
+  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr.is-team").length === 32, "9: 一覧でも出場32カ国を強調");
   // 決勝トーナメントは一覧でも全幅表示（両スコープ要件）。2022=R16 全16試合。
   assert(root.querySelectorAll("#knockout .ko-match").length === 16, "9: 一覧でも決勝トーナメント（2022 R16=16）が表示");
   // カード E をクリック → 詳細（E）へドリルイン。新スキームでは scope=detail が明示される。
@@ -327,7 +331,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(!root.querySelector(".overview-bt .bt-note"), "9b: 全消化＝一覧の3位比較も暫定注記なし");
   // R1: サイドのコンテンツを一覧でも表示（2026=48出場国）。
   assert(!!root.querySelector(".overview-rankings .ts-table"), "9b: 一覧に得点ランキング");
-  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr").length === 48, "9b: 一覧のFIFAランキングに全48出場国");
+  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr").length === 211, "9b: 一覧のFIFAランキングも世界全211カ国");
+  assert(root.querySelectorAll(".overview-rankings .fr-table tbody tr.is-team").length === 48, "9b: 一覧でも出場48カ国を強調");
   // 決勝トーナメントは一覧でも全幅表示。2026=R32 全32試合＋通過3位プール。
   assert(root.querySelectorAll("#knockout .ko-match").length === 32, "9b: 一覧でも決勝トーナメント（2026 R32=32）が表示");
   assert(root.querySelectorAll("#knockout .ko-pool .ko-pool-chip").length >= 1, "9b: 一覧でも通過3位プールを併記");
