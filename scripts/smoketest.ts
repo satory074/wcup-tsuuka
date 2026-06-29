@@ -501,10 +501,28 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
     const s = byId.get(id)!.side2;
     assert(s.teamId === tid && !s.undecided, `KO 2026: M${id} の3位枠は ${tid} に割当`);
   }
-  // R16 以降は前ラウンド勝者/敗者＝KO結果が無いので全て未確定（kickoff だけ持つ）。
+  // R32 開幕（2026-06-29 時点）: M73 のみ消化済み＝南アフリカ 0-1 カナダ（ユースタキオ 90+2'）。
+  const m73 = byId.get("73")!;
+  assert(!!m73.result, "KO 2026: M73 は消化済み（result あり）");
+  const m73Winner = m73.result!.winnerSide === 1 ? m73.side1.teamId : m73.side2.teamId;
+  assert(m73Winner === "can", "KO 2026: M73 の勝者はカナダ（can）");
+  assert(m73.result!.side1Score === 0 && m73.result!.side2Score === 1, "KO 2026: M73 は rsa 0-1 can");
+  // M73 を除く R32 は未消化（result 無し）。
   assert(
-    ko.matches.filter((m) => m.round !== "R32").every((m) => m.side1.undecided && m.side2.undecided),
-    "KO 2026: R16以降は全て未確定",
+    ko.matches.filter((m) => m.round === "R32" && m.id !== "73").every((m) => !m.result),
+    "KO 2026: M73 以外の R32 は未消化",
+  );
+  // M73 の勝者カナダは R16 の M90（WO73 vs WO75）に進出＝その1枠だけ確定。それ以外の R16 以降は未確定。
+  const m90 = byId.get("90")!;
+  assert(m90.side1.teamId === "can" && !m90.side1.undecided, "KO 2026: M73 勝者カナダが R16(M90) に進出");
+  assert(m90.side2.undecided, "KO 2026: M90 の対戦相手（M75勝者）は未確定");
+  const decidedR16Plus = ko.matches
+    .filter((m) => m.round !== "R32")
+    .flatMap((m) => [m.side1, m.side2])
+    .filter((s) => !s.undecided);
+  assert(
+    decidedR16Plus.length === 1 && decidedR16Plus[0].teamId === "can",
+    "KO 2026: R16以降で確定済みは M90 のカナダ1枠のみ（残りは未確定）",
   );
   assert(JSON.stringify(computeKnockout(ct26, sbg)) === JSON.stringify(ko), "KO 2026: 決定的");
 

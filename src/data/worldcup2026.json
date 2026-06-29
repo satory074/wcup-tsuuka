@@ -5,9 +5,9 @@
     "advancePerGroup": 2,
     "advanceBestThirds": 8,
     "points": { "win": 3, "draw": 1, "loss": 0 },
-    "dataLastUpdated": "2026-06-28",
-    "source": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup",
-    "disclaimer": "2026年北中米大会（48カ国・12組）の非公式可視化です。グループステージ進行中につき、消化済みの試合のみ実スコアを反映しています（残りは未消化）。各組上位2＋3位の上位8の通過判定は暫定です。"
+    "dataLastUpdated": "2026-06-29",
+    "source": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage",
+    "disclaimer": "2026年北中米大会（48カ国・12組）の非公式可視化です。グループステージは全12組消化済み、現在は決勝トーナメント（R32）進行中につき、消化済みの試合のみ実スコアを反映しています（残りは未消化）。"
   },
   "teams": [
     { "id": "mex", "name": "メキシコ", "nameEn": "Mexico", "group": "A", "flag": "🇲🇽", "fifaRank": 14 },
@@ -168,6 +168,9 @@
     { "id": "L-4", "group": "L", "matchday": 2, "kickoff": "2026-06-23T19:00", "home": "pan", "away": "cro", "score": { "home": 0, "away": 1 }, "goals": [ { "minute": 54, "side": "away", "player": "ブディミル" } ] },
     { "id": "L-5", "group": "L", "matchday": 3, "kickoff": "2026-06-27T17:00", "home": "pan", "away": "eng", "score": { "home": 0, "away": 2 }, "goals": [ { "minute": 62, "side": "away", "player": "ベリンガム" }, { "minute": 67, "side": "away", "player": "ケイン" } ] },
     { "id": "L-6", "group": "L", "matchday": 3, "kickoff": "2026-06-27T17:00", "home": "cro", "away": "gha", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 31, "side": "home", "player": "スチッチ" }, { "minute": 73, "side": "away", "player": "ルカッセン" }, { "minute": 83, "side": "home", "player": "ヴラシッチ" } ] }
+  ],
+  "knockout": [
+    { "round": "R32", "home": "rsa", "away": "can", "score": { "home": 0, "away": 1 }, "winner": "away", "goals": [ { "minute": 90, "plus": 2, "side": "away", "player": "ユースタキオ" } ] }
   ],
   "knockoutSchedule": [
     { "id": "73", "kickoff": "2026-06-28T12:00" },
