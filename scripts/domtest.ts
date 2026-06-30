@@ -228,12 +228,12 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll(".group-tab").length === 12, `8: 2026 はグループタブ12（実際: ${root.querySelectorAll(".group-tab").length}）`);
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "A", "8: 既定はグループA");
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "8: 順位表4行（単一組）");
-  // 日程カルーセル: 2026 は全72試合＋決勝T32＝104カード。組Aの6試合を強調。R32 開幕でM73のみ消化。
+  // 日程カルーセル: 2026 は全72試合＋決勝T32＝104カード。組Aの6試合を強調。R32 進行中で M73-M76 が消化。
   assert(root.querySelectorAll("#schedule .sched-card").length === 104, `8: 2026 は全72＋決勝T32=104カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
   assert(root.querySelectorAll("#schedule .sched-card.is-ko").length === 32, "8: 決勝Tカード32（R32〜決勝）");
   assert(root.querySelectorAll("#schedule .sched-card.is-current").length === 6, "8: 該当グループAの6試合を強調");
-  assert(root.querySelectorAll("#schedule .sched-card.is-ko.is-upcoming").length === 31, "8: 2026 KOは M73 消化済み＝31カードが is-upcoming");
-  assert(root.querySelectorAll("#schedule .sched-card.is-ko:not(.is-upcoming)").length === 1, "8: 2026 KOで消化済みは M73 の1カード");
+  assert(root.querySelectorAll("#schedule .sched-card.is-ko.is-upcoming").length === 28, "8: 2026 KOは M73-M76 消化済み＝28カードが is-upcoming");
+  assert(root.querySelectorAll("#schedule .sched-card.is-ko:not(.is-upcoming)").length === 4, "8: 2026 KOで消化済みは M73-M76 の4カード");
   // 3位比較は一覧のみ＝詳細には無い。
   assert(!root.querySelector("#best-thirds"), "8: 3位比較は詳細に無い（一覧のみ）");
   // FIFAランキング（大会全体）: 2026 は全48出場国を FIFA順位順。組Aの4チームを強調。
@@ -250,10 +250,11 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-side.is-team[data-team]").length === 32, "8: R32 全32枠が実チーム（3位割当済み）");
   assert(!root.querySelector("#knockout .ko-pool"), "8: 3位割当済み＝『未割当』プールは出さない");
   assert(!!root.querySelector('#knockout .ko-match .ko-date'), "8: ブラケット各試合に日付（knockoutSchedule）");
-  // R32 開幕: M73 のみ消化済み＝勝者カナダを強調＋スコア併記（他は未消化）。
-  assert(root.querySelectorAll("#knockout .ko-side.is-winner").length === 1, "8: 2026 KO 消化済みは M73 のみ＝勝者ハイライト1");
-  assert(root.querySelectorAll("#knockout .ko-score").length === 2, "8: 2026 KO スコア併記は M73 の2枠のみ");
-  assert(root.querySelector('#knockout .ko-round-R32 .ko-match.is-played .ko-side.is-winner')?.getAttribute("data-team") === "can", "8: 2026 R32 で消化済み試合の勝者はカナダ");
+  // R32 進行中: M73-M76 が消化済み＝勝者を強調＋スコア併記（M77 以降は未消化）。
+  assert(root.querySelectorAll("#knockout .ko-side.is-winner").length === 4, "8: 2026 KO 消化済みは M73-M76＝勝者ハイライト4");
+  assert(root.querySelectorAll("#knockout .ko-score").length === 8, "8: 2026 KO スコア併記は M73-M76 の8枠");
+  assert(!!root.querySelector("#knockout .ko-round-R32 .ko-so"), "8: 2026 R32 にPK戦表記あり（M74/M75）");
+  assert(root.querySelector('#knockout .ko-round-R32 .ko-match.is-played .ko-side.is-winner')?.getAttribute("data-team") === "can", "8: 2026 R32 で最初の消化済み試合の勝者はカナダ");
   // 通過条件パネルは削除済み。
   assert(!root.querySelector("#scenario-details"), "8: 通過条件パネルは無い");
   // 組K に切替えても順位表が描画される（タブ動作の確認）。

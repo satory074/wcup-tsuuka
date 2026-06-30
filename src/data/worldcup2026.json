@@ -170,7 +170,10 @@
     { "id": "L-6", "group": "L", "matchday": 3, "kickoff": "2026-06-27T17:00", "home": "cro", "away": "gha", "score": { "home": 2, "away": 1 }, "goals": [ { "minute": 31, "side": "home", "player": "スチッチ" }, { "minute": 73, "side": "away", "player": "ルカッセン" }, { "minute": 83, "side": "home", "player": "ヴラシッチ" } ] }
   ],
   "knockout": [
-    { "round": "R32", "home": "rsa", "away": "can", "score": { "home": 0, "away": 1 }, "winner": "away", "goals": [ { "minute": 90, "plus": 2, "side": "away", "player": "ユースタキオ" } ] }
+    { "round": "R32", "home": "rsa", "away": "can", "score": { "home": 0, "away": 1 }, "winner": "away", "goals": [ { "minute": 90, "plus": 2, "side": "away", "player": "ユースタキオ" } ] },
+    { "round": "R32", "home": "bra", "away": "jpn", "score": { "home": 2, "away": 1 }, "winner": "home", "goals": [ { "minute": 29, "side": "away", "player": "佐野海舟" }, { "minute": 56, "side": "home", "player": "カゼミロ" }, { "minute": 90, "plus": 5, "side": "home", "player": "マルチネッリ" } ] },
+    { "round": "R32", "home": "ger", "away": "par", "score": { "home": 1, "away": 1 }, "winner": "away", "shootout": { "home": 3, "away": 4 }, "goals": [ { "minute": 42, "side": "away", "player": "エンシソ" }, { "minute": 54, "side": "home", "player": "ハベルツ" } ] },
+    { "round": "R32", "home": "ned", "away": "mar", "score": { "home": 1, "away": 1 }, "winner": "away", "shootout": { "home": 2, "away": 3 }, "goals": [ { "minute": 72, "side": "home", "player": "ガクポ" }, { "minute": 90, "plus": 1, "side": "away", "player": "ディオプ" } ] }
   ],
   "knockoutSchedule": [
     { "id": "73", "kickoff": "2026-06-28T12:00" },
