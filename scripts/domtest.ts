@@ -248,6 +248,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#knockout .ko-match").length === 32, `8: KO 全32試合（実際: ${root.querySelectorAll("#knockout .ko-match").length}）`);
   assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-match").length === 16, "8: KO R32=16試合");
   assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-side.is-team[data-team]").length === 32, "8: R32 全32枠が実チーム（3位割当済み）");
+  assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-side.is-team .ko-fifa").length === 32, "8: R32 全32枠に FIFA順位を併記");
   assert(!root.querySelector("#knockout .ko-pool"), "8: 3位割当済み＝『未割当』プールは出さない");
   assert(!!root.querySelector('#knockout .ko-match .ko-date'), "8: ブラケット各試合に日付（knockoutSchedule）");
   // R32 進行中: M73-M76 が消化済み＝勝者を強調＋スコア併記（M77 以降は未消化）。
@@ -356,6 +357,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelector('.scope-toggle [data-scope="overview"]')?.classList.contains("seg-on") === true, "9b: 一覧トグルが選択状態");
   assert(root.querySelectorAll(".overview-grid .mini-group").length === 12, `9b: 2026 はカード12（実際: ${root.querySelectorAll(".overview-grid .mini-group").length}）`);
   assert(!!root.querySelector(".overview-bt .bt-table"), "9b: 一覧にベスト3位表がある");
+  assert(root.querySelectorAll(".overview-bt .bt-table .team-fifa").length === 12, "9b: 3位比較の全12組にFIFA順位を併記");
   assert(!root.querySelector(".overview-bt .bt-note"), "9b: 全消化＝一覧の3位比較も暫定注記なし");
   // R1: サイドのコンテンツを一覧でも表示（2026=48出場国）。
   assert(!!root.querySelector("#rankings .ts-table"), "9b: 一覧に得点ランキング");

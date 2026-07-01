@@ -70,17 +70,33 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const r = team(id).fifaRank;
     return r ? `<span class="team-fifa" title="FIFA世界ランキング">FIFA ${r}位</span>` : "";
   };
-  /** kickoff "YYYY-MM-DDThh:mm" → 表示用の M/D・HH:MM・曜日（Date 不使用・slice＋Sakamoto）。 */
-  const fmtKickoff = (iso: string): { date: string; time: string; dow: string } => {
-    if (iso.length < 16) return { date: "", time: "", dow: "" };
+  /** 省スペース版（決勝トーナメント／3位プールのチップ用）。 */
+  const fifaMini = (id: string) => {
+    const r = team(id).fifaRank;
+    return r ? `<span class="ko-fifa" title="FIFA世界ランキング">FIFA${r}</span>` : "";
+  };
+  // 保存済み kickoff の基準タイムゾーン → JST(UTC+9) への時差（時間）。
+  //   2018 モスクワ(MSK,UTC+3)・2022 カタール(AST,UTC+3) → +6h ／ 2026 米東部(EDT,UTC-4・夏時間) → +13h。
+  //   （2022 決勝=18:00 保存＝AST 18:00、2026 決勝=15:00 保存＝ET 15:00 の実データ一致で基準TZを確認）
+  const JST_SHIFT_H: Record<Cup, number> = { "2018": 6, "2022": 6, "2026": 13 };
+  const jstShiftH = JST_SHIFT_H[cup] ?? 0;
+  /** kickoff "YYYY-MM-DDThh:mm"（各大会の現地/正規化時刻）を JST へ変換した各部品。
+   *  Date.UTC を「実行環境 TZ 非依存の純算術」として使い（getUTC* で読み戻す）、日跨ぎ・月跨ぎ・曜日を一括処理。決定的。 */
+  const toJst = (iso: string): { mo: number; d: number; hh: number; mm: number; dow: number } => {
     const y = Number(iso.slice(0, 4)),
       mo = Number(iso.slice(5, 7)),
-      d = Number(iso.slice(8, 10));
-    // Sakamoto のアルゴリズム（Date 不使用で曜日を算出）。w: 0=日 .. 6=土。
-    const t = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
-    const yy = mo < 3 ? y - 1 : y;
-    const w = (yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) + t[mo - 1] + d) % 7;
-    return { date: `${mo}/${d}`, time: iso.slice(11, 16), dow: "日月火水木金土"[w] };
+      d = Number(iso.slice(8, 10)),
+      hh = Number(iso.slice(11, 13)),
+      mm = Number(iso.slice(14, 16));
+    const t = new Date(Date.UTC(y, mo - 1, d, hh + jstShiftH, mm));
+    return { mo: t.getUTCMonth() + 1, d: t.getUTCDate(), hh: t.getUTCHours(), mm: t.getUTCMinutes(), dow: t.getUTCDay() };
+  };
+  /** kickoff → 表示用の M/D・HH:MM・曜日（すべて JST）。 */
+  const fmtKickoff = (iso: string): { date: string; time: string; dow: string } => {
+    if (iso.length < 16) return { date: "", time: "", dow: "" };
+    const p = toJst(iso);
+    const p2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+    return { date: `${p.mo}/${p.d}`, time: `${p2(p.hh)}:${p2(p.mm)}`, dow: "日月火水木金土"[p.dow] };
   };
 
   const cupTabs = CUPS
@@ -99,7 +115,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     <header class="site-header">
       <div class="hero-inner">
         <h1><span class="hero-mark">⚽</span><span class="hero-title">WCUP <span class="hero-em">通過タイムライン</span></span></h1>
-        <p class="site-sub">いつ誰が得点して、その時点で通過国がどう入れ替わったかを時系列で可視化します。</p>
+        <p class="site-sub">いつ誰が得点して、その時点で通過国がどう入れ替わったかを時系列で可視化します。<span class="tz-note">日時はすべて日本時間（JST）で表示。</span></p>
         <nav class="cup-tabs seg" id="cup-tabs" aria-label="大会選択">${cupTabs}</nav>
       </div>
     </header>
@@ -280,7 +296,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     // キックオフ昇順（ISO は辞書順＝時系列）・同時刻は id 安定化。KO は全グループ後の日付なので末尾に並ぶ。
     all.sort((a, b) => (a.kickoff < b.kickoff ? -1 : a.kickoff > b.kickoff ? 1 : a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
     return `
-      <h2 class="section-title">日程・結果 <span class="hint">全試合＋決勝トーナメント（該当＝グループ${group}を強調・横スクロール）</span></h2>
+      <h2 class="section-title">日程・結果 <span class="hint">全試合＋決勝トーナメント（該当＝グループ${group}を強調・横スクロール・日時は日本時間 JST）</span></h2>
       <div class="card sched-carousel-wrap tnum"><div class="sched-carousel">${all.map((c) => c.html).join("")}</div></div>`;
   }
 
@@ -357,7 +373,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
           <tr class="bt-row ${cls}">
             <td class="col-rank"><span class="rank-badge">${e.rank}</span></td>
             <td class="bt-group">${e.group}</td>
-            <td class="col-team"><span class="team-cell"><span class="team-flag">${team(e.teamId).flag}</span><span class="team-name">${esc(team(e.teamId).name)}</span>${stateBadge(e)}</span></td>
+            <td class="col-team"><span class="team-cell"><span class="team-flag">${team(e.teamId).flag}</span><span class="team-name">${esc(team(e.teamId).name)}</span>${fifaInline(e.teamId)}${stateBadge(e)}</span></td>
             <td>${e.points}</td><td>${gdLabel(e.gd)}</td><td>${e.gf}</td>
           </tr>`;
       })
@@ -392,7 +408,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   function koSideHTML(side: KoSide, score?: number, isWinner?: boolean): string {
     const sc = score != null ? `<span class="ko-score">${score}</span>` : "";
     if (side.teamId) {
-      return `<span class="ko-side is-team${isWinner ? " is-winner" : ""}" data-team="${side.teamId}"><span class="ko-flag">${team(side.teamId).flag}</span><span class="ko-name">${tn(side.teamId)}</span>${sc}</span>`;
+      return `<span class="ko-side is-team${isWinner ? " is-winner" : ""}" data-team="${side.teamId}"><span class="ko-flag">${team(side.teamId).flag}</span><span class="ko-name">${tn(side.teamId)}</span>${fifaMini(side.teamId)}${sc}</span>`;
     }
     return `<span class="ko-side is-undecided">${esc(side.label)}</span>`;
   }
@@ -434,7 +450,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
         const chips = adv
           .map(
             (e) =>
-              `<span class="ko-pool-chip" data-team="${e.teamId}"><span class="ko-flag">${team(e.teamId).flag}</span>${tn(e.teamId)}<span class="ko-pool-grp">${e.group}</span></span>`,
+              `<span class="ko-pool-chip" data-team="${e.teamId}"><span class="ko-flag">${team(e.teamId).flag}</span>${tn(e.teamId)}${fifaMini(e.teamId)}<span class="ko-pool-grp">${e.group}</span></span>`,
           )
           .join("");
         const poolLabel = bt.undecided ? `暫定通過の3位（${bt.slots}枠）:` : `通過する3位（${bt.slots}組）:`;
@@ -602,7 +618,9 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     }
     const mdDateLabel = (md: number): string => {
       const iso = koByMd.get(md);
-      return iso && iso.length >= 10 ? `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}` : "";
+      if (!iso || iso.length < 16) return "";
+      const p = toJst(iso); // 節日付も JST（夜キックオフは +13h で翌日にずれ得る）
+      return `${p.mo}/${p.d}`;
     };
     let mdBands = "";
     const mdOf = (ci: number) => snaps[ci].matchday;

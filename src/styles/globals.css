@@ -296,6 +296,17 @@ body {
   max-width: 60ch;
   line-height: 1.55;
 }
+/* 日本時間（JST）表示の注記＝控えめに沈める。 */
+.tz-note {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(236, 242, 251, 0.14);
+  font-size: var(--ts-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 /* 大会切替（2022 / 2026）= 放送風セグメント（ヒーロー帯の上） */
 .cup-tabs {
@@ -1628,6 +1639,20 @@ table.bt-table {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* 各サイドに併記する FIFA順位（小さく沈める・スコアの手前）。 */
+.ko-fifa {
+  flex: 0 0 auto;
+  margin-left: 0.3rem;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  letter-spacing: -0.02em;
+}
+.ko-side.is-team.is-winner .ko-fifa {
+  color: rgba(255, 255, 255, 0.85);
 }
 /* スコア（消化済みKOのみ）＝右端・等幅。 */
 .ko-score {
