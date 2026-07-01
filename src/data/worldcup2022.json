@@ -4,6 +4,7 @@
     "edition": "2022 Qatar",
     "advancePerGroup": 2,
     "points": { "win": 3, "draw": 1, "loss": 0 },
+    "utcOffset": 3,
     "dataLastUpdated": "2026-06-13",
     "source": "https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/qatar2022",
     "disclaimer": "2022年カタール大会の実データに基づく非公式の可視化です。順位・通過判定は参考用です。"

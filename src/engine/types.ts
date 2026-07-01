@@ -23,6 +23,8 @@ export interface Meta {
   /** 全組の3位から追加で通過する数（2022=未指定→0 / 2026=8）。省略時は0。 */
   advanceBestThirds?: number;
   points: Points;
+  /** 会場のUTCオフセット（大会ベース・時間）。表示のJST変換用。2018/2022=3(UTC+3)・2026=-4(米東部EDT)。会場が違う試合は matches[].tz / knockoutSchedule[].tz で上書き。省略時は変換なし扱い。 */
+  utcOffset?: number;
   dataLastUpdated: string;
   source: string;
   disclaimer: string;
@@ -75,8 +77,10 @@ export interface Match {
   id: string;
   group: GroupId;
   matchday: 1 | 2 | 3;
-  /** キックオフ日時（ISO 現地＝カタール時間 "2022-11-23T16:00"）。タイムラインの絶対時刻並べ替え用 */
+  /** キックオフ日時（ISO 現地＝会場ローカル時間 "2022-11-23T16:00"）。タイムラインの絶対時刻並べ替え用 */
   kickoff?: string;
+  /** 会場のUTCオフセット（時間）。meta.utcOffset と違う会場のみ指定（2026の非東部会場＝太平洋-7/中部-5/メキシコ-6）。表示のJST変換用で順位計算には無関係。 */
+  tz?: number;
   /** チームid（行＝home） */
   home: string;
   /** チームid（列＝away） */
@@ -114,8 +118,10 @@ export interface KnockoutResult {
 export interface KnockoutScheduleEntry {
   /** テンプレ KoMatch.id（2026="73".."104" / 2018・2022="r16-1".."f"）。 */
   id: string;
-  /** キックオフ日時（ISO 現地。2018 は MSK 正規化）。 */
+  /** キックオフ日時（ISO 現地＝会場ローカル。2018 は MSK 正規化）。 */
   kickoff: string;
+  /** 会場のUTCオフセット（時間）。meta.utcOffset と違う会場のみ指定。表示のJST変換用。 */
+  tz?: number;
   /** 2026 R32 の「3位枠（slot=third）」に入る実チーム teamId（確定済みの割当・8件のみ）。 */
   third?: string;
 }
@@ -215,6 +221,8 @@ export interface KoResolvedMatch {
   no?: string;
   /** キックオフ日時（knockoutSchedule 由来。無ければ未定）。 */
   kickoff?: string;
+  /** 会場のUTCオフセット（時間・knockoutSchedule 由来）。表示のJST変換用。 */
+  tz?: number;
   side1: KoSide;
   side2: KoSide;
   /** 実結果（両スロットが実チームに解決でき、KO結果データがある場合のみ）。 */

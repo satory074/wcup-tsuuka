@@ -15,6 +15,10 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 function isNonNegInt(v: unknown): v is number {
   return typeof v === "number" && Number.isInteger(v) && v >= 0;
 }
+/** UTCオフセット（時間）: -12..14 の有限数。 */
+function isTz(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v) && v >= -12 && v <= 14;
+}
 
 /** 4チームの総当り（6対戦）の無向ペア集合キー */
 function pairKey(a: string, b: string): string {
@@ -47,6 +51,8 @@ export function validateTournament(raw: unknown): ValidateResult {
     if (meta.advanceBestThirds !== undefined
       && (!Number.isInteger(meta.advanceBestThirds) || (meta.advanceBestThirds as number) < 0))
       err("meta.advanceBestThirds が不正（非負整数）");
+    if (meta.utcOffset !== undefined && !isTz(meta.utcOffset))
+      err("meta.utcOffset が不正（-12..14 の数値）");
     const pts = meta.points;
     if (!isRecord(pts)) err("meta.points が無い");
     else for (const k of ["win", "draw", "loss"]) {
@@ -133,6 +139,7 @@ export function validateTournament(raw: unknown): ValidateResult {
       if (m.matchday !== 1 && m.matchday !== 2 && m.matchday !== 3) err(`${at}.matchday が 1..3 ではない`);
       if (typeof m.kickoff !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(m.kickoff))
         err(`${at}.kickoff が "YYYY-MM-DDThh:mm" ではない`);
+      if (m.tz !== undefined && !isTz(m.tz)) err(`${at}.tz が不正（-12..14 の数値）`);
 
       const home = m.home;
       const away = m.away;
@@ -256,6 +263,7 @@ export function validateTournament(raw: unknown): ValidateResult {
         else seenKoIds.add(e.id);
         if (typeof e.kickoff !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(e.kickoff))
           err(`${at}.kickoff が "YYYY-MM-DDThh:mm" ではない`);
+        if (e.tz !== undefined && !isTz(e.tz)) err(`${at}.tz が不正（-12..14 の数値）`);
         if (e.third !== undefined && e.third !== null) {
           if (typeof e.third !== "string" || !teamIds.has(e.third)) err(`${at}.third "${String(e.third)}" がチームに無い`);
         }

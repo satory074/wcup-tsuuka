@@ -251,6 +251,17 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#knockout .ko-round-R32 .ko-side.is-team .ko-fifa").length === 32, "8: R32 全32枠に FIFA順位を併記");
   assert(!root.querySelector("#knockout .ko-pool"), "8: 3位割当済み＝『未割当』プールは出さない");
   assert(!!root.querySelector('#knockout .ko-match .ko-date'), "8: ブラケット各試合に日付（knockoutSchedule）");
+  // 会場ごとの正確なJST変換: KOカードを試合番号で引き、日付+時刻を検証（会場tzの回帰防止）。
+  const koWhen = (no: string): string => {
+    const card = [...root.querySelectorAll("#knockout .ko-match")].find(
+      (c) => c.querySelector(".ko-no")?.textContent === `M${no}`,
+    );
+    return `${card?.querySelector(".ko-date")?.textContent ?? ""} ${card?.querySelector(".ko-time")?.textContent ?? ""}`;
+  };
+  assert(koWhen("76") === "6/30(火) 02:00", `8: M76 ブラジル-日本(ヒューストン/中部)は JST 6/30(火) 02:00（実際: ${koWhen("76")}）`);
+  assert(koWhen("73") === "6/29(月) 04:00", `8: M73 南ア-カナダ(SoFi/太平洋)は JST 6/29(月) 04:00（実際: ${koWhen("73")}）`);
+  assert(koWhen("75") === "6/30(火) 10:00", `8: M75 蘭-モロッコ(モンテレイ/メキシコ)は JST 6/30(火) 10:00（実際: ${koWhen("75")}）`);
+  assert(koWhen("104") === "7/20(月) 04:00", `8: M104 決勝(MetLife/東部)は JST 7/20(月) 04:00（実際: ${koWhen("104")}）`);
   // R32 進行中: M73-M76 が消化済み＝勝者を強調＋スコア併記（M77 以降は未消化）。
   assert(root.querySelectorAll("#knockout .ko-side.is-winner").length === 4, "8: 2026 KO 消化済みは M73-M76＝勝者ハイライト4");
   assert(root.querySelectorAll("#knockout .ko-score").length === 8, "8: 2026 KO スコア併記は M73-M76 の8枠");

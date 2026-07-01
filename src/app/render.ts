@@ -1,7 +1,7 @@
 // 唯一の DOM 層。グループ選択・順位表・通過ステータス・タイムライン（主役）・
 // 通過条件シナリオ（折りたたみ）を描画する。
 // イベントはルートの click リスナーで data-action 委譲（kisei/moshirasu パターン）。
-import type { CompiledTournament, GroupId, KnockoutBracket, KoResolvedMatch, KoRound, KoSide, Standings } from "../engine/types";
+import type { CompiledTournament, GroupId, KnockoutBracket, KoResolvedMatch, KoRound, KoSide, Match, Standings } from "../engine/types";
 import { tricode } from "../engine/format";
 import type { TeamStatus } from "../engine/status";
 import type { Snapshot } from "../engine/timeline";
@@ -75,26 +75,26 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const r = team(id).fifaRank;
     return r ? `<span class="ko-fifa" title="FIFA世界ランキング">FIFA${r}</span>` : "";
   };
-  // 保存済み kickoff の基準タイムゾーン → JST(UTC+9) への時差（時間）。
-  //   2018 モスクワ(MSK,UTC+3)・2022 カタール(AST,UTC+3) → +6h ／ 2026 米東部(EDT,UTC-4・夏時間) → +13h。
-  //   （2022 決勝=18:00 保存＝AST 18:00、2026 決勝=15:00 保存＝ET 15:00 の実データ一致で基準TZを確認）
-  const JST_SHIFT_H: Record<Cup, number> = { "2018": 6, "2022": 6, "2026": 13 };
-  const jstShiftH = JST_SHIFT_H[cup] ?? 0;
-  /** kickoff "YYYY-MM-DDThh:mm"（各大会の現地/正規化時刻）を JST へ変換した各部品。
+  // kickoff は「会場ローカル時刻」で保存。表示は日本時間(JST=UTC+9)へ変換する。
+  //   変換量 = JST(9) − 会場UTCオフセット。会場オフセットは大会ベース（meta.utcOffset）＝2018/2022 UTC+3・2026 米東部 EDT(UTC-4)。
+  //   2026 は会場が複数TZにまたがる（太平洋-7/中部-5/メキシコ-6/東部-4）ため、非東部の試合は matches[].tz / knockoutSchedule[].tz で会場オフセットを個別指定し baseOffsetH を上書きする。
+  //   （2022 決勝18:00=AST・2026 決勝15:00=ET・南ア-カナダ12:00=PT・ブラジル-日本12:00=CT の実データ一致で会場基準を確認）
+  const baseOffsetH = ct.meta.utcOffset ?? 9; // 省略時は変換なし（JST 扱い）
+  /** kickoff "YYYY-MM-DDThh:mm"（会場ローカル）を、会場UTCオフセット offsetH（時間）を用いて JST へ変換した各部品。
    *  Date.UTC を「実行環境 TZ 非依存の純算術」として使い（getUTC* で読み戻す）、日跨ぎ・月跨ぎ・曜日を一括処理。決定的。 */
-  const toJst = (iso: string): { mo: number; d: number; hh: number; mm: number; dow: number } => {
+  const toJst = (iso: string, offsetH: number): { mo: number; d: number; hh: number; mm: number; dow: number } => {
     const y = Number(iso.slice(0, 4)),
       mo = Number(iso.slice(5, 7)),
       d = Number(iso.slice(8, 10)),
       hh = Number(iso.slice(11, 13)),
       mm = Number(iso.slice(14, 16));
-    const t = new Date(Date.UTC(y, mo - 1, d, hh + jstShiftH, mm));
+    const t = new Date(Date.UTC(y, mo - 1, d, hh + (9 - offsetH), mm));
     return { mo: t.getUTCMonth() + 1, d: t.getUTCDate(), hh: t.getUTCHours(), mm: t.getUTCMinutes(), dow: t.getUTCDay() };
   };
-  /** kickoff → 表示用の M/D・HH:MM・曜日（すべて JST）。 */
-  const fmtKickoff = (iso: string): { date: string; time: string; dow: string } => {
+  /** kickoff → 表示用の M/D・HH:MM・曜日（すべて JST）。offsetH は会場UTCオフセット（省略時は大会ベース）。 */
+  const fmtKickoff = (iso: string, offsetH: number = baseOffsetH): { date: string; time: string; dow: string } => {
     if (iso.length < 16) return { date: "", time: "", dow: "" };
-    const p = toJst(iso);
+    const p = toJst(iso, offsetH);
     const p2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
     return { date: `${p.mo}/${p.d}`, time: `${p2(p.hh)}:${p2(p.mm)}`, dow: "日月火水木金土"[p.dow] };
   };
@@ -257,7 +257,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const groupCards = ct.groups
       .flatMap((g) => ct.matchesByGroup.get(g) ?? [])
       .map((m) => {
-        const { date, time } = fmtKickoff(m.kickoff ?? "");
+        const { date, time } = fmtKickoff(m.kickoff ?? "", m.tz ?? baseOffsetH);
         const played = m.score !== undefined && m.score !== null;
         const cur = m.group === group;
         const cls = `sched-card${cur ? " is-current" : ""}${played ? "" : " is-upcoming"}`;
@@ -279,7 +279,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     const koCards = (view.knockout?.matches ?? [])
       .filter((m) => m.kickoff)
       .map((m) => {
-        const { date, time } = fmtKickoff(m.kickoff!);
+        const { date, time } = fmtKickoff(m.kickoff!, m.tz ?? baseOffsetH);
         const r = m.result;
         const s1 = r ? String(r.side1Score) : "–";
         const s2 = r ? String(r.side2Score) : "–";
@@ -415,7 +415,7 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
   function koMatchHTML(m: KoResolvedMatch): string {
     const no = m.no ? `<span class="ko-no">M${esc(m.no)}</span>` : "";
-    const k = m.kickoff ? fmtKickoff(m.kickoff) : null;
+    const k = m.kickoff ? fmtKickoff(m.kickoff, m.tz ?? baseOffsetH) : null;
     const when = k
       ? `<span class="ko-when"><span class="ko-date">${esc(k.date)}(${esc(k.dow)})</span><span class="ko-time">${esc(k.time)}</span></span>`
       : "";
@@ -610,16 +610,16 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
 
     // 節帯（連続する同 matchday をまとめてラベル＋区切り線・節に日付 M/D を併記）
     const gMatches = ct.matchesByGroup.get(view.group) ?? [];
-    const koByMd = new Map<number, string>(); // matchday → 最早 kickoff iso
+    const koByMd = new Map<number, Match>(); // matchday → 最早 kickoff の試合（tz も要るので試合ごと保持）
     for (const m of gMatches) {
       if (!m.kickoff) continue;
       const prev = koByMd.get(m.matchday);
-      if (prev === undefined || m.kickoff < prev) koByMd.set(m.matchday, m.kickoff);
+      if (prev === undefined || m.kickoff < (prev.kickoff ?? "")) koByMd.set(m.matchday, m);
     }
     const mdDateLabel = (md: number): string => {
-      const iso = koByMd.get(md);
-      if (!iso || iso.length < 16) return "";
-      const p = toJst(iso); // 節日付も JST（夜キックオフは +13h で翌日にずれ得る）
+      const m = koByMd.get(md);
+      if (!m?.kickoff || m.kickoff.length < 16) return "";
+      const p = toJst(m.kickoff, m.tz ?? baseOffsetH); // 節日付も会場JST（夜キックオフは翌日にずれ得る）
       return `${p.mo}/${p.d}`;
     };
     let mdBands = "";

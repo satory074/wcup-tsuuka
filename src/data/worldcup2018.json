@@ -4,6 +4,7 @@
     "edition": "2018 ロシア",
     "advancePerGroup": 2,
     "points": { "win": 3, "draw": 1, "loss": 0 },
+    "utcOffset": 3,
     "dataLastUpdated": "2026-06-24",
     "source": "https://en.wikipedia.org/wiki/2018_FIFA_World_Cup",
     "disclaimer": "2018年ロシア大会の実データに基づく非公式の可視化です。順位・通過判定は参考用です。キックオフ時刻はモスクワ時間(MSK)に正規化しています。"

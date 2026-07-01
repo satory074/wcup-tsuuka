@@ -213,7 +213,7 @@ export function computeKnockout(
         };
       }
     }
-    return { id: m.id, round: m.round, no: m.no, kickoff: sched?.kickoff, side1, side2, result };
+    return { id: m.id, round: m.round, no: m.no, kickoff: sched?.kickoff, tz: sched?.tz, side1, side2, result };
   });
 
   const present = new Set(template.map((m) => m.round));
