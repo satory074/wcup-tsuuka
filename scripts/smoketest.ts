@@ -501,10 +501,12 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
     const s = byId.get(id)!.side2;
     assert(s.teamId === tid && !s.undecided, `KO 2026: M${id} の3位枠は ${tid} に割当`);
   }
-  // R32 進行中（2026-07-02 時点）: M73-M82 が消化済み（M83 以降は未消化）。
+  // R32 完了（2026-07-04 時点）: M73-M88 全16試合が消化済み＝R32 全消化・R16 全8対戦が確定。
   //   M73 南アフリカ 0-1 カナダ / M74 ドイツ 1-1 パラグアイ(PK 3-4) / M75 オランダ 1-1 モロッコ(PK 2-3) / M76 ブラジル 2-1 日本
   //   M77 フランス 3-0 スウェーデン / M78 コートジボワール 1-2 ノルウェー / M79 メキシコ 2-0 エクアドル
   //   M80 イングランド 2-1 DRコンゴ / M81 アメリカ 2-0 ボスニア / M82 ベルギー 3-2 セネガル(延長)
+  //   M83 ポルトガル 2-1 クロアチア / M84 スペイン 3-0 オーストリア / M85 スイス 2-0 アルジェリア
+  //   M86 アルゼンチン 3-2 カーボベルデ(延長) / M87 コロンビア 1-0 ガーナ / M88 オーストラリア 1-1 エジプト(PK 2-4)
   const winnerOf = (id: string): string | undefined => {
     const m = byId.get(id)!;
     return m.result ? (m.result.winnerSide === 1 ? m.side1.teamId : m.side2.teamId) : undefined;
@@ -540,11 +542,24 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   assert(m82.result!.side1Score === 3 && m82.result!.side2Score === 2, "KO 2026: M82 は bel 3-2 sen");
   assert(!m82.result!.shootout, "KO 2026: M82 は延長決着（PK戦なし）");
   assert(winnerOf("82") === "bel", "KO 2026: M82 の勝者はベルギー（bel）");
-  // M83 以降の R32 は未消化（result 無し）。
-  const consumedR32 = new Set(["73", "74", "75", "76", "77", "78", "79", "80", "81", "82"]);
+  // M83 ポルトガル 2-1 クロアチア / M84 スペイン 3-0 オーストリア / M85 スイス 2-0 アルジェリア。
+  assert(winnerOf("83") === "por", "KO 2026: M83 の勝者はポルトガル（por）");
+  assert(winnerOf("84") === "esp", "KO 2026: M84 の勝者はスペイン（esp）");
+  assert(winnerOf("85") === "sui", "KO 2026: M85 の勝者はスイス（sui）");
+  // M86 アルゼンチン 3-2 カーボベルデ（延長）/ M87 コロンビア 1-0 ガーナ。
+  const m86 = byId.get("86")!;
+  assert(m86.result!.side1Score === 3 && m86.result!.side2Score === 2, "KO 2026: M86 は arg 3-2 cpv");
+  assert(winnerOf("86") === "arg", "KO 2026: M86 の勝者はアルゼンチン（arg）");
+  assert(winnerOf("87") === "col", "KO 2026: M87 の勝者はコロンビア（col）");
+  // M88 オーストラリア 1-1 エジプト＝PK 2-4 でエジプト勝利。
+  const m88 = byId.get("88")!;
+  assert(m88.result!.side1Score === 1 && m88.result!.side2Score === 1, "KO 2026: M88 は aus 1-1 egy");
+  assert(!!m88.result!.shootout && m88.result!.shootout.side1 === 2 && m88.result!.shootout.side2 === 4, "KO 2026: M88 はPK 2-4");
+  assert(winnerOf("88") === "egy", "KO 2026: M88 の勝者はエジプト（egy・PK）");
+  // R32 は全16試合が消化済み（未消化ゼロ）。
   assert(
-    ko.matches.filter((m) => m.round === "R32" && !consumedR32.has(m.id)).every((m) => !m.result),
-    "KO 2026: M83 以降の R32 は未消化",
+    ko.matches.filter((m) => m.round === "R32").every((m) => !!m.result),
+    "KO 2026: R32 は全16試合が消化済み（R32 完了）",
   );
   // 勝者の R16 進出: M73→M90 / M75→M90（＝M90 は両枠確定 カナダ vs モロッコ）/ M74→M89 / M76→M91。
   const m90 = byId.get("90")!;
@@ -560,16 +575,25 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   assert(byId.get("92")!.side2.teamId === "eng", "KO 2026: M80 勝者イングランドが R16(M92) に進出（M92両枠確定）");
   assert(byId.get("94")!.side1.teamId === "usa", "KO 2026: M81 勝者アメリカが R16(M94) に進出");
   assert(byId.get("94")!.side2.teamId === "bel", "KO 2026: M82 勝者ベルギーが R16(M94) に進出（M94両枠確定）");
+  // R32 完了で R16 全8対戦が実チームに解決: M93 por vs esp / M95 arg vs egy / M96 sui vs col。
+  assert(byId.get("93")!.side1.teamId === "por" && byId.get("93")!.side2.teamId === "esp", "KO 2026: M93 は por vs esp（両枠確定）");
+  assert(byId.get("95")!.side1.teamId === "arg" && byId.get("95")!.side2.teamId === "egy", "KO 2026: M95 は arg vs egy（両枠確定）");
+  assert(byId.get("96")!.side1.teamId === "sui" && byId.get("96")!.side2.teamId === "col", "KO 2026: M96 は sui vs col（両枠確定）");
   const decidedR16Plus = ko.matches
-    .filter((m) => m.round !== "R32")
+    .filter((m) => m.round === "R16")
     .flatMap((m) => [m.side1, m.side2])
     .filter((s) => !s.undecided);
   assert(
-    decidedR16Plus.length === 10 &&
-      ["bra", "can", "mar", "par", "fra", "nor", "mex", "eng", "usa", "bel"].every((id) =>
-        decidedR16Plus.some((s) => s.teamId === id),
+    decidedR16Plus.length === 16 &&
+      ["bra", "can", "mar", "par", "fra", "nor", "mex", "eng", "usa", "bel", "por", "esp", "sui", "arg", "col", "egy"].every(
+        (id) => decidedR16Plus.some((s) => s.teamId === id),
       ),
-    "KO 2026: R16以降で確定済みは M73-M82 勝者の10枠のみ（残りは未確定）",
+    "KO 2026: R32 完了で R16 全16枠が実チーム（QF 以降は未確定）",
+  );
+  // QF 以降はまだ未消化＝全スロット未確定。
+  assert(
+    ko.matches.filter((m) => ["QF", "SF", "3P", "F"].includes(m.round)).flatMap((m) => [m.side1, m.side2]).every((s) => s.undecided),
+    "KO 2026: QF 以降は全スロット未確定（R16 未消化）",
   );
   assert(JSON.stringify(computeKnockout(ct26, sbg)) === JSON.stringify(ko), "KO 2026: 決定的");
 
