@@ -590,10 +590,14 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
       ),
     "KO 2026: R32 完了で R16 全16枠が実チーム（QF 以降は未確定）",
   );
-  // QF 以降はまだ未消化＝全スロット未確定。
+  // R16 進行中（2026-07-05 時点）: M89(par 0-1 fra)・M90(can 0-3 mar) 消化済み→勝者が QF(M97) に進出。
+  const m97 = byId.get("97")!;
+  assert(m97.side1.teamId === "fra" && !m97.side1.undecided, "KO 2026: M89 勝者フランスが QF(M97) に進出");
+  assert(m97.side2.teamId === "mar" && !m97.side2.undecided, "KO 2026: M90 勝者モロッコが QF(M97) に進出（M97両枠確定）");
+  // M97 以外の QF（M98-100）＋SF/3P/F はまだ未消化＝未確定（QF+SF+3P+F の16枠中 M97 の2枠のみ確定）。
   assert(
-    ko.matches.filter((m) => ["QF", "SF", "3P", "F"].includes(m.round)).flatMap((m) => [m.side1, m.side2]).every((s) => s.undecided),
-    "KO 2026: QF 以降は全スロット未確定（R16 未消化）",
+    ko.matches.filter((m) => ["QF", "SF", "3P", "F"].includes(m.round)).flatMap((m) => [m.side1, m.side2]).filter((s) => s.undecided).length === 14,
+    "KO 2026: QF残り(M98-100)＋SF/3P/F は未確定（M97のみ両枠確定）",
   );
   assert(JSON.stringify(computeKnockout(ct26, sbg)) === JSON.stringify(ko), "KO 2026: 決定的");
 

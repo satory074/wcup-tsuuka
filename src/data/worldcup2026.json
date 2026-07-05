@@ -186,7 +186,9 @@
     { "round": "R32", "home": "sui", "away": "alg", "score": { "home": 2, "away": 0 }, "winner": "home", "goals": [ { "minute": 10, "side": "home", "player": "エンボロ" }, { "minute": 46, "side": "home", "player": "エンドイエ" } ] },
     { "round": "R32", "home": "arg", "away": "cpv", "score": { "home": 3, "away": 2 }, "winner": "home", "goals": [ { "minute": 29, "side": "home", "player": "メッシ" }, { "minute": 59, "side": "away", "player": "ドゥアルテ" }, { "minute": 92, "side": "home", "player": "リサンドロ・マルティネス" }, { "minute": 103, "side": "away", "player": "カブラル" }, { "minute": 111, "side": "home", "player": "ボルジェス(OG)" } ] },
     { "round": "R32", "home": "col", "away": "gha", "score": { "home": 1, "away": 0 }, "winner": "home", "goals": [ { "minute": 14, "side": "home", "player": "アリアス" } ] },
-    { "round": "R32", "home": "aus", "away": "egy", "score": { "home": 1, "away": 1 }, "winner": "away", "shootout": { "home": 2, "away": 4 }, "goals": [ { "minute": 13, "side": "away", "player": "アシュール" }, { "minute": 55, "side": "home", "player": "ハニー(OG)" } ] }
+    { "round": "R32", "home": "aus", "away": "egy", "score": { "home": 1, "away": 1 }, "winner": "away", "shootout": { "home": 2, "away": 4 }, "goals": [ { "minute": 13, "side": "away", "player": "アシュール" }, { "minute": 55, "side": "home", "player": "ハニー(OG)" } ] },
+    { "round": "R16", "home": "par", "away": "fra", "score": { "home": 0, "away": 1 }, "winner": "away", "goals": [ { "minute": 70, "side": "away", "player": "ムバッペ(PK)" } ] },
+    { "round": "R16", "home": "can", "away": "mar", "score": { "home": 0, "away": 3 }, "winner": "away", "goals": [ { "minute": 50, "side": "away", "player": "ウナヒ" }, { "minute": 82, "side": "away", "player": "ウナヒ" }, { "minute": 90, "plus": 8, "side": "away", "player": "ラヒミ" } ] }
   ],
   "knockoutSchedule": [
     { "id": "73", "kickoff": "2026-06-28T12:00", "tz": -7 },
