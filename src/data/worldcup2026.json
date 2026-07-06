@@ -188,7 +188,9 @@
     { "round": "R32", "home": "col", "away": "gha", "score": { "home": 1, "away": 0 }, "winner": "home", "goals": [ { "minute": 14, "side": "home", "player": "アリアス" } ] },
     { "round": "R32", "home": "aus", "away": "egy", "score": { "home": 1, "away": 1 }, "winner": "away", "shootout": { "home": 2, "away": 4 }, "goals": [ { "minute": 13, "side": "away", "player": "アシュール" }, { "minute": 55, "side": "home", "player": "ハニー(OG)" } ] },
     { "round": "R16", "home": "par", "away": "fra", "score": { "home": 0, "away": 1 }, "winner": "away", "goals": [ { "minute": 70, "side": "away", "player": "ムバッペ(PK)" } ] },
-    { "round": "R16", "home": "can", "away": "mar", "score": { "home": 0, "away": 3 }, "winner": "away", "goals": [ { "minute": 50, "side": "away", "player": "ウナヒ" }, { "minute": 82, "side": "away", "player": "ウナヒ" }, { "minute": 90, "plus": 8, "side": "away", "player": "ラヒミ" } ] }
+    { "round": "R16", "home": "can", "away": "mar", "score": { "home": 0, "away": 3 }, "winner": "away", "goals": [ { "minute": 50, "side": "away", "player": "ウナヒ" }, { "minute": 82, "side": "away", "player": "ウナヒ" }, { "minute": 90, "plus": 8, "side": "away", "player": "ラヒミ" } ] },
+    { "round": "R16", "home": "bra", "away": "nor", "score": { "home": 1, "away": 2 }, "winner": "away", "goals": [ { "minute": 79, "side": "away", "player": "ハーランド" }, { "minute": 90, "side": "away", "player": "ハーランド" }, { "minute": 90, "plus": 10, "side": "home", "player": "ネイマール(PK)" } ] },
+    { "round": "R16", "home": "mex", "away": "eng", "score": { "home": 2, "away": 3 }, "winner": "away", "goals": [ { "minute": 36, "side": "away", "player": "ベリンガム" }, { "minute": 38, "side": "away", "player": "ベリンガム" }, { "minute": 42, "side": "home", "player": "キニョネス" }, { "minute": 60, "side": "away", "player": "ケイン(PK)" }, { "minute": 69, "side": "home", "player": "ヒメネス(PK)" } ] }
   ],
   "knockoutSchedule": [
     { "id": "73", "kickoff": "2026-06-28T12:00", "tz": -7 },
@@ -210,7 +212,7 @@
     { "id": "89", "kickoff": "2026-07-04T17:00" },
     { "id": "90", "kickoff": "2026-07-04T12:00", "tz": -5 },
     { "id": "91", "kickoff": "2026-07-05T16:00" },
-    { "id": "92", "kickoff": "2026-07-05T18:00", "tz": -6 },
+    { "id": "92", "kickoff": "2026-07-05T19:00", "tz": -6 },
     { "id": "93", "kickoff": "2026-07-06T14:00", "tz": -5 },
     { "id": "94", "kickoff": "2026-07-06T17:00", "tz": -7 },
     { "id": "95", "kickoff": "2026-07-07T12:00" },
