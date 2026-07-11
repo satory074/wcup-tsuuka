@@ -194,7 +194,9 @@
     { "round": "R16", "home": "por", "away": "esp", "score": { "home": 0, "away": 1 }, "winner": "away", "goals": [ { "minute": 90, "plus": 1, "side": "away", "player": "メリーノ" } ] },
     { "round": "R16", "home": "usa", "away": "bel", "score": { "home": 1, "away": 4 }, "winner": "away", "goals": [ { "minute": 9, "side": "away", "player": "デ・ケテラーレ" }, { "minute": 31, "side": "home", "player": "ティルマン" }, { "minute": 33, "side": "away", "player": "デ・ケテラーレ" }, { "minute": 57, "side": "away", "player": "ファナーケン" }, { "minute": 90, "plus": 3, "side": "away", "player": "ルカク" } ] },
     { "round": "R16", "home": "arg", "away": "egy", "score": { "home": 3, "away": 2 }, "winner": "home", "goals": [ { "minute": 15, "side": "away", "player": "ヤセル・イブラヒム" }, { "minute": 67, "side": "away", "player": "ジコ" }, { "minute": 79, "side": "home", "player": "ロメロ" }, { "minute": 83, "side": "home", "player": "メッシ" }, { "minute": 90, "plus": 2, "side": "home", "player": "エンソ・フェルナンデス" } ] },
-    { "round": "R16", "home": "sui", "away": "col", "score": { "home": 0, "away": 0 }, "winner": "home", "shootout": { "home": 4, "away": 3 }, "goals": [] }
+    { "round": "R16", "home": "sui", "away": "col", "score": { "home": 0, "away": 0 }, "winner": "home", "shootout": { "home": 4, "away": 3 }, "goals": [] },
+    { "round": "QF", "home": "fra", "away": "mar", "score": { "home": 2, "away": 0 }, "winner": "home", "goals": [ { "minute": 60, "side": "home", "player": "ムバッペ" }, { "minute": 66, "side": "home", "player": "デンベレ" } ] },
+    { "round": "QF", "home": "esp", "away": "bel", "score": { "home": 2, "away": 1 }, "winner": "home", "goals": [ { "minute": 30, "side": "home", "player": "ファビアン・ルイス" }, { "minute": 41, "side": "away", "player": "デ・ケテラーレ" }, { "minute": 88, "side": "home", "player": "メリーノ" } ] }
   ],
   "knockoutSchedule": [
     { "id": "73", "kickoff": "2026-06-28T12:00", "tz": -7 },
