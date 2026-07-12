@@ -615,23 +615,26 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   const m100 = byId.get("100")!;
   assert(m100.side1.teamId === "arg" && !m100.side1.undecided, "KO 2026: M95 勝者アルゼンチンが QF(M100) に進出");
   assert(m100.side2.teamId === "sui" && !m100.side2.undecided, "KO 2026: M96 勝者スイスが QF(M100) に進出（M100両枠確定）");
-  // QF 進行中（2026-07-11 時点）: M97 フランス 2-0 モロッコ / M98 スペイン 2-1 ベルギー が消化済み。
+  // QF 完了（2026-07-11 時点）: 全4試合が消化済み。
   assert(!!m97.result && m97.result.side1Score === 2 && m97.result.side2Score === 0, "KO 2026: M97 は fra 2-0 mar");
   assert(winnerOf("97") === "fra", "KO 2026: M97 の勝者はフランス（fra）");
   assert(!!m98.result && m98.result.side1Score === 2 && m98.result.side2Score === 1, "KO 2026: M98 は esp 2-1 bel");
   assert(winnerOf("98") === "esp", "KO 2026: M98 の勝者はスペイン（esp）");
-  // M99/M100 は未消化（result なし）。
-  assert(!m99.result && !m100.result, "KO 2026: M99/M100 は未消化");
-  // M97/M98 の勝者が SF(M101) に進出＝M101 は fra vs esp で両枠確定。M102 は M99/M100 待ちで未確定。
+  assert(!!m99.result && m99.result.side1Score === 1 && m99.result.side2Score === 2, "KO 2026: M99 は nor 1-2 eng（延長）");
+  assert(winnerOf("99") === "eng", "KO 2026: M99 の勝者はイングランド（eng）");
+  assert(!!m100.result && m100.result.side1Score === 3 && m100.result.side2Score === 1, "KO 2026: M100 は arg 3-1 sui（延長）");
+  assert(winnerOf("100") === "arg", "KO 2026: M100 の勝者はアルゼンチン（arg）");
+  // QF 全4試合の勝者が SF(M101/M102) に進出＝両枠とも確定。
   const m101 = byId.get("101")!;
   assert(m101.side1.teamId === "fra" && !m101.side1.undecided, "KO 2026: M97 勝者フランスが SF(M101) に進出");
   assert(m101.side2.teamId === "esp" && !m101.side2.undecided, "KO 2026: M98 勝者スペインが SF(M101) に進出（M101両枠確定）");
   const m102 = byId.get("102")!;
-  assert(m102.side1.undecided && m102.side2.undecided, "KO 2026: M102 は M99/M100 の勝者待ちで未確定");
-  // QF 8枠＋SF M101 の2枠が確定。残る M102/3P/F の6枠は未確定。
+  assert(m102.side1.teamId === "eng" && !m102.side1.undecided, "KO 2026: M99 勝者イングランドが SF(M102) に進出");
+  assert(m102.side2.teamId === "arg" && !m102.side2.undecided, "KO 2026: M100 勝者アルゼンチンが SF(M102) に進出（M102両枠確定）");
+  // QF 8枠＋SF M101/M102 の4枠が確定。残る 3P/F の4枠は未確定。
   assert(
-    ko.matches.filter((m) => ["QF", "SF", "3P", "F"].includes(m.round)).flatMap((m) => [m.side1, m.side2]).filter((s) => s.undecided).length === 6,
-    "KO 2026: QF 全4対戦＋SF M101 が確定＝M102/3P/F の6枠のみ未確定",
+    ko.matches.filter((m) => ["QF", "SF", "3P", "F"].includes(m.round)).flatMap((m) => [m.side1, m.side2]).filter((s) => s.undecided).length === 4,
+    "KO 2026: QF 全4対戦＋SF 全2対戦が確定＝3P/F の4枠のみ未確定",
   );
   assert(JSON.stringify(computeKnockout(ct26, sbg)) === JSON.stringify(ko), "KO 2026: 決定的");
 

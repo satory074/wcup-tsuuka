@@ -196,7 +196,9 @@
     { "round": "R16", "home": "arg", "away": "egy", "score": { "home": 3, "away": 2 }, "winner": "home", "goals": [ { "minute": 15, "side": "away", "player": "ヤセル・イブラヒム" }, { "minute": 67, "side": "away", "player": "ジコ" }, { "minute": 79, "side": "home", "player": "ロメロ" }, { "minute": 83, "side": "home", "player": "メッシ" }, { "minute": 90, "plus": 2, "side": "home", "player": "エンソ・フェルナンデス" } ] },
     { "round": "R16", "home": "sui", "away": "col", "score": { "home": 0, "away": 0 }, "winner": "home", "shootout": { "home": 4, "away": 3 }, "goals": [] },
     { "round": "QF", "home": "fra", "away": "mar", "score": { "home": 2, "away": 0 }, "winner": "home", "goals": [ { "minute": 60, "side": "home", "player": "ムバッペ" }, { "minute": 66, "side": "home", "player": "デンベレ" } ] },
-    { "round": "QF", "home": "esp", "away": "bel", "score": { "home": 2, "away": 1 }, "winner": "home", "goals": [ { "minute": 30, "side": "home", "player": "ファビアン・ルイス" }, { "minute": 41, "side": "away", "player": "デ・ケテラーレ" }, { "minute": 88, "side": "home", "player": "メリーノ" } ] }
+    { "round": "QF", "home": "esp", "away": "bel", "score": { "home": 2, "away": 1 }, "winner": "home", "goals": [ { "minute": 30, "side": "home", "player": "ファビアン・ルイス" }, { "minute": 41, "side": "away", "player": "デ・ケテラーレ" }, { "minute": 88, "side": "home", "player": "メリーノ" } ] },
+    { "round": "QF", "home": "nor", "away": "eng", "score": { "home": 1, "away": 2 }, "winner": "away", "goals": [ { "minute": 36, "side": "home", "player": "シェルデルップ" }, { "minute": 45, "plus": 2, "side": "away", "player": "ベリンガム" }, { "minute": 93, "side": "away", "player": "ベリンガム" } ] },
+    { "round": "QF", "home": "arg", "away": "sui", "score": { "home": 3, "away": 1 }, "winner": "home", "goals": [ { "minute": 10, "side": "home", "player": "マック・アリスター" }, { "minute": 67, "side": "away", "player": "エンドイエ" }, { "minute": 112, "side": "home", "player": "アルバレス" }, { "minute": 120, "plus": 1, "side": "home", "player": "ラウタロ・マルティネス" } ] }
   ],
   "knockoutSchedule": [
     { "id": "73", "kickoff": "2026-06-28T12:00", "tz": -7 },
