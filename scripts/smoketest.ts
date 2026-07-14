@@ -631,10 +631,17 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   const m102 = byId.get("102")!;
   assert(m102.side1.teamId === "eng" && !m102.side1.undecided, "KO 2026: M99 勝者イングランドが SF(M102) に進出");
   assert(m102.side2.teamId === "arg" && !m102.side2.undecided, "KO 2026: M100 勝者アルゼンチンが SF(M102) に進出（M102両枠確定）");
-  // QF 8枠＋SF M101/M102 の4枠が確定。残る 3P/F の4枠は未確定。
+  // SF1 消化（2026-07-14 時点）: M101 fra 0-2 esp。勝者スペインが決勝(M104)へ・敗者フランスが3位決定戦(M103)へ。
+  assert(!!m101.result && m101.result.side1Score === 0 && m101.result.side2Score === 2, "KO 2026: M101 は fra 0-2 esp");
+  assert(winnerOf("101") === "esp", "KO 2026: M101 の勝者はスペイン（esp）");
+  const m103 = byId.get("103")!;
+  const m104 = byId.get("104")!;
+  assert(m104.side1.teamId === "esp" && !m104.side1.undecided, "KO 2026: M101 勝者スペインが 決勝(M104) に進出");
+  assert(m103.side1.teamId === "fra" && !m103.side1.undecided, "KO 2026: M101 敗者フランスが 3位決定戦(M103) に進出");
+  // SF2/3P/F は未消化。SF1 消化で決勝・3P の各1枠が確定＝残る未確定は 3P/F の各1枠＝2枠。
   assert(
-    ko.matches.filter((m) => ["QF", "SF", "3P", "F"].includes(m.round)).flatMap((m) => [m.side1, m.side2]).filter((s) => s.undecided).length === 4,
-    "KO 2026: QF 全4対戦＋SF 全2対戦が確定＝3P/F の4枠のみ未確定",
+    ko.matches.filter((m) => ["QF", "SF", "3P", "F"].includes(m.round)).flatMap((m) => [m.side1, m.side2]).filter((s) => s.undecided).length === 2,
+    "KO 2026: SF1 消化で決勝/3位決定戦の各1枠が確定＝未確定は 3P/F の各1枠＝2枠",
   );
   assert(JSON.stringify(computeKnockout(ct26, sbg)) === JSON.stringify(ko), "KO 2026: 決定的");
 
