@@ -232,8 +232,8 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#schedule .sched-card").length === 104, `8: 2026 は全72＋決勝T32=104カード（実際: ${root.querySelectorAll("#schedule .sched-card").length}）`);
   assert(root.querySelectorAll("#schedule .sched-card.is-ko").length === 32, "8: 決勝Tカード32（R32〜決勝）");
   assert(root.querySelectorAll("#schedule .sched-card.is-current").length === 6, "8: 該当グループAの6試合を強調");
-  assert(root.querySelectorAll("#schedule .sched-card.is-ko.is-upcoming").length === 3, "8: 2026 KOは R32＋R16＋QF全4＋SF1消化＝残り3カード（SF2/3P/F）が is-upcoming");
-  assert(root.querySelectorAll("#schedule .sched-card.is-ko:not(.is-upcoming)").length === 29, "8: 2026 KOで消化済みは R32 全16＋R16 全8＋QF 全4＋SF1＝29カード");
+  assert(root.querySelectorAll("#schedule .sched-card.is-ko.is-upcoming").length === 2, "8: 2026 KOは R32＋R16＋QF全4＋SF全2消化＝残り2カード（3P/F）が is-upcoming");
+  assert(root.querySelectorAll("#schedule .sched-card.is-ko:not(.is-upcoming)").length === 30, "8: 2026 KOで消化済みは R32 全16＋R16 全8＋QF 全4＋SF 全2＝30カード");
   // 3位比較は一覧のみ＝詳細には無い。
   assert(!root.querySelector("#best-thirds"), "8: 3位比較は詳細に無い（一覧のみ）");
   // FIFAランキング（大会全体）: 2026 は全48出場国を FIFA順位順。組Aの4チームを強調。
@@ -262,9 +262,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(koWhen("73") === "6/29(月) 04:00", `8: M73 南ア-カナダ(SoFi/太平洋)は JST 6/29(月) 04:00（実際: ${koWhen("73")}）`);
   assert(koWhen("75") === "6/30(火) 10:00", `8: M75 蘭-モロッコ(モンテレイ/メキシコ)は JST 6/30(火) 10:00（実際: ${koWhen("75")}）`);
   assert(koWhen("104") === "7/20(月) 04:00", `8: M104 決勝(MetLife/東部)は JST 7/20(月) 04:00（実際: ${koWhen("104")}）`);
-  // R32＋R16＋QF全4＋SF1: M73-M101 全29試合が消化済み＝勝者を強調＋スコア併記（SF2/3P/F は未消化）。
-  assert(root.querySelectorAll("#knockout .ko-side.is-winner").length === 29, "8: 2026 KO R32 全16＋R16 全8＋QF 全4＋SF1＝勝者ハイライト29");
-  assert(root.querySelectorAll("#knockout .ko-score").length === 58, "8: 2026 KO スコア併記は R32 16＋R16 8＋QF 4＋SF1 の29試合×2=58枠");
+  // R32＋R16＋QF全4＋SF全2: M73-M102 全30試合が消化済み＝勝者を強調＋スコア併記（3P/F は未消化）。
+  assert(root.querySelectorAll("#knockout .ko-side.is-winner").length === 30, "8: 2026 KO R32 全16＋R16 全8＋QF 全4＋SF 全2＝勝者ハイライト30");
+  assert(root.querySelectorAll("#knockout .ko-score").length === 60, "8: 2026 KO スコア併記は R32 16＋R16 8＋QF 4＋SF 2 の30試合×2=60枠");
   assert(!!root.querySelector("#knockout .ko-round-R32 .ko-so"), "8: 2026 R32 にPK戦表記あり（M74/M75）");
   assert(root.querySelector('#knockout .ko-round-R32 .ko-match.is-played .ko-side.is-winner')?.getAttribute("data-team") === "can", "8: 2026 R32 で最初の消化済み試合の勝者はカナダ");
   // 通過条件パネルは削除済み。
