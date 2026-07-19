@@ -642,7 +642,11 @@ function playedRounds(ct: CompiledTournament, gid: GroupId): number {
   assert(m104.side2.teamId === "arg" && !m104.side2.undecided, "KO 2026: M102 勝者アルゼンチンが 決勝(M104) に進出（M104両枠確定）");
   assert(m103.side1.teamId === "fra" && !m103.side1.undecided, "KO 2026: M101 敗者フランスが 3位決定戦(M103) に進出");
   assert(m103.side2.teamId === "eng" && !m103.side2.undecided, "KO 2026: M102 敗者イングランドが 3位決定戦(M103) に進出（M103両枠確定）");
-  // SF 全消化で決勝・3位決定戦の両枠が確定＝残る未確定チーム枠は 0（3P/F は対戦カード確定・結果のみ未消化）。
+  // 3位決定戦 消化（2026-07-18）: M103 fra 4-6 eng＝イングランドが3位。決勝(M104)は未消化。
+  assert(!!m103.result && m103.result.side1Score === 4 && m103.result.side2Score === 6, "KO 2026: M103 は fra 4-6 eng");
+  assert(winnerOf("103") === "eng", "KO 2026: M103 の勝者（3位）はイングランド（eng）");
+  assert(!m104.result, "KO 2026: M104 決勝は未消化（結果なし）");
+  // SF・3位決定戦まで確定＝残る未確定チーム枠は 0（決勝Fも対戦カード確定・結果のみ未消化）。
   assert(
     ko.matches.filter((m) => ["QF", "SF", "3P", "F"].includes(m.round)).flatMap((m) => [m.side1, m.side2]).filter((s) => s.undecided).length === 0,
     "KO 2026: SF 全消化で決勝/3位決定戦の両枠が確定＝未確定チーム枠は 0",
