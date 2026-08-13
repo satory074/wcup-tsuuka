@@ -1818,11 +1818,11 @@ table.bt-table {
   min-height: 36px;
   padding: 6px 12px;
   padding-bottom: calc(6px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border-top: 1px solid var(--border);
-  font-size: 0.8rem;
+  font-size: 12px;
 }
 .app-backlink-bar a {
   display: inline-flex;
