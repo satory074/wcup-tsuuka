@@ -265,7 +265,8 @@ body {
 .scope-overview .hero-inner {
   max-width: 1200px;
 }
-.site-header h1 {
+/* サイト名（見た目は旧 h1 のまま）。ページの h1 は本文先頭の .page-heading（ページごとに違う見出し）。 */
+.site-header .hero-brand {
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -285,8 +286,8 @@ body {
 .hero-title {
   text-transform: uppercase;
 }
-/* h1 の color:#fff より詳細度を上げて芝グリーンのアクセントを効かせる */
-.site-header h1 .hero-em {
+/* .hero-brand の color:#fff より詳細度を上げて芝グリーンのアクセントを効かせる */
+.site-header .hero-brand .hero-em {
   color: var(--pitch-bright);
 }
 .site-header .site-sub {
@@ -319,6 +320,10 @@ body {
   backdrop-filter: blur(2px);
 }
 .cup-tab {
+  /* <a> だが旧 <button> と同じ寸法にする（ボタンの UA 既定の border-box・下線なしを明示）。 */
+  display: inline-block;
+  box-sizing: border-box;
+  text-decoration: none;
   padding: 0.4rem 1.2rem;
   font-family: var(--font-display);
   font-size: var(--ts-base);
@@ -375,6 +380,23 @@ body {
   color: var(--ink-soft);
 }
 
+/* ---- ページ見出し（h1）と要約: ページごとに違う「どの大会・どのグループか」と結果の1〜2文 ---- */
+.page-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3.2vw, 1.6rem);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+}
+.page-summary {
+  margin: var(--sp-1) 0 0;
+  color: var(--ink-soft);
+  font-size: var(--ts-base);
+  line-height: 1.6;
+  max-width: 80ch;
+}
+
 /* ---- グループ選択（A〜L タブ） ---- */
 .group-tabs {
   display: flex;
@@ -383,6 +405,10 @@ body {
   margin-top: var(--sp-5);
 }
 .group-tab {
+  /* <a> だが旧 <button> と同じ寸法にする（ボタンの UA 既定の border-box・下線なしを明示）。 */
+  display: inline-block;
+  box-sizing: border-box;
+  text-decoration: none;
   flex: 1 1 auto;
   min-width: 2.6rem;
   border: 1px solid var(--border-strong);

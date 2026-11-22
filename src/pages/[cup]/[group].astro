@@ -1,0 +1,18 @@
+---
+// 1 グループの詳細（/2022/e/ など。組は小文字）。最終順位・順位推移チャート・得点経過。
+import type { GetStaticPaths } from "astro";
+import AppPage from "../../components/AppPage.astro";
+import { groupsOf } from "../../app/data";
+import { CUP_IDS, type Cup } from "../../app/url";
+import type { GroupId } from "../../engine/types";
+
+export const getStaticPaths = (() =>
+  CUP_IDS.flatMap((cup) =>
+    groupsOf(cup).map((group) => ({ params: { cup, group: group.toLowerCase() }, props: { group } })),
+  )) satisfies GetStaticPaths;
+
+const cup = Astro.params.cup as Cup;
+const { group } = Astro.props as { group: GroupId };
+---
+
+<AppPage cup={cup} scope="detail" group={group} />

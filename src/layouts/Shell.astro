@@ -1,0 +1,74 @@
+---
+// 全ページ共通の <head> と、satory074.com へ戻るバー。
+// 手書きのアセットリンク（favicon・OG画像）は必ず siteLink() 経由（BASE_URL 直結は末尾 / が無く 404 になる）。
+import "../styles/globals.css";
+import { siteLink } from "../lib/url";
+import { SITE_NAME } from "../app/pageInfo";
+
+interface Props {
+  title: string;
+  description: string;
+  /** このページの絶対 URL（canonical = og:url） */
+  url: string;
+  /** 構造化データ（ページに 1 つ） */
+  jsonLd?: Record<string, unknown>;
+  /** 検索に出さないページ（/2026/ の転送ページ） */
+  noindex?: boolean;
+  /** 転送先（meta refresh） */
+  refreshTo?: string;
+}
+
+const { title, description, url, jsonLd, noindex = false, refreshTo } = Astro.props;
+// OG 画像は全ページ共通の 1 枚（public/og.png）。
+const ogImage = new URL(siteLink("og.png"), import.meta.env.SITE).toString();
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {noindex && <meta name="robots" content="noindex" />}
+    {refreshTo && <meta http-equiv="refresh" content={`0; url=${refreshTo}`} />}
+    <link rel="icon" type="image/svg+xml" href={siteLink("favicon.svg")} />
+    <!-- 欧文の見出し（Barlow）と数字（Spline Sans Mono）のみ Web フォント化。和文はシステムフォント維持で軽量。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700;800&family=Spline+Sans+Mono:wght@500;600;700&display=swap"
+    />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- canonical = og:url = このページの絶対 URL（ディレクトリは末尾 /） -->
+    <link rel="canonical" href={url} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={url} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    {jsonLd && <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")} />}
+  </head>
+  <body>
+    <slot />
+    <nav class="app-backlink-bar" aria-label="サイト間ナビゲーション">
+      <a
+        href="https://satory074.com/apps/"
+        target="_blank"
+        rel="noopener"
+        aria-label="satory074 のほかのアプリ一覧を新しいタブで開く"
+        >satory074 のほかのアプリ <span aria-hidden="true">↗</span></a
+      >
+    </nav>
+  </body>
+</html>

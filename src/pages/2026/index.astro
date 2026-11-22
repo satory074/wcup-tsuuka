@@ -1,0 +1,21 @@
+---
+// /2026/ は置かない（2026 の一覧はトップ）。URL を手で削った人のための転送ページ＝検索には出さない（noindex・サイトマップ外）。
+import Shell from "../../layouts/Shell.astro";
+import { siteLink } from "../../lib/url";
+import { SITE_NAME } from "../../app/pageInfo";
+
+const top = siteLink("/");
+const topUrl = new URL(top, import.meta.env.SITE).toString();
+---
+
+<Shell
+  title={`2026 北中米大会はトップページにあります｜${SITE_NAME}`}
+  description="2026 北中米大会の全グループ一覧はトップページにあります。"
+  url={topUrl}
+  noindex
+  refreshTo={top}
+>
+  <main class="wrap">
+    <p>2026 北中米大会の全グループ一覧は <a href={top}>トップページ</a> にあります。</p>
+  </main>
+</Shell>

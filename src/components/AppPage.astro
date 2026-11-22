@@ -1,0 +1,66 @@
+---
+// 1 ページ分（大会の一覧 or 1 グループの詳細）。ビルド時に描画結果を HTML に入れ、ブラウザでは boot() が引き継ぐ。
+import Shell from "../layouts/Shell.astro";
+import { prerender } from "../lib/prerender";
+import { siteLink } from "../lib/url";
+import { pagePath, type Cup, type Scope } from "../app/url";
+import { SITE_NAME } from "../app/pageInfo";
+import type { GroupId } from "../engine/types";
+
+interface Props {
+  cup: Cup;
+  scope: Scope;
+  group?: GroupId;
+}
+
+const { cup, scope, group } = Astro.props;
+const base = siteLink("/"); // "/wcup-tsuuka/"
+const r = prerender(cup, scope, group, base);
+const path = pagePath(cup, scope, r.group);
+const abs = (p: string) => new URL(siteLink(`/${p}`), import.meta.env.SITE).toString();
+const url = abs(path);
+const rootUrl = abs("");
+
+// 構造化データ: トップは WebSite、それ以外は WebPage（isPartOf → トップ）。中身は画面の見出し・説明文と同じ。
+const author = { "@type": "Person", "@id": "https://satory074.com/#person", name: "satory074", url: "https://satory074.com/" };
+const jsonLd =
+  path === ""
+    ? {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": `${rootUrl}#website`,
+        name: SITE_NAME,
+        url: rootUrl,
+        description: r.page.description,
+        inLanguage: "ja",
+        author,
+      }
+    : {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": `${url}#webpage`,
+        name: r.page.heading,
+        url,
+        description: r.page.description,
+        inLanguage: "ja",
+        isPartOf: { "@type": "WebSite", "@id": `${rootUrl}#website`, name: SITE_NAME, url: rootUrl },
+        author,
+      };
+---
+
+<Shell title={r.page.title} description={r.page.description} url={url} jsonLd={jsonLd}>
+  <noscript><p class="noscript-note">JavaScript を有効にすると、一覧／詳細の切り替えやチャートの強調表示が使えます。</p></noscript>
+  <main
+    id="app"
+    class={r.rootClass || undefined}
+    data-base={base}
+    data-cup={cup}
+    data-scope={scope}
+    data-group={r.group}
+    set:html={r.html}
+  />
+  <script>
+    import { boot } from "../app/main";
+    boot(document.getElementById("app")!);
+  </script>
+</Shell>

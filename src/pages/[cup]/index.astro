@@ -1,0 +1,13 @@
+---
+// 2018 / 2022 の全グループ一覧（/2018/ ・ /2022/）。2026 の一覧はトップ（/）。
+import type { GetStaticPaths } from "astro";
+import AppPage from "../../components/AppPage.astro";
+import { CUP_IDS, DEFAULT_CUP, type Cup } from "../../app/url";
+
+export const getStaticPaths = (() =>
+  CUP_IDS.filter((c) => c !== DEFAULT_CUP).map((cup) => ({ params: { cup } }))) satisfies GetStaticPaths;
+
+const cup = Astro.params.cup as Cup;
+---
+
+<AppPage cup={cup} scope="overview" />

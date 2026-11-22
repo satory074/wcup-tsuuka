@@ -8,6 +8,8 @@ import type { Snapshot } from "../engine/timeline";
 import type { ScorerEntry } from "../engine/scorers";
 import type { BestThirdsResult, ThirdEntry } from "../engine/thirds";
 import type { Cup, Scope } from "./url";
+import { pagePath } from "./url";
+import type { PageInfo } from "./pageInfo";
 import { assignGroupColors, type FlagPalette } from "./flagColors";
 import flagColors from "../data/flag-colors.json";
 import fifaRankings from "../data/fifa-rankings.json";
@@ -30,9 +32,9 @@ const CUPS: { id: Cup; label: string }[] = [
   { id: "2026", label: "2026 北中米" },
 ];
 
+// 大会の切替は普通のリンク（ページ遷移）なので Command に無い。
 export type Command =
-  | { type: "set-group"; group: GroupId }
-  | { type: "set-cup"; cup: Cup }
+  | { type: "open-group"; group: GroupId }
   | { type: "set-scope"; scope: Scope };
 export type Dispatch = (cmd: Command) => void;
 
@@ -40,6 +42,8 @@ export interface RenderView {
   /** 表示範囲（overview=全組一覧 / detail=1組詳細） */
   scope: Scope;
   group: GroupId;
+  /** ページの見出し・要約（pageInfo.ts。<title> と同じ計算） */
+  page: PageInfo;
   /** 一覧用: 全組の順位（detail でも算出済みなので常に渡す） */
   standingsByGroup: Map<GroupId, Standings>;
   /** 一覧用: 各組の安価な進行フェーズ（バッジ表示） */
@@ -61,7 +65,8 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: Cup, dispatch: Dispatch) {
+/** base はサイトの base（末尾 "/"）。大会タブ・グループタブを本当のリンク（<a href>）にするのに使う。 */
+export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: Cup, base: string, dispatch: Dispatch) {
   const team = (id: string) => ct.teamsById.get(id)!;
   /** 表示用の国名（FIFAランキングと同じ日本語表記）。略号に代えて各所で使う。 */
   const tn = (id: string) => esc(team(id).name);
@@ -99,12 +104,14 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     return { date: `${p.mo}/${p.d}`, time: `${p2(p.hh)}:${p2(p.mm)}`, dow: "日月火水木金土"[p.dow] };
   };
 
+  // 大会タブ・グループタブは <a href>＝JS が無くても（クローラーも）各ページへ辿れる。
+  // 大会タブは普通のページ遷移、グループタブはクリックを横取りして再読込なしで描き替える（click 委譲）。
   const cupTabs = CUPS
-    .map((c) => `<button type="button" class="cup-tab seg-btn${c.id === cup ? " seg-on" : ""}" data-action="set-cup" data-cup="${c.id}">${esc(c.label)}</button>`)
+    .map((c) => `<a class="cup-tab seg-btn${c.id === cup ? " seg-on" : ""}" href="${base}${pagePath(c.id, "overview")}" data-cup="${c.id}">${esc(c.label)}</a>`)
     .join("");
 
   const groupTabs = ct.groups
-    .map((g) => `<button type="button" class="group-tab" data-action="set-group" data-group="${g}">${g}</button>`)
+    .map((g) => `<a class="group-tab" href="${base}${pagePath(cup, "detail", g)}" data-action="drill-group" data-group="${g}" aria-label="グループ${g}">${g}</a>`)
     .join("");
 
   const btSlots = ct.meta.advanceBestThirds ?? 0;
@@ -114,12 +121,14 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
     <a class="skip-link" href="#main-content">本文へスキップ</a>
     <header class="site-header">
       <div class="hero-inner">
-        <h1><span class="hero-mark">⚽</span><span class="hero-title">WCUP <span class="hero-em">通過タイムライン</span></span></h1>
+        <p class="hero-brand"><span class="hero-mark">⚽</span><span class="hero-title">WCUP <span class="hero-em">通過タイムライン</span></span></p>
         <p class="site-sub">いつ誰が得点して、その時点で通過国がどう入れ替わったかを時系列で可視化します。<span class="tz-note">日時はすべて日本時間（JST）で表示。</span></p>
         <nav class="cup-tabs seg" id="cup-tabs" aria-label="大会選択">${cupTabs}</nav>
       </div>
     </header>
     <div class="wrap">
+      <h1 class="page-heading" id="page-heading"></h1>
+      <p class="page-summary" id="page-summary"></p>
       <nav class="group-tabs" id="group-tabs" aria-label="グループ選択">${groupTabs}</nav>
 
       <div class="scope-toggle seg" role="group" aria-label="表示範囲">
@@ -175,18 +184,23 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   const elRankings = $("#rankings");
   const elCaption = $("#group-caption");
   const elKnockout = $("#knockout");
+  const elHeading = $("#page-heading");
+  const elSummary = $("#page-summary");
 
   // ---- イベント委譲 ----
   root.addEventListener("click", (ev) => {
     const t = (ev.target as HTMLElement).closest("[data-action]") as HTMLElement | null;
     if (!t) return;
-    if (t.dataset.action === "set-group") dispatch({ type: "set-group", group: t.dataset.group as GroupId });
-    else if (t.dataset.action === "set-cup") dispatch({ type: "set-cup", cup: t.dataset.cup as Cup });
-    else if (t.dataset.action === "set-scope") dispatch({ type: "set-scope", scope: t.dataset.scope as Scope });
+    if (t.tagName === "A") {
+      // 新しいタブで開く（⌘/Ctrl/Shift/中クリック）はブラウザに任せる。普通のクリックだけ横取りする。
+      const me = ev as MouseEvent;
+      if (me.button !== 0 || me.metaKey || me.ctrlKey || me.shiftKey || me.altKey) return;
+      ev.preventDefault();
+    }
+    if (t.dataset.action === "set-scope") dispatch({ type: "set-scope", scope: t.dataset.scope as Scope });
     else if (t.dataset.action === "drill-group") {
-      // 一覧カード → そのグループの詳細へ（単機能 Command 2連発）。
-      dispatch({ type: "set-group", group: t.dataset.group as GroupId });
-      dispatch({ type: "set-scope", scope: "detail" });
+      // グループタブ・一覧カード・日程カード → そのグループの詳細へ。
+      dispatch({ type: "open-group", group: t.dataset.group as GroupId });
     }
   });
 
@@ -876,9 +890,19 @@ export function createRenderer(root: HTMLElement, ct: CompiledTournament, cup: C
   }
 
   function render(view: RenderView): void {
-    // グループタブのハイライトは両モード共通で同期。
+    // ページの見出し（h1）と要約。グループを切り替えたら書き換える（<title> は main.ts が同じ pageInfo で更新）。
+    elHeading.textContent = view.page.heading;
+    elSummary.textContent = view.page.summary;
+    // グループタブのハイライトは両モード共通で同期。aria-current は「そのグループのページを見ている」とき（詳細）だけ。
     for (const tab of root.querySelectorAll<HTMLElement>(".group-tab")) {
-      tab.classList.toggle("is-on", tab.dataset.group === view.group);
+      const on = tab.dataset.group === view.group;
+      tab.classList.toggle("is-on", on);
+      if (on && view.scope === "detail") tab.setAttribute("aria-current", "page");
+      else tab.removeAttribute("aria-current");
+    }
+    // 大会タブ: 一覧ページではそのページ自身、詳細ではその大会の中にいる。
+    for (const tab of root.querySelectorAll<HTMLElement>(".cup-tab")) {
+      if (tab.dataset.cup === cup) tab.setAttribute("aria-current", view.scope === "overview" ? "page" : "true");
     }
     // 表示範囲トグル（一覧／詳細）の状態と表示切替。
     const isOverview = view.scope === "overview";
