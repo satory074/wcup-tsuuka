@@ -1,9 +1,12 @@
 // DOM レベルのスモークテスト: boot → 日程・結果（上部・ドリル）→ 最終順位/ステータス →
-// タイムライン（チャート＋試合別得点ログ）→ ランキング(右レール)/決勝T(左) → 共有URL復元 → 大会切替 を jsdom で検証。
+// タイムライン（チャート＋試合別得点ログ）→ ランキング(右レール)/決勝T(左) → ページURL（パス）→ 大会切替 を jsdom で検証。
+// 各ページは事前描画が <main id="app" data-cup data-scope data-group data-base> を付けて配信する＝ここでも同じ形で boot する。
 // 実行: npx tsx scripts/domtest.ts
 import { JSDOM } from "jsdom";
 import { boot } from "../src/app/main";
-import { decodeQuery } from "../src/app/url";
+import { legacyQueryPath, pagePath, type Cup, type Scope } from "../src/app/url";
+import { groupsOf, sitePages } from "../src/app/data";
+import type { GroupId } from "../src/engine/types";
 
 function assert(cond: boolean, msg: string): void {
   if (!cond) {
@@ -12,8 +15,13 @@ function assert(cond: boolean, msg: string): void {
   }
 }
 
-function setupDom(url: string): JSDOM {
-  const dom = new JSDOM(`<!DOCTYPE html><body><main id="app"></main></body>`, { url, pretendToBeVisual: true });
+const BASE = "/wcup-tsuuka/";
+const ORIGIN = "https://satory074.github.io";
+/** そのページの URL と data 属性で DOM を用意する（事前描画が配信する <main id="app"> と同じ形）。 */
+function setupDom(cup: Cup, scope: Scope, group?: GroupId): JSDOM {
+  const attrs = `data-base="${BASE}" data-cup="${cup}" data-scope="${scope}"${group ? ` data-group="${group}"` : ""}`;
+  const url = `${ORIGIN}${BASE}${pagePath(cup, scope, group)}`;
+  const dom = new JSDOM(`<!DOCTYPE html><title>t</title><body><main id="app" ${attrs}></main></body>`, { url, pretendToBeVisual: true });
   const g = globalThis as unknown as Record<string, unknown>;
   g.window = dom.window;
   g.document = dom.window.document;
@@ -29,24 +37,22 @@ function app(dom: JSDOM): HTMLElement {
 function click(dom: JSDOM, el: Element): void {
   el.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
 }
-const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
-
-// ---- 0) デフォルト = 最新大会の一覧（2026 overview）。無クエリ。 ----
+// ---- 0) トップ = 最新大会の一覧（2026 overview）。 ----
 {
-  const dom = setupDom(BASE_URL);
+  const dom = setupDom("2026", "overview");
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelector(".cup-tab.seg-on")?.getAttribute("data-cup") === "2026", "0: 既定大会は2026（最新）");
   assert((root.querySelector("#overview") as HTMLElement).hidden === false, "0: 既定は一覧（overview）表示");
   assert((root.querySelector("#detail-view") as HTMLElement).hidden === true, "0: 既定で詳細は非表示");
   assert(root.querySelectorAll(".overview-grid .mini-group").length === 12, "0: 2026 は12カード");
-  assert(!dom.window.location.search.includes("scope"), "0: 既定 overview は URL に scope を出さない");
+  assert(dom.window.location.pathname === BASE, "0: トップは / のまま（初回描画で URL を書き換えない）");
   console.log("[dom] デフォルト = 最新大会の一覧（2026 overview）OK");
 }
 
 // ---- 1) 初期描画（2022 詳細を明示）----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2022&scope=detail`);
+  const dom = setupDom("2022", "detail");
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelectorAll(".group-tab").length === 8, "1: グループタブ8");
@@ -153,7 +159,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
 
 // ---- 1b) 単一タイムライン＋節末＋縦型ログ（組E） ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2022&group=E&scope=detail`);
+  const dom = setupDom("2022", "detail", "E");
   boot(app(dom));
   const root = app(dom);
   // 分刻みなので頂点多数（24より多い）＋節末リング・節末ブロック3。
@@ -170,47 +176,56 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   console.log("[dom] 単一タイムライン＋節末＋縦型ログ OK");
 }
 
-// ---- 2) グループ切替（A → E） ----
+// ---- 2) グループ切替（A → E）: 再読込なしで描き替え、URL・h1・<title> がそのグループのページになる ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2022&scope=detail`);
+  const dom = setupDom("2022", "detail");
   boot(app(dom));
   const root = app(dom);
   const tabE = root.querySelector<HTMLElement>('.group-tab[data-group="E"]')!;
+  assert(tabE.getAttribute("href") === `${BASE}2022/e/`, "2: グループタブは本当のリンク（JS なしでも辿れる）");
   click(dom, tabE);
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "E", "2: E が選択状態");
-  assert(decodeQuery(dom.window.location.search).group === "E", "2: URL に group=E");
+  assert(dom.window.location.pathname === `${BASE}2022/e/`, `2: URL は /2022/e/（実際: ${dom.window.location.pathname}）`);
+  assert(root.querySelectorAll("h1").length === 1 && (root.querySelector("h1")?.textContent ?? "").includes("グループE"), "2: h1 は1つで、切替後のグループ名");
+  assert(dom.window.document.title.includes("グループE"), `2: <title> も切替後のグループ（実際: ${dom.window.document.title}）`);
   // E の1位は日本（順位表先頭）
   const firstTeam = root.querySelector(".standings-table tbody tr .team-name")?.textContent ?? "";
   assert(firstTeam.includes("日本"), `2: E の1位は日本（実際: ${firstTeam}）`);
   console.log("[dom] グループ切替 OK");
 }
 
-// ---- 6) 共有URL復元（?group=H） ----
+// ---- 6) グループのページ（/2022/h/）を直接開く ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2022&group=H&scope=detail`);
+  const dom = setupDom("2022", "detail", "H");
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "H", "6: H が復元");
   const firstTeam = root.querySelector(".standings-table tbody tr .team-name")?.textContent ?? "";
   assert(firstTeam.includes("ポルトガル"), `6: H の1位はポルトガル（実際: ${firstTeam}）`);
-  console.log("[dom] 共有URL復元 OK");
+  console.log("[dom] グループのページを直接開く OK");
 }
 
-// ---- 6b) 旧 ?view= は無視され壊れない（後方互換） ----
+// ---- 6b) 旧 ?cup=&group=&scope= の共有URL → 新しいパス（boot が location.replace する先）。必ず実在するページに着地する ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2022&group=E&scope=detail&view=stage`);
-  boot(app(dom));
-  const root = app(dom);
-  // view は廃止。group=E は復元され、単一タイムラインが描画される。URL から view は消える。
-  assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "E", "6b: group=E は復元");
-  assert(!!root.querySelector("svg.tl-chart"), "6b: 単一タイムライン描画");
-  assert(!dom.window.location.search.includes("view"), "6b: 同期後の URL から view= が消える");
-  console.log("[dom] 旧 ?view= 後方互換 OK");
+  const pages = new Set(sitePages().map((p) => p.path));
+  const cases: [string, Cup, string][] = [
+    ["?cup=2022&group=E&scope=detail&view=stage", "2026", "2022/e/"], // 旧 view は捨てる
+    ["?cup=2022&group=E", "2026", "2022/"], // scope 無し＝旧仕様でも一覧
+    ["?cup=2026", "2026", ""],
+    ["?scope=detail", "2026", "2026/a/"], // cup 無し＝トップの大会、group 無し＝先頭の組
+    ["?cup=2018&group=K&scope=detail", "2026", "2018/a/"], // 2018 に K 組は無い→先頭の組（404 にしない）
+  ];
+  for (const [q, cup, want] of cases) {
+    const got = legacyQueryPath(q, cup, groupsOf);
+    assert(got === want && pages.has(got), `6b: ${q} → ${want}（実際: ${got}）は実在するページ`);
+  }
+  assert(legacyQueryPath("?utm_source=x", "2026", groupsOf) === null, "6b: 旧パラメータが無ければ転送しない");
+  console.log("[dom] 旧クエリURL → 新しいパス OK");
 }
 
 // ---- 7) フッタ ----
 {
-  const dom = setupDom(BASE_URL);
+  const dom = setupDom("2026", "overview");
   boot(app(dom));
   const root = app(dom);
   assert(!!root.querySelector(".site-footer .disclaimer"), "7: disclaimer 表示");
@@ -218,9 +233,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   console.log("[dom] フッタ OK");
 }
 
-// ---- 8) 大会切替（?cup=2026: 12組・ベスト3位パネル。詳細を明示） ----
+// ---- 8) 2026 のグループページ（/2026/a/: 12組・KO・FIFA） ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2026&scope=detail`);
+  const dom = setupDom("2026", "detail");
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelectorAll(".cup-tab").length === 3, "8: 大会タブ3");
@@ -273,12 +288,12 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   // 組K に切替えても順位表が描画される（タブ動作の確認）。
   click(dom, root.querySelector<HTMLElement>('.group-tab[data-group="K"]')!);
   assert(root.querySelectorAll(".standings-table tbody tr").length === 4, "8: 組K 切替で順位表4行");
-  console.log("[dom] 大会切替 ?cup=2026（12組・KO・FIFA）OK");
+  console.log("[dom] 2026 /2026/a/（12組・KO・FIFA）OK");
 }
 
 // ---- 8b) 2022 は best-thirds 非表示（DOM 不変） ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2022&scope=detail`);
+  const dom = setupDom("2022", "detail");
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelectorAll(".cup-tab").length === 3, "8b: 大会タブ3");
@@ -301,9 +316,9 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   console.log("[dom] 2022 best-thirds非表示＋KO勝者解決＋得点ランキングKO込み OK");
 }
 
-// ---- 8c) 大会切替（?cup=2018: 8組・全消化・組H フェアプレーで日本2位。詳細を明示） ----
+// ---- 8c) 2018 のグループページ（/2018/a/: 8組・全消化・組H フェアプレーで日本2位） ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2018&scope=detail`);
+  const dom = setupDom("2018", "detail");
   boot(app(dom));
   const root = app(dom);
   assert(root.querySelectorAll(".cup-tab").length === 3, "8c: 大会タブ3");
@@ -325,17 +340,17 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(rowsH.length === 4, "8c: 組H 順位表4行");
   assert(rowsH[1].getAttribute("data-team") === "jpn", "8c: 組H 2位は日本（フェアプレー通過）");
   assert(root.querySelectorAll(".standings-table .tie-badge").length === 0, "8c: 組H に抽選バッジなし（フェアプレーで確定）");
-  console.log("[dom] 大会切替 ?cup=2018（8組・全消化・組H 日本2位フェアプレー）OK");
+  console.log("[dom] 2018 /2018/a/（8組・全消化・組H 日本2位フェアプレー）OK");
 }
 
 // ---- 9) 一覧（overview）2022: 8カード + サイドのランキング + ドリルイン ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2022`); // 既定 scope=overview
+  const dom = setupDom("2022", "overview"); // /2022/
   boot(app(dom));
   const root = app(dom);
   assert((root.querySelector("#overview") as HTMLElement).hidden === false, "9: 既定で一覧が表示");
   assert((root.querySelector("#detail-view") as HTMLElement).hidden === true, "9: 詳細は非表示");
-  assert(decodeQuery(dom.window.location.search).scope === undefined, "9: 既定 overview は URL に scope を出さない");
+  assert(dom.window.location.pathname === `${BASE}2022/`, "9: 一覧のURLは /2022/");
   // 日程・結果は一覧にも表示（左カラム最上部・両scope共通）。
   assert(!!root.querySelector(".layout-main #schedule .sched-carousel"), "9: 一覧にも日程・結果がある");
   assert(root.querySelectorAll('#schedule .sched-card[data-action="drill-group"]').length === 48, "9: 一覧の日程カードもドリル可能");
@@ -350,10 +365,10 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
   assert(root.querySelectorAll("#rankings .fr-table tbody tr.is-team").length === 32, "9: 一覧でも出場32カ国を強調");
   // 決勝トーナメントは一覧でも全幅表示（両スコープ要件）。2022=R16 全16試合。
   assert(root.querySelectorAll("#knockout .ko-match").length === 16, "9: 一覧でも決勝トーナメント（2022 R16=16）が表示");
-  // カード E をクリック → 詳細（E）へドリルイン。新スキームでは scope=detail が明示される。
+  // カード E をクリック → 詳細（E）へドリルイン＝URL は E のページ（/2022/e/）。
   const cardE = root.querySelector<HTMLElement>('.mini-group[data-group="E"]')!;
   click(dom, cardE);
-  assert(decodeQuery(dom.window.location.search).scope === "detail", "9: ドリルで detail（scope=detail 明示）");
+  assert(dom.window.location.pathname === `${BASE}2022/e/`, "9: ドリルで E のページ（/2022/e/）");
   assert((root.querySelector("#detail-view") as HTMLElement).hidden === false, "9: ドリル後は詳細表示");
   assert(root.querySelector(".group-tab.is-on")?.getAttribute("data-group") === "E", "9: ドリル先は E");
   assert(!!root.querySelector("svg.tl-chart"), "9: ドリル後にタイムライン(バンプチャート)描画");
@@ -362,7 +377,7 @@ const BASE_URL = "https://satory074.github.io/wcup-tsuuka/";
 
 // ---- 9b) 一覧（overview）2026: 12カード + ベスト3位表 + サイドのランキング ----
 {
-  const dom = setupDom(`${BASE_URL}?cup=2026`); // 既定 scope=overview
+  const dom = setupDom("2026", "overview"); // トップ
   boot(app(dom));
   const root = app(dom);
   assert((root.querySelector("#overview") as HTMLElement).hidden === false, "9b: 2026 既定で一覧が表示");

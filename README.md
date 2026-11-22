@@ -44,9 +44,10 @@ src/
   app/                       # DOM 層のみ
     main.ts                  # 配線（compile → 計算 → render → URL 同期）
     render.ts                # 唯一の DOM 描画（click/change を data-action 委譲）
-    url.ts                   # ?group=E&view=live&pivot=E-5 の相互変換
+    url.ts                   # 表示状態 ⇔ パス（/2022/ ・ /2022/e/）＋旧 ?cup= リンクの転送先
+    pageInfo.ts              # ページごとの h1・要約・<title>・description
   lib/url.ts                 # siteLink()（base path 対応）
-  pages/index.astro          # シェル + boot()
+  pages/                     # / ・ /[cup]/ ・ /[cup]/[group]/ ・ sitemap.xml（ビルド時に jsdom で事前描画 → boot() が引き継ぐ）
 scripts/
   smoketest.ts               # エンジン assert（実順位再現・タイブレーク・マトリックス・status）
   domtest.ts                 # jsdom で描画・操作・URL 復元を検証
@@ -68,7 +69,7 @@ scripts/
 2. モードを選ぶ（どちらも横1表。縦＝順位、列＝時間が右へ流れ、各セル＝その順位の国旗）:
    - **全試合（分刻み）**: 第1〜3節の全6試合を1表に。並びは**キックオフ日時＋経過分の絶対時刻順**（同時刻開催＝最終節などは分で並列、別時間帯の試合は時系列で前後に）。ヘッダは『第n節の帯』＋『日時帯（キックオフ時間帯ごと、現地時間 `M/D HH:MM`）』＋『時刻行』＋『2レーン（試合①/②）』。得点（⚽得点者・スコア）はその試合のレーンに色分け表示。🟩＝暫定通過圏（上位2の行）、▲▼＝順位変動（国旗の上下）。横スクロールでも先頭の順位列は固定。
    - **大会全体（試合単位）**: 列＝第1→3節の各試合（ヘッダに節・スコア）、各セル＝その試合後の順位の国旗。
-3. `?group=E&view=live` のように URL で共有・復元できる。
+3. グループごとに URL がある（例: `/wcup-tsuuka/2022/e/`）。そのまま共有・再読込できる。旧 `?cup=2022&group=E&scope=detail` のリンクは新しい URL へ転送される。
 
 ### もしものスコア（通過条件マトリックス・折りたたみ）
 

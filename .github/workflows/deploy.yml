@@ -28,6 +28,9 @@ jobs:
       - run: npm run build
         env:
           GH_USER: ${{ github.repository_owner }}
+      # 検索・AI クローラー向けの不変条件（title/description の重複・canonical・サイトマップ・JSON-LD・
+      # サイト内リンク・戻りリンクのバー）。破ったら deploy しない。
+      - run: node scripts/seo-check.mjs dist https://satory074.github.io/wcup-tsuuka/ --require-backlink
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
